@@ -30,3 +30,11 @@
 *.exe
 *.out
 *.app
+source/IotWebsocket.vcxproj.user
+IotWebsocket.log
+source/.bin/*
+source/.vs/*
+source/packages/*
+*.cc
+*.pb.h
+*.i
