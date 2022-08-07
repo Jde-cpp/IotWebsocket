@@ -10,6 +10,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IotWebsocket", "IotWebsocke
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Framework", "..\..\Framework\source\Framework.vcxproj", "{7FC3CC33-B345-423E-99B6-5D499E531FBF}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Odbc", "..\..\Odbc\source\Odbc.vcxproj", "{B80EC089-F567-4E1E-B3CC-06091482DDA7}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7FC3CC33-B345-423E-99B6-5D499E531FBF} = {7FC3CC33-B345-423E-99B6-5D499E531FBF}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -24,6 +29,10 @@ Global
 		{7FC3CC33-B345-423E-99B6-5D499E531FBF}.Debug|x64.Build.0 = Debug|x64
 		{7FC3CC33-B345-423E-99B6-5D499E531FBF}.Release|x64.ActiveCfg = Release|x64
 		{7FC3CC33-B345-423E-99B6-5D499E531FBF}.Release|x64.Build.0 = Release|x64
+		{B80EC089-F567-4E1E-B3CC-06091482DDA7}.Debug|x64.ActiveCfg = Debug|x64
+		{B80EC089-F567-4E1E-B3CC-06091482DDA7}.Debug|x64.Build.0 = Debug|x64
+		{B80EC089-F567-4E1E-B3CC-06091482DDA7}.Release|x64.ActiveCfg = Release|x64
+		{B80EC089-F567-4E1E-B3CC-06091482DDA7}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

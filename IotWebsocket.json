@@ -1,0 +1,35 @@
+{
+	"GoogleAuthClientId": "$(GoogleAuthClientId)",
+	"logging":
+	{
+		"tags": [ "alarm", "ql", "_io", "_locks", "settings", "_threads", "_sql", "app-webRequests" ],
+		"console":
+		{
+			"pattern":  "\u001b]8;;file://%g\u001b\\%3!#-%3!l-%H:%M:%S.%e %v\u001b]8;;\u001b",
+			"pattern-line":  "\u001b]8;;file://%@\u001b\\%3!l-%H:%M:%S.%e %v\u001b]8;;\u001b\\",
+			"pattern-color":  "\u001b]8;;file://c:\\temp\\unchanged.xml\u001b\\%^%3!l%$-%H:%M:%S.%e %-64@  %v\u001b]8;;\u001b\\"
+		},
+		"file":{ "path": "$(ProgramData)\\Jde-cpp\\twsWebSocket\\logs", "md": true },
+		"server": { "_port": 4321, "level": "Debug", "diagnosticsLevel": "Debug", "tags": ["_threads"] }
+	},
+	"db":
+	{
+		"driver": "Jde.DB.Odbc.dll",
+		"connectionString": "DSN=IOT_Connection",
+		"meta": "../meta.json"
+	},
+	"iotWebSocket":
+	{
+		"webSocketPort":  6708
+	},
+	"um":
+	{
+		"user.email": "$(email)",
+		"use": true
+	},
+	"workers":
+	{
+		"drive":{ "threads":  1 },
+		"Alarm":{ "threads":  1 }
+	}
+}

@@ -1,18 +1,15 @@
-﻿//#include "Cache.h"
-#include "WebSession.h"
+﻿#include "WebSession.h"
 #include "WebServer.h"
-//#include "Listener.h"
-//#include "LogData.h"
-#include "../../Framework/source/DateTime.h"
+
 
 #define var const auto
 #define _listener TcpListener::GetInstance()
 
 namespace Jde::Iot
 {
-	static const LogTag& _logLevel = Logging::TagLevel( "app-requests" );
+	static const LogTag& _logLevel = Logging::TagLevel( "app-webRequests" );
 
-	MySession::MySession( WebSocket::WebListener& server, IO::Sockets::SessionPK id, tcp::socket&& socket )noexcept(false):
+	MySession::MySession( WebSocket::WebListener& server, IO::Sockets::SessionPK id, tcp::socket&& socket )ε:
 		base( server, id, move(socket) )
 	{}
 
@@ -21,27 +18,36 @@ namespace Jde::Iot
 		LOG( "({})~MySession()"sv, Id );
 	}
 
-	α MySession::Run()noexcept->void
+	α MySession::Run()ι->void
 	{
 		base::Run();
 		LOG( "({})MySession::Run()"sv, Id );
 		//Server().UpdateStatus( Server() );
 	}
-	α MySession::OnAccept( beast::error_code ec )noexcept->void
+	α MySession::OnAccept( beast::error_code ec )ι->void
 	{
-		LOG( "({})MySession::OnAccept()"sv, Id );
-		auto pAck{ mu<FromServer::Acknowledgement>() }; pAck->set_id( (uint32)Id );
-		FromServer::Transmission t; t.add_messages()->set_allocated_acknowledgement( pAck.release() );
-		Write( t );
+		LOG( "({})MySession::OnAccept()", Id );
+		Write( FromServer::ToAck(Id) );
 		base::OnAccept( ec );
 	}
 
-	α MySession::Server()noexcept->WebServer&
+	α MySession::WriteCustom( uint32 id, string&& m )ι->Task
+	{
+		return Write( FromServer::ToCustom(id, move(m)) );
+	}
+
+	α MySession::WriteError( string m, uint32 requestId )ι->Task
+	{
+		LOG( "({})WriteError( '{}', '{}' )"sv, Id, requestId, m );
+		return Write( FromServer::ToError(requestId, move(m)) );
+	}
+
+	α MySession::Server()ι->WebServer&
 	{
 		return dynamic_cast<WebServer&>( _server );
 	}
 
-	α MySession::OnRead( FromClient::Transmission t )noexcept->void
+	α MySession::OnRead( FromClient::Transmission t )ι->Task
 	{
 		for( α i=0; i<t.messages_size(); ++i )
 		{
@@ -65,6 +71,26 @@ namespace Jde::Iot
 				}
 				else*/
 					WARN( "unsupported request '{}'"sv, request.value() );
+			}
+			else if( pMessage->has_query() )
+			{
+				auto q = move( pMessage->query() );
+				try
+				{
+					LOG( "({}.{})Query( {}, '{}' )"sv, Id, q.request_id(), q.query() );
+					var j = ( co_await DB::CoQuery(move(*q.mutable_query()), UserId()) ).UP<json>();
+
+					Write( FromServer::ToQueryResult(q.request_id(), j->is_null() ? string{} : j->dump()) );
+				}
+				catch( const json::exception& e )
+				{
+					DBG( "({}.{}) query json error:  '{}'", Id, q.request_id(), q.query(), e.what() );
+					WriteError( format("query json error:  '{}'",  e.what()), q.request_id() );
+				}
+				catch( IException& e )
+				{
+					Write( move(e), q.request_id() );
+				}
 			}
 			else if( pMessage->has_requestid() )
 			{
@@ -119,7 +145,7 @@ namespace Jde::Iot
 		}
 	};
 
-	α MySession::SendStatuses()noexcept->void
+	α MySession::SendStatuses()ι->void
 	{
 /*		auto pStatuses = new FromServer::Statuses();
 		Server().SetStatus( *pStatuses->add_values() );
@@ -134,7 +160,7 @@ namespace Jde::Iot
 		LOG( "({})Add status subscription."sv, Id );
 		Server().AddStatusSession( Id );*/
 	}
-/*	α MySession::SendLogs( sp<MySession> self, ApplicationPK applicationId, ApplicationInstancePK instanceId, ELogLevel level, time_t start, uint limit )noexcept->void
+/*	α MySession::SendLogs( sp<MySession> self, ApplicationPK applicationId, ApplicationInstancePK instanceId, ELogLevel level, time_t start, uint limit )ι->void
 	{
 		std::optional<TimePoint> time = start ? Clock::from_time_t(start) : std::optional<TimePoint>{};
 		auto pTraces = Logging::Data::LoadEntries( applicationId, instanceId, level, time, limit );
@@ -146,7 +172,7 @@ namespace Jde::Iot
 		transmission.add_messages()->set_allocated_traces( pTraces.release() );
 		self->Write( transmission );
 	}
-	α MySession::SendStrings( const FromClient::RequestStrings& request )noexcept->void
+	α MySession::SendStrings( const FromClient::RequestStrings& request )ι->void
 	{
 		var reqId = request.requestid();
 		TRACE( "({}) requeststrings count='{}'"sv, Id, request.values_size() );
@@ -196,36 +222,22 @@ namespace Jde::Iot
 		transmission.add_messages()->set_allocated_strings( pStrings );//finished.
 		Write( transmission );
 	}*/
-	α MySession::WriteCustom( uint32 clientId, const string& message )noexcept->void
-	{
-		var pCustom = new FromServer::Custom();
-		pCustom->set_requestid( clientId );
-		pCustom->set_message( message );
-		FromServer::Transmission transmission; transmission.add_messages()->set_allocated_custom( pCustom );
-		Write( transmission );
-	}
-	α MySession::WriteComplete( uint32 clientId )noexcept->void
+
+/*	α MySession::WriteComplete( uint32 clientId )ι->void
 	{
 		var pCustom = new FromServer::Complete();
 		pCustom->set_requestid( clientId );
 		FromServer::Transmission transmission; transmission.add_messages()->set_allocated_complete( pCustom );
 		Write( transmission );
-	}
+	}*/
 
-	α MySession::WriteError( string&& msg, uint32 requestId )noexcept->void
+	α MySession::Write( FromServer::MessageUnion&& m )ι->Task
 	{
-		LOG( "({})WriteError( '{}', '{}' )"sv, Id, requestId, msg );
-		var pError = new FromServer::ErrorMessage();
-		pError->set_requestid( requestId );
-		pError->set_message( msg );
-		FromServer::Transmission transmission; transmission.add_messages()->set_allocated_error( pError );
-		Write( transmission );
+		FromServer::Transmission t;
+		*t.add_messages() = move( m );
+		return base::Write( move(t) );
 	}
-	α MySession::Write( const FromServer::Transmission& t  )noexcept(false)->void
-	{
-		base::Write( make_unique<string>(IO::Proto::ToString(t)) );
-	}
-/*	α MySession::PushMessage( LogPK id, ApplicationInstancePK applicationId, ApplicationInstancePK instanceId, TimePoint time, ELogLevel level, uint32 messageId, uint32 fileId, uint32 functionId, uint16 lineNumber, uint32 userId, uint threadId, const vector<string>& variables )noexcept->void
+/*	α MySession::PushMessage( LogPK id, ApplicationInstancePK applicationId, ApplicationInstancePK instanceId, TimePoint time, ELogLevel level, uint32 messageId, uint32 fileId, uint32 functionId, uint16 lineNumber, uint32 userId, uint threadId, const vector<string>& variables )ι->void
 	{
 		auto pTraces = new FromServer::Traces();
 		pTraces->set_applicationid( (google::protobuf::uint32)applicationId );

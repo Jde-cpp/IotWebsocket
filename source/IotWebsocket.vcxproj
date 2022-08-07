@@ -45,13 +45,13 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(JDE_DIR)\Public\</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(JDE_DIR)\Public\;$(REPO_DIR)\vcpkg\installed\x64-windows\include</IncludePath>
     <OutDir>$(SolutionDir).bin\$(Configuration)\</OutDir>
     <IntDir>.obj\$(Configuration)\</IntDir>
     <TargetName>Jde.$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(JDE_DIR)\Public\</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(JDE_DIR)\Public\;$(REPO_DIR)\vcpkg\installed\x64-windows\include</IncludePath>
     <OutDir>$(SolutionDir).bin\$(Configuration)\</OutDir>
     <IntDir>.obj\$(Configuration)\</IntDir>
     <TargetName>Jde.$(ProjectName)</TargetName>
@@ -60,7 +60,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;WIN32_LEAN_AND_MEAN;PROTOBUF_USE_DLLS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;WIN32_LEAN_AND_MEAN;PROTOBUF_USE_DLLS;PROTOBUF_USE_EXCEPTIONS=0;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <DisableSpecificWarnings>4251;4275</DisableSpecificWarnings>
@@ -82,7 +82,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;WIN32_LEAN_AND_MEAN;PROTOBUF_USE_DLLS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;WIN32_LEAN_AND_MEAN;PROTOBUF_USE_DLLS;PROTOBUF_USE_EXCEPTIONS=0;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <DisableSpecificWarnings>4251;4275</DisableSpecificWarnings>
@@ -120,6 +120,7 @@
       <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ForcedIncludeFiles>
     </ClCompile>
+    <ClInclude Include="FromServer.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="WebServer.h" />
   </ItemGroup>

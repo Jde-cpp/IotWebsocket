@@ -1,37 +1,24 @@
 //source $JDE_DIR/Framework/common.sh;toBashDir $JDE_DIR JDE_BASH;source=$JDE_BASH/IotWebsocket/source/types/proto
-//file=FromServer;cd $source;$JDE_BASH/Public/stage/release/protoc --cpp_out . $file.proto
-
+//cd $source;file=FromServer;$JDE_BASH/Public/stage/release/protoc --cpp_out . $file.proto
 
 syntax = "proto3";
 package Jde.Iot.FromServer;
 
 message Acknowledgement
 {
-	uint32 Id=1;
+	uint32 id=1;
 }
 
-enum ELogLevel
+message Custom
 {
-	Trace = 0;
-	Debug = 1;
-	Information = 2;
-	Warning = 3;
-	Error = 4;
-	Critical = 5;
-	None = 6;
+	uint32 request_id=1;
+	bytes message=2;
 }
 
-message Application
+message QueryResult
 {
-	uint32 Id=1;
-	string Name=2;
-	ELogLevel DbLevel=3;
-	ELogLevel FileLevel=4;
-}
-
-message Applications
-{
-	repeated Application Values=1;
+	uint32 request_id=1;
+	string result=2;
 }
 
 message Status
@@ -43,8 +30,6 @@ message Status
 	uint64 Memory=5;
 	uint32 LogCount=6;
 	double Cpu=7;
-	ELogLevel DBLogLevel=8;
-	ELogLevel FileLogLevel=9;
 	repeated string Values=10;
 }
 
@@ -58,7 +43,6 @@ message TraceMessage
 	uint64 id=1;
 	uint64 InstanceId=2;
 	uint64 Time=3;
-	ELogLevel Level=4;
 	uint32 MessageId=5;
 	uint32 FileId=6;
 	uint32 FunctionId=7;
@@ -88,16 +72,10 @@ message ApplicationStrings
 	repeated ApplicationString Values=3;
 }
 
-message ErrorMessage
+message Error
 {
-	uint32 RequestId=1;
-	string Message=2;
-}
-
-message Custom
-{
-	uint32 RequestId=1;
-	bytes Message=2;
+	uint32 request_id=1;
+	string message=2;
 }
 
 message Complete
@@ -105,22 +83,22 @@ message Complete
 	uint32 RequestId=1;
 }
 
+message Transmission
+{
+	repeated MessageUnion messages=1;
+}
+
 message MessageUnion
 {
 	oneof Value
 	{
-		Traces Traces=1;
-		Statuses Statuses=2;
-		Acknowledgement Acknowledgement=3;
-		ApplicationStrings Strings=4;
-		Applications Applications=5;
-		ErrorMessage Error=6;
-		Custom Custom=7;
-		Complete Complete=8;
+		Acknowledgement acknowledgement=1;
+		Custom custom=2;
+		Error error=3;
+		QueryResult query=4;
+		Traces Traces=5;
+		Statuses Statuses=6;
+		ApplicationStrings Strings=7;
+		Complete Complete=10;
 	}
-}
-
-message Transmission
-{
-	repeated MessageUnion Messages=1;
 }

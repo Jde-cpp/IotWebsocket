@@ -111,6 +111,18 @@ int main( int argc, char **argv )
 	try
 	{
 		OSApp::Startup( argc, argv, "Connection", "IOT Connection" );
+		try
+		{
+			UM::Configure();
+		}
+		catch( IException& e )
+		{
+			std::cerr << e.what() << std::endl;
+			{auto e2=e.Move();}//destructor log.
+			std::this_thread::sleep_for( 1s );
+			std::terminate();
+		}
+
 		IApplication::Pause();
 	}
 	catch( const IException& e )

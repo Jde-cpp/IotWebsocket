@@ -7,7 +7,7 @@
 //#define _logClient Logging::LogClient::Instance()
 namespace Jde::Iot
 {
-	WebServer _instance{ Settings::Get<PortType>("web/port").value_or(1967) };
+	WebServer _instance{ Settings::Get<PortType>("web/port").value_or(6708) };
 	α Server()noexcept->WebServer&{ return _instance; }
 
 	WebServer::WebServer( PortType port )noexcept:

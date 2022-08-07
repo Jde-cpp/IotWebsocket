@@ -1,5 +1,5 @@
 //source $JDE_DIR/Framework/common.sh;toBashDir $JDE_DIR JDE_BASH;source=$JDE_BASH/IotWebsocket/source/types/proto
-//file=FromClient;cd $source;$JDE_BASH/Public/stage/release/protoc --cpp_out . $file.proto
+//cd $source;file=FromClient;$JDE_BASH/Public/stage/release/protoc --cpp_out . $file.proto
 
 syntax = "proto3";
 package Jde.Iot.FromClient;
@@ -17,6 +17,12 @@ enum ERequest
 message Request
 {
 	ERequest Value=1;
+}
+
+message GraphQL
+{
+	uint32 request_id=1;
+	string query=2;
 }
 
 message RequestId
@@ -70,20 +76,21 @@ message Custom
 	bytes Message=3;
 }
 
+message Transmission
+{
+	repeated MessageUnion messages=1;
+}
+
 message MessageUnion
 {
 	oneof Value
 	{
 		Request Request=1;
-		//Request CancelRequest=2;
+		GraphQL query=2;
 		RequestId RequestId=3;
 		RequestLogs RequestLogs=4;
 		LogValues LogValues=5;
 		RequestStrings RequestStrings=6;
 		Custom Custom=7;
 	}
-}
-message Transmission
-{
-	repeated MessageUnion Messages=1;
 }
