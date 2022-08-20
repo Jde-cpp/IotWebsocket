@@ -30,13 +30,13 @@
     <ClCompile Include="pc.h">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="types\proto\FromServer.pb.cc">
-      <Filter>Source Files\types\proto</Filter>
-    </ClCompile>
     <ClCompile Include="WebSession.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="types\proto\FromClient.pb.cc">
+    <ClCompile Include="types\proto\IotFromClient.pb.cc">
+      <Filter>Source Files\types\proto</Filter>
+    </ClCompile>
+    <ClCompile Include="types\proto\IotFromServer.pb.cc">
       <Filter>Source Files\types\proto</Filter>
     </ClCompile>
   </ItemGroup>
