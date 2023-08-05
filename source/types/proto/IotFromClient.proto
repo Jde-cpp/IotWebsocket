@@ -3,6 +3,7 @@
 
 syntax = "proto3";
 package Jde.Iot.FromClient;
+import "FromClient.proto";
 
 enum ERequest
 {
@@ -17,12 +18,6 @@ enum ERequest
 message Request
 {
 	ERequest Value=1;
-}
-
-message GraphQL
-{
-	uint32 request_id=1;
-	string query=2;
 }
 
 message RequestId
