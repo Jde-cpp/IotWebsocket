@@ -1,8 +1,5 @@
 ﻿#pragma once
 #include "../../Framework/source/net/WebSocket.h"
-#include "../../Framework/source/io/sockets/Socket.h"
-//#include <jde/log/types/proto/FromServer.pb.h>
-//#include <jde/log/types/proto/FromClient.pb.h>
 
 namespace Jde::Iot
 {

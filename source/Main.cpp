@@ -1,11 +1,8 @@
 ﻿#include <iostream>
-#include <jde/Log.h>
-#include <jde/App.h>
-#include <jde/Str.h>
-#include <open62541/client_config_default.h>
-#include <open62541/client_highlevel.h>
-#include <open62541/plugin/log_stdout.h>
-//$(VC_IncludePath);$(WindowsSDK_IncludePath);
+#include "types/OpcServer.h"
+#include "uatypes/UAClient.h"
+#include "uatypes/UAVariant.h"
+#include "Rest.h"
 
 #define var const auto
 namespace Jde
@@ -14,95 +11,8 @@ namespace Jde
 }
 namespace Jde::Iot
 {
-	constexpr UA_String operator "" _uv( const char* x, size_t len )noexcept{ return UA_String{ len, (UA_Byte*)x }; }
-
-	struct Logger : UA_Logger
-	{
-		Ω UA_Log_Stdout_log( void *context, UA_LogLevel level, UA_LogCategory category, const char* file, const char* function, uint_least32_t line, const char *msg, va_list args )->void
-		{
-			constexpr array<sv,8> Categories{ "UANet", "UASecure", "UASession", "UAServer", "UAClient", "UAUser", "UASecurity", "UAEvent" };
-			var tag = Str::FromEnum( Categories, category );
-			auto tagLevel = Logging::TagLevel(Str::FromEnum(Categories,category)).Level;
-			tagLevel = ELogLevel::Trace;//
-			if( (int)tagLevel<=(int)level )
-			{
-				string m2{msg};
-				va_list ap_copy; va_copy( ap_copy, args );
-				var len = vsnprintf( 0, 0, msg, args );
-				string m; m.resize( len + 1 );
-				vsnprintf( m.data(), len + 1, msg, args );
-				m.resize( len );  // remove the NUL
-				Logging::Log( Logging::Message(tag, (ELogLevel)level, Format(msg,args), file, function, line), false );
-			}
-		}
-		Ω clear( void *context )->void
-		{
-			std::cout << "clear" << std::endl;
-		}
-
-	private:
-		Ω Format( const char* format, va_list ap )->string
-		{
-			va_list ap_copy; va_copy( ap_copy, ap );
-			var len = vsnprintf( 0, 0, format, ap_copy );
-			string m; m.resize( len + 1 );
-			vsnprintf( m.data(), len + 1, format, ap );
-			m.resize( len );  // remove the NUL
-			return m;
-		}
-		void *context{}; /* Logger state */
-
-	};
-
-	struct UAClient
-	{
-		UAClient():_ptr{ Create() }
-		{
-			auto& c = Configuration();
-			/*        UA_Logger logger = {Logger::UA_Log_Stdout_log, (void*)context, UA_Log_Stdout_clear};
-			return logger;
-
-			c.logger = Logger{};
-			c.logger.clear( nullptr );*/
-			UA_ClientConfig_setDefault( &c );
-		}
-		~UAClient(){ UA_Client_delete(_ptr); }
-		auto Create()->UA_Client* //ua_config_default.c
-		{
-			//      memset( &_config, 0, sizeof(UA_ClientConfig) );
-			//UA_Logger logger = { Logger::UA_Log_Stdout_log, (void*)_logContext, Logger::clear };
-			_config.logger = { Logger::UA_Log_Stdout_log, (void*)_logContext, Logger::clear };
-			//UA_Log_Stdout_withLevel(UA_LOGLEVEL_INFO);
-			_config.eventLoop = UA_EventLoop_new_POSIX(&_config.logger);
-			UA_ConnectionManager *tcpCM = UA_ConnectionManager_new_POSIX_TCP( "tcp connection manager"_uv );
-			_config.eventLoop->registerEventSource(_config.eventLoop, (UA_EventSource *)tcpCM);
-
-			UA_ConnectionManager *udpCM = UA_ConnectionManager_new_POSIX_UDP( "udp connection manager"_uv );
-			_config.eventLoop->registerEventSource(_config.eventLoop, (UA_EventSource *)udpCM);
-			UA_Client *c = UA_Client_newWithConfig(&_config);
-			UA_Client_getConfig(c)->eventLoop->logger = &_config.logger;
-
-			return c;
-		}
-		operator UA_Client* (){ return _ptr; }
-		void Connect( const char* endpoint )
-		{
-			if( UA_StatusCode retval = UA_Client_connect( _ptr, endpoint ); retval != UA_STATUSCODE_GOOD )
-				throw (int)retval;
-		}
-		auto Configuration()->UA_ClientConfig&{ return *UA_Client_getConfig(_ptr); }
-	private:
-		UA_ClientConfig _config{};
-		void* _logContext{};
-		UA_Client* _ptr;//needs to be after _logContext & _config.
-	};
-	struct UAVariant
-	{
-		UA_Variant _value{};
-		operator UA_Variant&(){return _value;}
-		auto operator &()->UA_Variant*{return &_value;}
-		auto data()->void*{ return _value.data; }
-	};
+	α Test()ι->void;
+	int Test2();
 }
 
 int main( int argc, char **argv )
@@ -110,8 +20,12 @@ int main( int argc, char **argv )
 	using namespace Jde;
 	try
 	{
-		OSApp::Startup( argc, argv, "Connection", "IOT Connection" );
-		try
+		OSApp::Startup( argc, argv, "IotWebSocket", "IOT Connection" );
+		DB::CreateSchema();
+		Iot::Rest::DoAccept();
+		//Iot::Test2();
+		//Iot::Test();
+/*		try
 		{
 			UM::Configure();
 		}
@@ -121,7 +35,7 @@ int main( int argc, char **argv )
 			{auto e2=e.Move();}//destructor log.
 			std::this_thread::sleep_for( 1s );
 			std::terminate();
-		}
+		}*/
 
 		IApplication::Pause();
 	}
@@ -139,11 +53,7 @@ namespace Jde::Iot
 {
 	α Test()ι->void
 	{
-		UAClient client;
-		//UA_Client *client = UA_Client_new();
-		//UA_ClientConfig_setDefault( UA_Client_getConfig(client) );
-
-		client.Connect( "opc.tcp://127.0.0.1:49320" );
+		UAClient client{ "opc.tcp://127.0.0.1:4840" };
 		/* Read the value attribute of the node. UA_Client_readValueAttribute is a wrapper for the raw read service available as UA_Client_Service_read. */
 		UAVariant value;
 		/* NodeId of the variable holding the current time */
@@ -157,7 +67,72 @@ namespace Jde::Iot
 			//DBG( "date is: {}", dts.day );
 			UA_LOG_INFO( UA_Log_Stdout, UA_LOGCATEGORY_USERLAND, "date is: %u-%u-%u %u:%u:%u.%03u\n", dts.day, dts.month, dts.year, dts.hour, dts.min, dts.sec, dts.milliSec );
 		}
+		char theAnswer []= "the.answer";
+		char* pTheAnswer = theAnswer;
+    var status = UA_Client_readValueAttribute(client, UA_NODEID_STRING(1, pTheAnswer), &value);
+    if(status == UA_STATUSCODE_GOOD &&
+       UA_Variant_hasScalarType(&value, &UA_TYPES[UA_TYPES_INT32])) {
+        DBG("the value is: {}", *(UA_Int32*)value.data());
+    }
+
+    UA_BrowseRequest bReq;
+    UA_BrowseRequest_init(&bReq);
+    bReq.requestedMaxReferencesPerNode = 0;
+    bReq.nodesToBrowse = UA_BrowseDescription_new();
+    bReq.nodesToBrowseSize = 1;
+    bReq.nodesToBrowse[0].nodeId = UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER); /* browse objects folder */
+    bReq.nodesToBrowse[0].resultMask = UA_BROWSERESULTMASK_ALL; /* return everything */
+    UA_BrowseResponse bResp = UA_Client_Service_browse(client, bReq);
+    printf("%-9s %-16s %-16s %-16s\n", "NAMESPACE", "NODEID", "BROWSE NAME", "DISPLAY NAME");
+    for(size_t i = 0; i < bResp.resultsSize; ++i) {
+        for(size_t j = 0; j < bResp.results[i].referencesSize; ++j) {
+            UA_ReferenceDescription *ref = &(bResp.results[i].references[j]);
+            if(ref->nodeId.nodeId.identifierType == UA_NODEIDTYPE_NUMERIC) {
+                printf("%-9u %-16u %-16.*s %-16.*s\n", ref->nodeId.nodeId.namespaceIndex,
+                       ref->nodeId.nodeId.identifier.numeric, (int)ref->browseName.name.length,
+                       ref->browseName.name.data, (int)ref->displayName.text.length,
+                       ref->displayName.text.data);
+            } else if(ref->nodeId.nodeId.identifierType == UA_NODEIDTYPE_STRING) {
+                printf("%-9u %-16.*s %-16.*s %-16.*s\n", ref->nodeId.nodeId.namespaceIndex,
+                       (int)ref->nodeId.nodeId.identifier.string.length,
+                       ref->nodeId.nodeId.identifier.string.data,
+                       (int)ref->browseName.name.length, ref->browseName.name.data,
+                       (int)ref->displayName.text.length, ref->displayName.text.data);
+            }
+            /* TODO: distinguish further types */
+        }
+    }
+    UA_BrowseRequest_clear(&bReq);
+    UA_BrowseResponse_clear(&bResp);
+
 		/* Clean up */
 		UA_Variant_clear(&value);
+	}
+	int Test2()
+	{
+  UA_Client *client = UA_Client_new();
+    UA_ClientConfig_setDefault(UA_Client_getConfig(client));
+    UA_StatusCode status = UA_Client_connect(client, "opc.tcp://localhost:4840");
+    if(status != UA_STATUSCODE_GOOD) {
+        UA_Client_delete(client);
+        return status;
+    }
+
+    /* Read the value attribute of the node. UA_Client_readValueAttribute is a
+     * wrapper for the raw read service available as UA_Client_Service_read. */
+    UA_Variant value; /* Variants can hold scalar values and arrays of any type */
+    UA_Variant_init(&value);
+		char theAnswer []= "the.answer";
+		char* pTheAnswer = theAnswer;
+    status = UA_Client_readValueAttribute(client, UA_NODEID_STRING(1, pTheAnswer), &value);
+    if(status == UA_STATUSCODE_GOOD &&
+       UA_Variant_hasScalarType(&value, &UA_TYPES[UA_TYPES_INT32])) {
+        printf("the value is: %i\n", *(UA_Int32*)value.data);
+    }
+
+    /* Clean up */
+    UA_Variant_clear(&value);
+    UA_Client_delete(client); /* Disconnects the client internally */
+    return status == UA_STATUSCODE_GOOD ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 }

@@ -76,77 +76,8 @@
 	{
 		"parent": "$description",
 		"columns": [
+			{ "name": "is_default", "type": "bit" },
 			{ "name": "url", "type": "url?" }
 		]
-	},
-	"umUsers":
-	{
-		"parent": "$description",
-		"columns": [
-			{ "name": "authenticatorId", "type": "umAuthenticators?" }
-		]
-	},
-	"umAuthenticators":
-	{
-		"parent": "$values",
-		"data": ["None", "Google"]
-	},
-	"umGroups":
-	{
-		"parent": "$description",
-		"data": [{"id":1, "attributes":5, "name":"Everyone", "target":"everyone" }, {"id":2, "attributes":6, "name":"Users", "target":"users"}]
-	},
-	"umUserGroups":
-	{
-		"columns": [
-			{ "name": "userId", "type": "umUsers" },
-			{ "name": "groupId", "type": "umGroups" }
-		],
-		"surrogateKey":["userId", "groupId"]
-	},
-	"umRoles":
-	{
-		"parent": "$description",
-		"data": [{"id":1, "attributes":4, "name":"User Management", "target": "user_management" }]
-	},
-	"umGroupRoles":
-	{
-		"columns": [
-			{ "name": "groupId", "type": "umGroups" },
-			{ "name": "roleId", "type": "umRoles" }
-		],
-		"surrogateKey":["groupId","roleId"],
-		"data": [{"groupId":1, "roleId":1 }]
-	},
-	"umRights":
-	{
-		"parent": "$values",
-		"flagsData": ["None","Administer", "Write", "Read"]
-	},
-	"umRolePermissions":
-	{
-		"columns": [
-			{ "name": "roleId", "type": "umRoles", "updateable":false },
-			{ "name": "permissionId", "type": "umPermissions", "updateable":false },
-			{ "name": "rightId", "type": "umRights", "default":"4" }
-		],
-		"surrogateKey":["roleId","permissionId"],
-		"data": [{"roleId":1, "permissionId":1, "rightId": 7}]
-	},
-	"umApis":
-	{
-		"parent": "$values",
-		"data": ["None","UM", "Web", "Tws", "Blockly"]
-	},
-	"umPermissions":
-	{
-		"columns": [
-			{ "name": "id", "sequence": true },
-			{ "name": "apiId", "type": "umApis" },
-			{ "name": "name", "type": "name?", "qlAppend":"apiId", "description": "null=default, name=particular permission, api=um, name='change password'" }
-		],
-		"surrogateKey":["id"],
-		"naturalKey":["apiId","name"],
-		"data": [{"id":1, "apiId":1}, {"id":2, "apiId":3} ]
 	}
 }

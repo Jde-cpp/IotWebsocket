@@ -38,3 +38,8 @@ source/packages/*
 *.cc
 *.pb.h
 *.i
+source/.vscode/c_cpp_properties.json
+source/.vscode/launch.json
+.gitignore
+source/.vscode/settings.json
+source/.vscode/tasks.json

@@ -1,0 +1,35 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true
+            },
+            "includePath": [
+								"/usr/include",
+								"/usr/local/lib/clang/16/include",
+                "${REPO_DIR}/llvm-project/libcxx/include/",
+                "${REPO_DIR}/llvm-project/libc/include/",
+                "${workspaceFolder}/**",
+                "${BOOST_LIBRARYDIR}/../../",
+                "${REPO_DIR}/spdlog/include/",
+                "${REPO_DIR}/json/include",
+                "${JDE_DIR}/Public",
+                "../../Public/jde/log/types/proto",
+                "../../open62541/include",
+                "../../open62541/plugins/include",
+                "../../open62541/build/src_generated",
+            ],
+            "defines": [],
+            "forcedInclude": [
+                "${workspaceFolder}/pc.h"
+            ],
+            "compilerPath": "",
+            "cStandard": "c17",
+            "cppStandard": "c++20",
+            "intelliSenseMode": "linux-clang-x64",
+            "compilerArgs": []
+        }
+    ],
+    "version": 4
+}

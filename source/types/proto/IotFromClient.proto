@@ -1,4 +1,5 @@
 //source $JDE_DIR/Framework/common.sh;toBashDir $JDE_DIR JDE_BASH;source=$JDE_BASH/IotWebsocket/source/types/proto
+//ln -s $JDE_BASH/Public/jde/log/types/proto/FromClient.proto .
 //cd $source;file=IotFromClient;$JDE_BASH/Public/stage/release/protoc --cpp_out . $file.proto
 
 syntax = "proto3";
@@ -81,7 +82,7 @@ message MessageUnion
 	oneof Value
 	{
 		Request Request=1;
-		GraphQL query=2;
+		ApplicationServer.Web.FromClient.GraphQL query=2;
 		RequestId RequestId=3;
 		RequestLogs RequestLogs=4;
 		LogValues LogValues=5;

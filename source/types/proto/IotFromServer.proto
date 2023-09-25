@@ -1,5 +1,6 @@
 //source $JDE_DIR/Framework/common.sh;toBashDir $JDE_DIR JDE_BASH;source=$JDE_BASH/IotWebsocket/source/types/proto
-//cd $source;file=IotFromServer;$JDE_BASH/Public/stage/release/protoc --cpp_out . $file.proto
+//ln -s $JDE_BASH/Public/jde/log/types/proto/FromServer.proto .
+//cd $source;file=IotFromServer;protoc --cpp_out . $file.proto
 
 syntax = "proto3";
 package Jde.Iot.FromServer;

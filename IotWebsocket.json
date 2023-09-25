@@ -1,31 +1,24 @@
 {
-	"GoogleAuthClientId": "$(GoogleAuthClientId)",
 	"logging":
 	{
-		"tags": [ "alarm", "ql", "_io", "_locks", "settings", "_threads", "_sql", "app-webRequests" ],
-		"console":
-		{
-			"pattern":  "\u001b]8;;file://%g\u001b\\%3!#-%3!l-%H:%M:%S.%e %v\u001b]8;;\u001b",
-			"pattern-line":  "\u001b]8;;file://%@\u001b\\%3!l-%H:%M:%S.%e %v\u001b]8;;\u001b\\",
-			"pattern-color":  "\u001b]8;;file://c:\\temp\\unchanged.xml\u001b\\%^%3!l%$-%H:%M:%S.%e %-64@  %v\u001b]8;;\u001b\\"
-		},
+		"tags": [ "alarm", "ql", "_io", "_locks", "settings", "_threads", "_sql" ],
+		"console":{},
 		"file":{ "path": "$(ProgramData)\\Jde-cpp\\twsWebSocket\\logs", "md": true },
-		"server": { "_port": 4321, "level": "Debug", "diagnosticsLevel": "Debug", "tags": ["_threads"] }
+		"server": { "port": 4321, "level": "Debug", "diagnosticsLevel": "Debug", "tags": ["_threads"] }
 	},
 	"db":
 	{
-		"driver": "Jde.DB.Odbc.dll",
-		"connectionString": "DSN=IOT_Connection",
-		"meta": "../meta.json"
+		"driver": "$(JDE_DB_DRIVER)",
+		"connectionString": "$(Jde_Iot_Connection)",
+		"meta": "../iot-meta.json"
 	},
-	"iotWebSocket":
+	"rest":
 	{
-		"webSocketPort":  6708
+		"port":  6707
 	},
-	"um":
+	"websocket":
 	{
-		"user.email": "$(email)",
-		"use": true
+		"port":  6708
 	},
 	"workers":
 	{
