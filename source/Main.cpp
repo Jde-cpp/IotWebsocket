@@ -22,6 +22,7 @@ int main( int argc, char **argv )
 	{
 		OSApp::Startup( argc, argv, "IotWebSocket", "IOT Connection" );
 		DB::CreateSchema();
+		DB::SetQLDataSource( DB::DataSourcePtr() );
 		Iot::Rest::DoAccept();
 		//Iot::Test2();
 		//Iot::Test();

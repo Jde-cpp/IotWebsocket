@@ -8,6 +8,7 @@ link_directories( ../../open62541/build/bin )
 find_package(ZLIB)
 
 add_executable( Jde.IotWebsocket Main.cpp Rest.cpp
+	async/AsyncRequest.cpp async/ConnectAwait.cpp
 	types/OpcServer.cpp
 	uatypes/Logger.cpp uatypes/UAClient.cpp )
 #######################################################

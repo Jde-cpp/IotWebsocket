@@ -4,7 +4,7 @@ namespace Jde::Iot
 {
 	OpcServer::OpcServer( const DB::IRow& r )ι:
 		Id{ r.GetUInt32(0) },
-		Address{ r.GetString(1) },
+		Url{ r.GetString(1) },
 		IsDefault{ r.GetBit(2) },
 		Name{ r.GetString(3) },
 		Target{ r.GetString(4) }
@@ -23,10 +23,10 @@ namespace Jde::Iot
 				params.push_back( *id );
 			}
 			else
-				where << "is_default=true";
+				where << "is_default=1";
 		}
 
-		auto y = (co_await DB::SelectCo<vector<OpcServer>>(format("select id, address, is_default, name, target from opc_servers {}", where.Move()), params, []( vector<OpcServer>& result, const DB::IRow& r )
+		auto y = (co_await DB::SelectCo<vector<OpcServer>>(format("select id, url, is_default, name, target from iot_opc_servers {}", where.Move()), params, []( vector<OpcServer>& result, const DB::IRow& r )
 		{
 			result.push_back(OpcServer{r});
 		} )).UP<vector<OpcServer>>();
