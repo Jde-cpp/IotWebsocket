@@ -1,4 +1,6 @@
 #include "UAClient.h"
+
+#include "Node.h"
 #include "UAException.h"
 #include "helpers.h"
 
@@ -101,7 +103,7 @@ namespace Jde::Iot
 
 				json bn;
 				const UA_QualifiedName& browseName = ref.browseName;
-				bn["nsIndex"] = browseName.namespaceIndex;
+				bn["ns"] = browseName.namespaceIndex;
 				bn["name"] = ToSV( browseName.name );
 				reference["browseName"] = bn;
 
@@ -140,7 +142,7 @@ namespace Jde::Iot
 					else
 						DBG( "({:x}){} - could not find client.", sc, UAException::Message(sc) );
 				}
-				if( sc==UA_STATUSCODE_BADCONNECTIONCLOSED ){
+				if( sc==UA_STATUSCODE_BADCONNECTIONCLOSED || sc==UA_STATUSCODE_BADSERVERNOTCONNECTED ){
 					try{
 						auto pClient = ( co_await GetClient(Target()) ).SP<UAClient>();
 						pClient->SendBrowseRequest( move(bReq), move(h) );
@@ -182,14 +184,6 @@ namespace Jde::Iot
 		return h;
 	}
 
-	// α ClientAwaitable::await_ready()ι->bool
-	// {
-	// 	sl _{ _clientsMutex };
-	// 	if( auto p = _id.size() ? _clients.find(_id) : find_if( _clients, [](var& c){return c.second->IsDefault();} ); p!=_clients.end() )
-	// 		_result.Set( p->second );
-	// 	return _result.HasShared();
-	// }
-
 	α UAClient::Find( UA_Client* ua )ε->sp<UAClient>{
 		sl _{ _clientsMutex };
 		sp<UAClient> y;
@@ -206,29 +200,4 @@ namespace Jde::Iot
 			y = p->second;
 		return y;
 	}
-
-/*	α GetClient( string id, HCoroutine h )ι->Task{
-		try{
-			auto pServer = ( co_await OpcServer::Select(id) ).UP<OpcServer>(); THROW_IF( !pServer, "Could not find opc server:  '{}'", id );
-			sp<UAClient> y = UAClient::Find( id );
-			if( !y ){
-				y = ms<UAClient>( move(pServer) );
-				DBG( "Adding client ({:x}){}", y->Handle(), y->Target() );
-				ul _{ _clientsMutex };
-				_clients.emplace( y->Target(), y );
-			}
-			Result(h).SetSP( move(y) );
-		}
-		catch( Exception& e ){
-			Result(h).SetResult( move(e) );
-		}
-		h.resume();
-	}
-*/
-	// α ClientAwaitable::await_suspend( HCoroutine h )ι->void
-	// {
-	// 	IAwaitCache::await_suspend( h );
-	// 	GetClient( _id, h );
-	// }
-
 }

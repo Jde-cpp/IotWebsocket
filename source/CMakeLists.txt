@@ -4,7 +4,7 @@ set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../../Framework/cmake )
 include(SetUpConfigurations)
 #######################################################
 link_directories( ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} )
-link_directories( ../../open62541/build/bin )
+link_directories( ../../open62541/${CMAKE_BUILD_TYPE}/bin )
 find_package(ZLIB)
 
 add_executable( Jde.IotWebsocket Main.cpp Rest.cpp
@@ -16,7 +16,7 @@ include_directories( "../../Public" )
 include_directories( "../../Public/jde/log/types/proto" )
 include_directories( "../../open62541/include" )
 include_directories( "../../open62541/plugins/include" )
-include_directories( "../../open62541/build/src_generated" )
+include_directories( "../../open62541/${CMAKE_BUILD_TYPE}/src_generated" )
 
 target_link_libraries( Jde.IotWebsocket libopen62541.a )
 target_link_libraries( Jde.IotWebsocket lzma )

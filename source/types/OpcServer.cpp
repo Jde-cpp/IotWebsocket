@@ -19,7 +19,7 @@ namespace Jde::Iot
 		{
 			if( id->size() )
 			{
-				where << "name=?";
+				where << "target=?";
 				params.push_back( *id );
 			}
 			else

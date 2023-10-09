@@ -2,8 +2,6 @@
 
 namespace Jde::Iot
 {
-	constexpr UA_String operator "" _uv( const char* x, unsigned long len )noexcept{ return UA_String{ len, (UA_Byte*)x }; }
-
 	struct Logger : UA_Logger
 	{
 		Logger(){};

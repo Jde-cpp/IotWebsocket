@@ -1,7 +1,7 @@
 {
 	"logging":
 	{
-		"tags": [ "alarm", "ql", "_io", "_locks", "settings", "_threads", "_sql" ],
+		"tags": [ "alarm", "ql", "_io", "_locks", "settings", "_threads", "sql" ],
 		"console":{},
 		"file":{ "path": "$(ProgramData)\\Jde-cpp\\twsWebSocket\\logs", "md": true },
 		"server": { "port": 4321, "level": "Debug", "diagnosticsLevel": "Debug", "tags": ["_threads"] }

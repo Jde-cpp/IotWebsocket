@@ -2,6 +2,7 @@
 #include "../../Framework/source/db/GraphQL.h"
 #include "../../Framework/source/math/MathUtilities.h"
 #include "WebSession.h"
+#include "uatypes/Node.h"
 #include "uatypes/UAClient.h"
 #include "uatypes/UAException.h"
 #include "uatypes/helpers.h"
@@ -27,46 +28,34 @@ namespace Jde::Iot
 
 	struct BrowseFoldersAwait final : IAwait
 	{
-		BrowseFoldersAwait( sp<UAClient>&& c, SRCE )ι:IAwait{sl},_client{move(c)}{}
+		BrowseFoldersAwait( sp<UAClient>&& c, NodeId&& node,  SRCE )ι:IAwait{sl},_client{move(c)}, _node{move(node)}{}
 		α await_suspend( HCoroutine h )ι->void override;
 		α await_resume()ι->AwaitResult override{ return _pPromise->get_return_object().Result(); }
 	private:
 		sp<UAClient> _client;
-//		sp<AsyncRequest> _processor;
+		NodeId _node;
 	};
 
 	α BrowseFoldersAwait::await_suspend( HCoroutine h )ι->void{
 		IAwait::await_suspend( h );
-/*		{
-			UA_SessionState ss;
-			UA_Client_getState( *_client, nullptr, &ss, nullptr );
-	    while(ss != UA_SESSIONSTATE_ACTIVATED) {
-				DBG( "({:x}){} - ss != UA_SESSIONSTATE_ACTIVATED" );
-	      UA_Client_run_iterate( *_client, 1 );
-	      UA_Client_getState( *_client, NULL, &ss, NULL );
-	    }
-		}*/
     UA_BrowseRequest bReq;
     UA_BrowseRequest_init( &bReq );
     bReq.requestedMaxReferencesPerNode = 0;
     bReq.nodesToBrowse = UA_BrowseDescription_new();
     bReq.nodesToBrowseSize = 1;
-    bReq.nodesToBrowse[0].nodeId = UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER);
+    bReq.nodesToBrowse[0].nodeId = _node.Move();
     bReq.nodesToBrowse[0].resultMask = UA_BROWSERESULTMASK_ALL;
 
 		_client->SendBrowseRequest( move(bReq), move(h) );
 		DBG("~BrowseFoldersAwait::await_suspend");
 	}
-	α BrowseFolders( sp<UAClient>&& c )ι->BrowseFoldersAwait
-	{
-		return BrowseFoldersAwait{move(c)};
-	}
+	α BrowseFolders( sp<UAClient>&& c, NodeId&& node )ι->BrowseFoldersAwait{ return BrowseFoldersAwait{ move(c), move(node) }; }
 
-	α BrowseObjectsFolder( string&& opcId, Request req )ι->Task
+	α BrowseObjectsFolder( string&& opcId, NodeId node, Request req )ι->Task
 	{
 		try{
 			auto c = ( co_await UAClient::GetClient(move(opcId)) ).SP<UAClient>();
-			auto y = ( co_await BrowseFolders(move(c)) ).UP<json>();
+			auto y = ( co_await BrowseFolders(move(c), move(node)) ).UP<json>();
 			Session::Send( move(*y), move(req) );
 		}
 		catch( Exception& e ){
@@ -84,7 +73,7 @@ namespace Jde::Iot
 	    if( req.Method() == http::verb::get )
 			{
 				if( target=="/BrowseObjectsFolder" )
-					BrowseObjectsFolder( move(opcId), move(req) );
+					BrowseObjectsFolder( move(opcId), NodeId(params), move(req) );
 			}
 			else if( req.Method() == http::verb::post )
 			{
