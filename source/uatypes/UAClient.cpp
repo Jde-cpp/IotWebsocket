@@ -1,9 +1,8 @@
 #include "UAClient.h"
 
 #include "Node.h"
-#include "UAException.h"
 #include "helpers.h"
-
+#include "Value.h"
 #define var const auto
 namespace Jde::Iot
 {
@@ -72,6 +71,7 @@ namespace Jde::Iot
 		_awaitingActivation[pClient] = id;
 	}
 	α UAClient::Process()ι->void{
+		//{ lg _{_requestMutex}; ASSERT( _requests.size() ); }
 		lg _{ _asyncRequestMutex };
 		if( !_asyncRequest )
 		{
@@ -84,85 +84,73 @@ namespace Jde::Iot
 	// {
 	// 	var r = UA_Client_connect( _ptr, _pOpcServer->Url.c_str() ); THROW_IFX( r!= UA_STATUSCODE_GOOD, UAException{ r } );
 	// }
-
-	α fileBrowsed( UA_Client *ua, void* userdata, UA_UInt32 requestId, UA_BrowseResponse* response )ι->void{
-		DBG( "fileBrowsed={:x}.{}", (uint)ua, requestId );
-		optional<HCoroutine> h = UAClient::ClearRequest( ua, requestId ); if( !h ) return;
-
-		if( response->responseHeader.serviceResult )
-			return ResumeEx( move(*h), UAException{response->responseHeader.serviceResult} );
-
-		json references{ json::array() };
-    for(size_t i = 0; i < response->resultsSize; ++i) {
-      for(size_t j = 0; j < response->results[i].referencesSize; ++j) {
-        const UA_ReferenceDescription& ref = response->results[i].references[j];
-				json reference;
-				reference["referenceType"] = ToJson( ref.referenceTypeId );
-				reference["isForward"] = ref.isForward;
-				reference["node"] = ToJson( ref.nodeId );
-
-				json bn;
-				const UA_QualifiedName& browseName = ref.browseName;
-				bn["ns"] = browseName.namespaceIndex;
-				bn["name"] = ToSV( browseName.name );
-				reference["browseName"] = bn;
-
-				json dn;
-				const UA_LocalizedText& displayName = ref.displayName;
-				dn["locale"] = ToSV( displayName.locale );
-				dn["text"] = ToSV( displayName.text );
-				reference["displayName"] = dn;
-
-				reference["nodeClass"] = ref.nodeClass;
-				reference["typeDefinition"] = ToJson( ref.typeDefinition );
-
-				references.push_back( reference );
-			}
-		}
-		json j;
-		j["references"] = references;
-		h->promise().get_return_object().SetResult( mu<json>(move(j)) );
-		DBG( "~fileBrowsed={:x}", (uint)userdata );
-		h->resume();
-	}
-
-	α UAClient::SendBrowseRequest( UA_BrowseRequest bReq, HCoroutine h )ι->Task{
-		UA_StatusCode sc; bool resent{};
+	α UAClient::Retry( function<void(sp<UAClient>&&, HCoroutine&&)> f, UAException e, sp<UAClient> pClient, HCoroutine h )ι->Task{
+		//TODO limit retry attempts.
+		str target = pClient->Target();
 		{
-			lg _{ _requestMutex };
-			sc = UA_Client_sendAsyncBrowseRequest( _ptr, &bReq, fileBrowsed, nullptr, &RequestId );
-			if( sc ){
-				_requestMutex.unlock();
-				{
-					ul _{ _clientsMutex };
-					if( auto p =_clients.find(Target()); p!=_clients.end() ){
-						DBG( "({:x}){} - removing client.", sc, UAException::Message(sc) );
-						_clients.erase(p);
-					}
-					else
-						DBG( "({:x}){} - could not find client.", sc, UAException::Message(sc) );
-				}
-				if( sc==UA_STATUSCODE_BADCONNECTIONCLOSED || sc==UA_STATUSCODE_BADSERVERNOTCONNECTED ){
-					try{
-						auto pClient = ( co_await GetClient(Target()) ).SP<UAClient>();
-						pClient->SendBrowseRequest( move(bReq), move(h) );
-						resent = true;
-					}
-					catch( Exception& e ){
-						ResumeEx( move(h), move(e) );
-					}
-				}
-				else
-					ResumeEx( move(h), UAException{sc} );
+			ul _{ _clientsMutex };
+			if( auto p =_clients.find(target); p!=_clients.end() ){
+				DBG( "[{:x}]({:x}) - {} - removing client.", pClient->Handle(), e.Code, e.what() );
+				_clients.erase(p);
 			}
 			else
-				_requests[RequestId] = move(h);
+				DBG( "[{:x}]({:x}) - could not find client={:x}.", pClient->Handle(), e.Code, e.what() );
 		}
-		if( !resent )
-			UA_BrowseRequest_clear( &bReq );
-		if( !sc )
-			Process();
-		DBG( "~SendBrowseRequest" );
+
+		if( e.Code==UA_STATUSCODE_BADCONNECTIONCLOSED || e.Code==UA_STATUSCODE_BADSERVERNOTCONNECTED ){
+			try{
+				pClient = ( co_await GetClient(target) ).SP<UAClient>();
+				f( move(pClient), move(h) );
+			}
+			catch( Exception& e ){
+				ResumeEx( move(e), move(h) );
+			}
+		}
+		else
+			ResumeEx( move(e), move(h) );
+	}
+	α UAClient::SendBrowseRequest( Browse::Request&& request, sp<UAClient>&& pClient, HCoroutine&& h )ι->void{
+		try{
+			{
+				lg _{ pClient->_requestMutex };
+				UAε( UA_Client_sendAsyncBrowseRequest(pClient->_ptr, &request, Browse::OnResponse, nullptr, &pClient->RequestId) );
+				pClient->_requests[pClient->RequestId] = move(h);
+			}
+			pClient->Process();
+		}
+		catch( UAException& e ){
+			//Browse::Request b2{ move(request) };
+			//SendBrowseRequest( move(request), move(pClient), move(h) );
+			//var f = [r{move(request)}]( sp<UAClient>&& p, HCoroutine&& h )mutable{ var b2{move(r)}; };
+			Retry( [r{move(request)}]( sp<UAClient>&& p, HCoroutine&& h )mutable{SendBrowseRequest( move(r), move(p), move(h) );}, move(e), move(pClient), move(h) );
+		}
+		DBG( "~Browse::Send" );
+	}
+
+	α UAClient::SendReadRequest( sp<Browse::Response> browse, sp<UAClient>&& pClient, HCoroutine&& h )ε->void{
+		flat_map<UA_UInt32, tuple<uint,uint>> ids;
+		Jde::Handle handle{};
+		try{
+			for( uint i = 0; i < browse->resultsSize; ++i) {
+	      for( size_t j = 0; j < browse->results[i].referencesSize; ++j ) {
+	        const UA_ReferenceDescription& ref = browse->results[i].references[j];
+					lg _{ pClient->_requestMutex };
+					UAε( UA_Client_readValueAttribute_async(pClient->_ptr, ref.nodeId.nodeId, Read::OnResponse, (void*)handle, &pClient->RequestId) );
+					if( !handle )
+						handle = pClient->RequestId;
+					ids.emplace( pClient->RequestId, make_tuple(i,j) );
+				}
+			}
+			{
+				lg _{ pClient->_requestMutex };
+				pClient->_requests[handle] = move( h );
+				pClient->_readRequests.try_emplace( handle, ReadRequest{move(browse), move(ids), pClient} );
+			}
+			pClient->Process();
+		}
+		catch( UAException& e ){
+			Retry( [r=move(browse)]( sp<UAClient>&& p, HCoroutine&& h )mutable{SendReadRequest( move(r), move(p), move(h) );}, move(e), move(pClient), move(h) );
+		}
 	}
 
 	α UAClient::ClearRequest( UA_Client* ua, UA_UInt32 requestId )ι->optional<HCoroutine>{

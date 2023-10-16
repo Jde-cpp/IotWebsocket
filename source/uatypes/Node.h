@@ -1,14 +1,12 @@
 #pragma once
 #include "helpers.h"
-#include <boost/algorithm/hex.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_io.hpp>
 
 namespace Jde::Iot
 {
 	struct NodeId : UA_ExpandedNodeId{
-		NodeId( UA_NodeId&& x )ι:UA_ExpandedNodeId{move(x)}{}
+//		NodeId( const UA_ExpandedNodeId& x )ι{ UA_ExpandedNodeId_copy( &x, this ); }
+//		NodeId( const UA_NodeId& x )ι{ UA_NodeId_copy( &x, this ); namespaceUri=""_ua, serverIndex=0; }
+		NodeId( UA_NodeId&& x )ι:UA_ExpandedNodeId{move(x), ""_uv, 0}{}
 		NodeId( const flat_map<string,string>& x )ι:
 			UA_ExpandedNodeId{UA_EXPANDEDNODEID_NULL}{
 			if( auto p = x.find("nsu"); p!=x.end() )
@@ -104,29 +102,22 @@ namespace Jde::Iot
 			n["i"]=nodeId.identifier.numeric;
 		else if( type==UA_NodeIdType::UA_NODEIDTYPE_STRING )
 			n["s"]=ToSV( nodeId.identifier.string );
-		else if( type==UA_NodeIdType::UA_NODEIDTYPE_GUID ){
-			boost::uuids::uuid id;
-			memcpy(&id.data, &nodeId.identifier.guid, id.size() );
-			n["g"] = boost::uuids::to_string( id );
-		}
-		else if( type==UA_NodeIdType::UA_NODEIDTYPE_BYTESTRING ){
-			UA_ByteString bs = nodeId.identifier.byteString;
-			string buffer; buffer.reserve( bs.length*2 );
-			boost::algorithm::hex_lower( ToSV(bs), std::back_inserter(buffer) );
-			n["b"] = buffer;
-		}
+		else if( type==UA_NodeIdType::UA_NODEIDTYPE_GUID )
+			n["g"] = ToJson( nodeId.identifier.guid );
+		else if( type==UA_NodeIdType::UA_NODEIDTYPE_BYTESTRING )
+			n["b"] = ByteStringToJson( nodeId.identifier.byteString );
 	}
-	Ξ ToJson( const UA_NodeId& nodeId )ε->nlohmann::json{
-		nlohmann::json n;
-		to_json( n, nodeId );
-		return n;
+	Ξ ToJson( const UA_NodeId& n )ε->nlohmann::json{
+		nlohmann::json j;
+		to_json( j, n );
+		return j;
 	}
-	Ξ ToJson( const UA_ExpandedNodeId& expanded )ε->nlohmann::json{
-		nlohmann::json n;
-		to_json( n, expanded.nodeId );
-		n["nsu"] = ToSV(expanded.namespaceUri);
-		n["serverindex"] = expanded.serverIndex;
+	Ξ ToJson( const UA_ExpandedNodeId& n )ε->nlohmann::json{
+		nlohmann::json j;
+		to_json( j, n.nodeId );
+		j["nsu"] = ToSV(n.namespaceUri);
+		j["serverindex"] = n.serverIndex;
 
-		return n;
+		return j;
 	}
 }

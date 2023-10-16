@@ -1,6 +1,5 @@
 #include "ConnectAwait.h"
 #include "../uatypes/UAClient.h"
-#include "../uatypes/UAException.h"
 
 #define var const auto
 
@@ -17,7 +16,7 @@ namespace Jde::Iot
 		IAwait::await_suspend( h );
 		lg _{ _requestMutex };
 		if( auto pClient = UAClient::Find(_id); pClient )
-			ResumeSP( move(h), pClient );
+			ResumeSP( pClient, move(h) );
 		else{
 			auto p = _requests.find( _id );
 			if( p==_requests.end() ){
@@ -43,15 +42,16 @@ namespace Jde::Iot
 			lg _{ _requestMutex };
 			var ua = dynamic_cast<const UAException*>( &e );
 			for( auto& r : _requests[id] ){
-				ResumeEx( move(r), ua ? UAException{*ua} : Exception{e.what(), e.Code, e.Level(), e.Stack().front()} );
+				ResumeEx( ua ? UAException{*ua} : Exception{e.what(), e.Code, e.Level(), e.Stack().front()}, move(r) );
 			}
 			_requests.erase( id );
 		}
 	}
 	α ConnectAwait::Resume( sp<UAClient> pClient, string id )ι->void{
+		pClient->_asyncRequest = nullptr;
 		lg _{ _requestMutex };
 		for( auto r : _requests[id] )
-			ResumeSP( move(r), pClient );
+			ResumeSP( pClient, move(r) );
 		_requests.erase( id );
 	}
 }

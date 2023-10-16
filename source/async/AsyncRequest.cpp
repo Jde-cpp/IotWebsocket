@@ -1,6 +1,5 @@
 #include "AsyncRequest.h"
 #include "../uatypes/UAClient.h"
-#include "../uatypes/UAException.h"
 
 namespace Jde::Iot{
 
@@ -13,11 +12,12 @@ namespace Jde::Iot{
 			ASSERT_DESC( _stopProcessingLoops.find(handle)==_stopProcessingLoops.end(), format("Duplicated processing loop: {}", handle) );
 			_stopProcessingLoops[handle]=&stop;
 		}
-		while( !stop.test() )
+		for( uint i=0; !stop.test(); ++i )
 		{
-			auto result = UA_Client_run_iterate( *pClient, 0 );
-			if( result!=UA_STATUSCODE_GOOD )
-				ERR( "UA_Client_run_iterate returned ({}){}", result, UAException::Message(result) );
+			if( auto sc = UA_Client_run_iterate(*pClient, 0); sc && (sc!=UA_STATUSCODE_BADINTERNALERROR || i!=0) ){//if not "Cannot run EventLoop from the run method itself" on first try.
+				ERR( "UA_Client_run_iterate returned ({:x}){}", sc, UAException::Message(sc) );
+				co_return;
+			}
 			if( !stop.test() )
 			{
 				co_await Threading::Alarm::Wait( 100ms );

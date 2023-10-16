@@ -1,7 +1,7 @@
 ﻿#include <iostream>
 #include "types/OpcServer.h"
 #include "uatypes/UAClient.h"
-#include "uatypes/UAVariant.h"
+#include "uatypes/Variant.h"
 #include "Rest.h"
 
 #define var const auto
@@ -56,13 +56,13 @@ namespace Jde::Iot
 	{
 		UAClient client{ "opc.tcp://127.0.0.1:4840" };
 		/* Read the value attribute of the node. UA_Client_readValueAttribute is a wrapper for the raw read service available as UA_Client_Service_read. */
-		UAVariant value;
+		Variant value;
 		/* NodeId of the variable holding the current time */
 		const UA_NodeId nodeId = UA_NODEID_NUMERIC( 0, UA_NS0ID_SERVER_SERVERSTATUS_CURRENTTIME );
 		UA_StatusCode retval = UA_Client_readValueAttribute(client, nodeId, &value);
 		if( retval == UA_STATUSCODE_GOOD && UA_Variant_hasScalarType(&value, &UA_TYPES[UA_TYPES_DATETIME]) )
 		{
-			UA_DateTime raw_date = *(UA_DateTime *)value.data();
+			UA_DateTime raw_date = *(UA_DateTime *)value.data;
 			UA_DateTimeStruct dts = UA_DateTime_toStruct(raw_date);
 			//Jde::Logging::Log( Jde::Logging::MessageBase("date is: {}"sv, Jde::ELogLevel::Debug, __FILE__, __func__, __LINE__), dts.day );
 			//DBG( "date is: {}", dts.day );
@@ -73,7 +73,7 @@ namespace Jde::Iot
     var status = UA_Client_readValueAttribute(client, UA_NODEID_STRING(1, pTheAnswer), &value);
     if(status == UA_STATUSCODE_GOOD &&
        UA_Variant_hasScalarType(&value, &UA_TYPES[UA_TYPES_INT32])) {
-        DBG("the value is: {}", *(UA_Int32*)value.data());
+        DBG("the value is: {}", *(UA_Int32*)value.data);
     }
 
     UA_BrowseRequest bReq;

@@ -10,7 +10,7 @@ find_package(ZLIB)
 add_executable( Jde.IotWebsocket Main.cpp Rest.cpp
 	async/AsyncRequest.cpp async/ConnectAwait.cpp
 	types/OpcServer.cpp
-	uatypes/Logger.cpp uatypes/UAClient.cpp )
+	uatypes/Browse.cpp uatypes/Logger.cpp uatypes/Value.cpp uatypes/UAClient.cpp )
 #######################################################
 include_directories( "../../Public" )
 include_directories( "../../Public/jde/log/types/proto" )
@@ -40,6 +40,9 @@ target_link_libraries( Jde.IotWebsocket Jde.XZ )
 #######################################################
 target_precompile_headers(Jde.IotWebsocket
 	PRIVATE
+	<boost/lexical_cast.hpp>
+	<boost/uuid/uuid.hpp>
+	<boost/uuid/uuid_io.hpp>
 	<open62541/client_config_default.h>
 	<open62541/client_highlevel.h>
 	<open62541/client_highlevel_async.h>
@@ -51,6 +54,7 @@ target_precompile_headers(Jde.IotWebsocket
 	"types/proto/IotFromServer.pb.h"
 	"types/proto/IotFromClient.pb.h"
 	"types/FromServer.h"
+	"uatypes/UAException.h"
 	"../../Framework/source/DateTime.h"
 	"../../Framework/source/coroutine/Alarm.h"
 	"../../Framework/source/db/Database.h"

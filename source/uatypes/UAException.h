@@ -1,4 +1,6 @@
+#pragma once
 
+#define UAε(x) var sc = x; if( sc ) throw UAException{ sc, ELogLevel::Error };
 
 namespace Jde::Iot
 {
