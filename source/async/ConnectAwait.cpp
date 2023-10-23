@@ -47,11 +47,19 @@ namespace Jde::Iot
 			_requests.erase( id );
 		}
 	}
-	α ConnectAwait::Resume( sp<UAClient> pClient, string id )ι->void{
+	α ConnectAwait::Resume( sp<UAClient> pClient, string&& target, function<void(HCoroutine&&)> resume )ι->void{
+		ASSERT( pClient );
 		pClient->_asyncRequest = nullptr;
 		lg _{ _requestMutex };
-		for( auto r : _requests[id] )
-			ResumeSP( pClient, move(r) );
-		_requests.erase( id );
+		for( auto h : _requests[target] )
+			resume( move(h) );
+		_requests.erase( target );
+	}
+
+	α ConnectAwait::Resume( sp<UAClient>&& pClient, string&& target )ι->void{
+		Resume( pClient, move(target), [p=pClient](HCoroutine&& h){ ResumeSP(p, move(h)); } );
+	}
+	α ConnectAwait::Resume( sp<UAClient>&& pClient, string&& target, const UAException&& e )ι->void{
+		Resume( move(pClient), move(target), [sc=e.Code](HCoroutine&& h){ ResumeEx(UAException{sc}, move(h)); } );
 	}
 }

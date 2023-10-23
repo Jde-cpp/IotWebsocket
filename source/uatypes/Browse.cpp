@@ -16,9 +16,9 @@ namespace Jde::Iot::Browse{
 	{
 		try{
 			auto y = ( co_await Folders(move(node), ua) ).SP<Response>();
-			up<flat_map<tuple<uint,uint>, Value>> pValues;
+			up<flat_map<NodeId, Value>> pValues;
 			if( snapshot )
-			 	pValues = ( co_await Read::SendRequest(y, move(ua)) ).UP<flat_map<tuple<uint,uint>, Value>>();
+			 	pValues = ( co_await Read::SendRequest(y->Nodes(), move(ua)) ).UP<flat_map<NodeId, Value>>();
 
 			Web::Rest::ISession::Send(y->ToJson(move(pValues)), move(req) );
 		}
@@ -49,17 +49,24 @@ namespace Jde::Iot::Browse{
     nodesToBrowse[0].nodeId = node.Move();
     nodesToBrowse[0].resultMask = UA_BROWSERESULTMASK_ALL;
 	}
-
-	α Response::ToJson( sp<flat_map<tuple<uint,uint>, Value>>&& pValues )ε->json{
+	α Response::Nodes()ι->flat_set<NodeId>{
+		flat_set<NodeId> y;
+		for( uint i = 0; i < resultsSize; ++i) {
+      for( size_t j = 0; j < results[i].referencesSize; ++j )
+				y.emplace( results[i].references[j].nodeId );
+		}
+		return y;
+	}
+	α Response::ToJson( up<flat_map<NodeId, Value>>&& pSnapshot )ε->json{
 		try{
 			json references{ json::array() };
 	    for(size_t i = 0; i < resultsSize; ++i) {
 	      for(size_t j = 0; j < results[i].referencesSize; ++j) {
 	        const UA_ReferenceDescription& ref = results[i].references[j];
 					json reference;
-					if( pValues ){
-						if( auto pValue = pValues->find({i,j}); pValue!=pValues->end() )
-							reference["value"] = pValue->second.ToJson();
+					if( pSnapshot ){
+						if( auto p = pSnapshot->find(ref.nodeId); p!=pSnapshot->end() )
+							reference["value"] = p->second.ToJson();
 					}
 					reference["referenceType"] = Iot::ToJson( ref.referenceTypeId );
 					reference["isForward"] = ref.isForward;

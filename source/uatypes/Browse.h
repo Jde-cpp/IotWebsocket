@@ -1,6 +1,6 @@
 #pragma once
 #include "Node.h"
-#include "helpers.h"
+//#include "helpers.h"
 #include "Value.h"
 
 namespace Jde::Iot{
@@ -33,6 +33,7 @@ namespace Browse{
 		Response( Response&& x )ι:UA_BrowseResponse{ *this }{ Zero( *this ); }
 		~Response(){ UA_BrowseResponse_clear(this); }
 
-		α ToJson( sp<flat_map<tuple<uint,uint>, Value>>&& pValues )ε->json;
+		α Nodes()ι->flat_set<NodeId>;
+		α ToJson( up<flat_map<NodeId, Value>>&& pSnapshot )ε->json;
 	};
 }}

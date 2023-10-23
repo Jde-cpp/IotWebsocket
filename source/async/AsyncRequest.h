@@ -2,7 +2,7 @@
 
 namespace Jde::Iot{
 	struct UAClient;
-	
+
 	struct AsyncRequest final{
 		AsyncRequest( sp<UAClient> pClient )ι;
 		~AsyncRequest();

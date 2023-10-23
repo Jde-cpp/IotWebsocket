@@ -16,10 +16,10 @@ namespace Jde::Iot
 	struct UAClient;
 	struct Value;
 	struct ReadRequest{
-		sp<Browse::Response> Browse;
-		flat_map<UA_UInt32, tuple<uint,uint>> Requests;
+		//sp<Browse::Response> Browse;
+		flat_map<UA_UInt32, NodeId> Requests;
 		sp<UAClient> ClientPtr;
-		flat_map<tuple<uint,uint>, Value> Results;
+		flat_map<NodeId, Value> Results;
 	};
 	struct UAClient final : std::enable_shared_from_this<UAClient>
 	{
@@ -35,7 +35,8 @@ namespace Jde::Iot
 
 		//Ω GetAsyncRequest( sp<UAClient> p )ι{ lock_guard _{p->_asyncRequestMutex}; if(!p->_asyncRequest) p->_asyncRequest=ms<AsyncRequest>(move(p)); return _asyncRequest; };
 		Ω SendBrowseRequest( Browse::Request&& request, sp<UAClient>&& pClient, HCoroutine&& h )ι->void;
-		Ω SendReadRequest( sp<Browse::Response> browse, sp<UAClient>&& pClient, HCoroutine&& h )ε->void;
+		Ω SendReadRequest( const flat_set<NodeId>&& nodes, sp<UAClient>&& pClient, HCoroutine&& h )ι->void;
+		Ω SendWriteRequest( const flat_map<NodeId,Value>&& values, sp<UAClient>&& pClient, HCoroutine&& h )ι->void;
 		Ω ClearRequest( UA_Client* ua, UA_UInt32 requestId )ι->optional<HCoroutine>;
 		Ω Retry( function<void(sp<UAClient>&&, HCoroutine&&)> f, UAException e, sp<UAClient> pClient, HCoroutine h )ι->Task;
 		α Process()ι->void;
@@ -58,7 +59,6 @@ namespace Jde::Iot
 		OpcServer _opcServer;
 		flat_map<UA_UInt32, HCoroutine> _requests; mutex _requestMutex;
 		boost::concurrent_flat_map<Jde::Handle, ReadRequest> _readRequests;
-		//atomic<Jde::Handle> _readRequestIndex{};
 		sp<AsyncRequest> _asyncRequest; mutable mutex _asyncRequestMutex;
 		UA_Client* _ptr{};//needs to be after _logContext & _config.
 		friend ConnectAwait; friend α Read::OnResponse( UA_Client *client, void *userdata, UA_UInt32 requestId, UA_StatusCode status, UA_DataValue *var )ι->void;

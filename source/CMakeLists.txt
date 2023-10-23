@@ -10,7 +10,7 @@ find_package(ZLIB)
 add_executable( Jde.IotWebsocket Main.cpp Rest.cpp
 	async/AsyncRequest.cpp async/ConnectAwait.cpp
 	types/OpcServer.cpp
-	uatypes/Browse.cpp uatypes/Logger.cpp uatypes/Value.cpp uatypes/UAClient.cpp )
+	uatypes/Browse.cpp uatypes/Logger.cpp uatypes/Node.cpp uatypes/Value.cpp uatypes/UAClient.cpp )
 #######################################################
 include_directories( "../../Public" )
 include_directories( "../../Public/jde/log/types/proto" )

@@ -25,19 +25,23 @@ namespace Jde::Iot
 
 	α stateCallback( UA_Client *ua, UA_SecureChannelState channelState, UA_SessionState sessionState, UA_StatusCode connectStatus )ι->void{
 		DBG( "({:x})channelState='{}', sessionState='{}', connectStatus='({:x}){}", (uint)ua, UAException::Message(channelState), UAException::Message(sessionState), connectStatus, UAException::Message(connectStatus) );
-		if( sessionState == UA_SESSIONSTATE_ACTIVATED ){
+		if( sessionState == UA_SESSIONSTATE_ACTIVATED || connectStatus==UA_STATUSCODE_BADCONNECTIONREJECTED ){
 			lg _{ _awaitingActivationMutex };
 			if( auto p=find_if(_awaitingActivation, [ua](auto x){return ua==x.first->UAPointer();}); p!=_awaitingActivation.end() ){
 				auto pClient = move(p->first);
-				auto id = move(p->second);
+				auto target = move(p->second);
 				_awaitingActivation.erase( p );
 				_awaitingActivationMutex.unlock();
-				{
-					ul _{ _clientsMutex };
-					ASSERT( _clients.find(id)==_clients.end() );
-					_clients[id] = pClient;
+				if( sessionState == UA_SESSIONSTATE_ACTIVATED ){
+					{
+						ul _{ _clientsMutex };
+						ASSERT( _clients.find(target)==_clients.end() );
+						_clients[target] = pClient;
+					}
+					ConnectAwait::Resume( move(pClient), move(target) );
 				}
-				ConnectAwait::Resume( move(pClient), move(id) );//another thread?
+				else
+					ConnectAwait::Resume( move(pClient), move(target), UAException{connectStatus} );
 			}
 		}
 	}
@@ -127,29 +131,52 @@ namespace Jde::Iot
 		DBG( "~Browse::Send" );
 	}
 
-	α UAClient::SendReadRequest( sp<Browse::Response> browse, sp<UAClient>&& pClient, HCoroutine&& h )ε->void{
-		flat_map<UA_UInt32, tuple<uint,uint>> ids;
+	α UAClient::SendReadRequest( const flat_set<NodeId>&& nodeIds, sp<UAClient>&& pClient, HCoroutine&& h )ι->void{
+		flat_map<UA_UInt32, NodeId> ids;
 		Jde::Handle handle{};
 		try{
-			for( uint i = 0; i < browse->resultsSize; ++i) {
-	      for( size_t j = 0; j < browse->results[i].referencesSize; ++j ) {
-	        const UA_ReferenceDescription& ref = browse->results[i].references[j];
-					lg _{ pClient->_requestMutex };
-					UAε( UA_Client_readValueAttribute_async(pClient->_ptr, ref.nodeId.nodeId, Read::OnResponse, (void*)handle, &pClient->RequestId) );
-					if( !handle )
-						handle = pClient->RequestId;
-					ids.emplace( pClient->RequestId, make_tuple(i,j) );
-				}
-			}
+			for( auto&& nodeId : nodeIds ){
+				lg _{ pClient->_requestMutex };
+				UAε( UA_Client_readValueAttribute_async(pClient->_ptr, nodeId.nodeId, Read::OnResponse, (void*)handle, &pClient->RequestId) );
+				if( !handle )
+					handle = pClient->RequestId;
+				ids.emplace( pClient->RequestId, nodeId );
+	 		}
 			{
 				lg _{ pClient->_requestMutex };
 				pClient->_requests[handle] = move( h );
-				pClient->_readRequests.try_emplace( handle, ReadRequest{move(browse), move(ids), pClient} );
+				pClient->_readRequests.try_emplace( handle, ReadRequest{move(ids), pClient} );
 			}
 			pClient->Process();
 		}
 		catch( UAException& e ){
-			Retry( [r=move(browse)]( sp<UAClient>&& p, HCoroutine&& h )mutable{SendReadRequest( move(r), move(p), move(h) );}, move(e), move(pClient), move(h) );
+			Retry( [n=move(nodeIds)]( sp<UAClient>&& p, HCoroutine&& h )mutable{SendReadRequest( move(n), move(p), move(h) );}, move(e), move(pClient), move(h) );
+		}
+	}
+	α UAClient::SendWriteRequest( const flat_map<NodeId,Value>&& values, sp<UAClient>&& pClient, HCoroutine&& h )ι->void{
+		flat_map<UA_UInt32, NodeId> ids;
+		Jde::Handle handle{};
+		try{
+			for( auto&& [nodeId, value] : values ){
+				lg _{ pClient->_requestMutex };
+				myVariant
+				UAε( UA_Client_writeValueAttribute_async(pClient->_ptr, nodeId.nodeId, &value.Variant(), Write::OnResonse, NULL,
+                                                &reqId);
+
+					UA_Client_readValueAttribute_async(, nodeId.nodeId, Read::OnResponse, (void*)handle, &pClient->RequestId) );
+				if( !handle )
+					handle = pClient->RequestId;
+				ids.emplace( pClient->RequestId, nodeId );
+	 		}
+			{
+				lg _{ pClient->_requestMutex };
+				pClient->_requests[handle] = move( h );
+				pClient->_readRequests.try_emplace( handle, ReadRequest{move(ids), pClient} );
+			}
+			pClient->Process();
+		}
+		catch( UAException& e ){
+			Retry( [n=move(nodeIds)]( sp<UAClient>&& p, HCoroutine&& h )mutable{SendReadRequest( move(n), move(p), move(h) );}, move(e), move(pClient), move(h) );
 		}
 	}
 

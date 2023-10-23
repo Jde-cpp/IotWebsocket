@@ -9,8 +9,10 @@ namespace Jde::Iot
 		α await_ready()ι->bool override;
 		α await_suspend( HCoroutine h )ι->void override;
 		α await_resume()ι->AwaitResult override{ return _pPromise ? _pPromise->get_return_object().Result() : _result; }
-		Ω Resume( sp<UAClient> pClient, string id )ι->void;
+		Ω Resume( sp<UAClient>&& pClient, string&& target )ι->void;
+		Ω Resume( sp<UAClient>&& pClient, string&& target, const UAException&& e )ι->void;
 	private:
+		Ω Resume( sp<UAClient> pClient, string&& target, function<void(HCoroutine&&)> resume )ι->void;
 		α Create( string id )ι->Task;
 		string _id;
 		AwaitResult _result;

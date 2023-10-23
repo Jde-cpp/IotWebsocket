@@ -5,9 +5,11 @@
 
 namespace Jde::Iot{
 	namespace Read{
+		Await::Await( flat_set<NodeId>&& x, sp<UAClient>&& c, SL sl )ι:IAwait{sl}, _nodes{move(x)},_client{move(c)}{}
+
 		α Await::await_suspend( HCoroutine h )ι->void{
 			IAwait::await_suspend( h );
-			_client->SendReadRequest( move(_response), move(_client), move(h) );
+			_client->SendReadRequest( move(_nodes), move(_client), move(h) );
 		}
 		//α Execute( sp<UAClient> ua, NodeId node, Web::Rest::Request req, bool snapShot )ι->Task;
 
@@ -17,23 +19,19 @@ namespace Jde::Iot{
 			string logPrefix = format( "[{:x}.{}.{}]", (uint)ua, handle, requestId );
 			DBG( "[{}]Value::OnResponse()", logPrefix );
 			auto ppClient = Try<sp<UAClient>>( [ua](){return UAClient::Find(ua);} ); if( !ppClient ) return;
-			up<flat_map<tuple<uint,uint>, Value>> results;
-			bool visited = (*ppClient)->_readRequests.visit( handle, [handle, requestId, sc, val, &results, ua]( auto& pair ){
+			up<flat_map<NodeId, Value>> results;
+			bool visited = (*ppClient)->_readRequests.visit( handle, [requestId, sc, val, &results]( auto& pair ){
 				auto& x = pair.second;
-				if( sc ){
-					optional<HCoroutine> h = UAClient::ClearRequest( ua, handle ); if( !h ) return CRITICAL( "Could not find handle for client={:x}, request={}.", (uint)ua, requestId );
-					ResumeEx( UAException{sc}, move(*h) );
-				}
-				else if( auto pRequest=x.Requests.find(requestId); pRequest!=x.Requests.end() ){
-					Value v{ *val };
-					x.Results.try_emplace( pRequest->second, move(v) );
+				if( auto pRequest=x.Requests.find(requestId); pRequest!=x.Requests.end() ){
+					x.Results.try_emplace( pRequest->second, sc ? Value{ sc } : Value{ *val } );
 					if( x.Results.size()==x.Requests.size() )
-						results = mu<flat_map<tuple<uint,uint>, Value>>( move(x.Results) );
+						results = mu<flat_map<NodeId, Value>>( move(x.Results) );
 				}
 			});
 			if( !visited )
 				CRITICAL( "{}Could not find handle.", logPrefix );
 			else if( results ){
+				(*ppClient)->_readRequests.erase( handle );
 				optional<HCoroutine> h = UAClient::ClearRequest( ua, handle ); if( !h ) return CRITICAL( "Could not find handle for client={:x}, request={}.", (uint)ua, requestId );
 				Resume( move(results), move(*h) );
 			}
@@ -42,7 +40,7 @@ namespace Jde::Iot{
 	}
 #define ADD add.operator()
 #define IS(ua) type==&UA_TYPES[ua]
-	α Value::ToJson()ε->json{
+	α Value::ToJson()Ε->json{
 		if( status )
 			return json{ {"sc", status} };
 		var scaler = UA_Variant_isScalar( &value );
@@ -98,38 +96,5 @@ namespace Jde::Iot{
 			}
 		}
 		return j;
-/*
-
-		else if( IS(UA_TYPES_BYTESTRING) )
-			j = string{, *(UA_Byte
-*/
 	}
-
-			// auto pIndexes = x.Ids.find( requestId );
-				// if( pIndexes==x.Ids.end() ){
-				// 	done = true;
-				// 	ResumeEx( Exception{"{}Could not find indexes for request.", logPrefix}, move(x.HCo) );
-				// }
-
-				//var i = get<0>( pIndexes->second ); var j = get<1>( pIndexes->second );
-				// if( i>=x.Response->resultsSize )
-				// 	return CRITICAL( "{}Incorrect indexes for request i={}, resultsSize={}.", logPrefix, i, x.Response->resultsSize );
-				// if( j>=x.Response->results[i].referencesSize )
-				// 	return CRITICAL( "{}Incorrect indexes for request j={}, referencesSize={}.", logPrefix, j, x.Response->results[i].referencesSize );
-				// const UA_ReferenceDescription& ref = browse->results[i].references[j];
-//				ref.nodeId.nodeId;
-//				x.Browse.[x.Ids[requestId].first].references[x.Ids[requestId].second].value = Value{ sc };
-			// --x.Count;
-			// if( !x.Count )
-			// 	ResumeSP( move(x.Response), move(x.Handle) );
-		//}
-		// UAClient::AddReadResult( handle, requestId, sc ua, var );
-		// //optional<HCoroutine> h = UAClient::ClearRequest( client, requestId ); if( !h ) return CRITICAL( "Could not find handle for client={:x}, request={}.", (uint)client, requestId );
-
-    // printf("%-50s%u\n", "Read value attribute for request", requestId);
-    // if(UA_Variant_hasScalarType(&var->value, &UA_TYPES[UA_TYPES_INT32])) {
-    //     UA_Int32 int_val = *(UA_Int32*) var->value.data;
-    //     printf("---%-40s%-8i\n",
-    //            "Reading the value of node (1, \"the.answer\"):", int_val);
-    // }
 }
