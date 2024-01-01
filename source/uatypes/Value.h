@@ -5,15 +5,21 @@ namespace Jde::Iot{
 	namespace Browse{ struct Response; }
 	struct UAClient;
 	struct NodeId;
+	struct Variant;
 
 	struct Value : UA_DataValue{
-		Value( UA_StatusCode sc )ι:UA_DataValue{}{ status=sc; }
-		Value( UA_DataValue& x )ι{ UA_DataValue_copy( &x, this ); }
-		Value( Value&& x )ι:UA_DataValue{ x }{ Zero( x ); }
-		~Value(){ UA_DataValue_clear(this); }
+		Value( StatusCode sc )ι:UA_DataValue{}{ status=sc; }
+		Value( const UA_DataValue& x )ι{ UA_DataValue_copy( &x, this ); }
+		Value( const Value& x )ι{ UA_DataValue_copy( &x, this ); }
+		Value( Value&& x )ι:UA_DataValue{x}{ UA_DataValue_init(&x); }
+		~Value(){ UA_DataValue_deleteMembers(this); }
 
 		α operator=( Value&& x )ι->Value&{ UA_DataValue_copy( &x, this ); return *this; }
-		α ToJson()Ε->json;
+		α IsScaler()Ι->bool{ return UA_Variant_isScalar( &value ); }
+		α ToProto( const OpcId& opcId, const NodeId& nodeId )Ι->FromServer::MessageUnion;
+		α ToJson()Ι->json;
+		α Set( json j )ε->void;
+		Ŧ Get( uint index )Ι->const T&{ return ((T*)value.data)[index]; };
 	};
 
 	namespace Read{
@@ -27,9 +33,7 @@ namespace Jde::Iot{
 			sp<UAClient> _client;
 		};
 
-		Ξ SendRequest( flat_set<NodeId>&& x, sp<UAClient>&& c )ι->Await{ return Await{ move(x), move(c) }; }
-		//α Execute( sp<UAClient> ua, NodeId node, Web::Rest::Request req, bool snapShot )ι->Task;
-		α OnResponse( UA_Client *client, void *userdata, UA_UInt32 requestId, UA_StatusCode status, UA_DataValue *var )ι->void;
-
+		Ξ SendRequest( flat_set<NodeId> x, sp<UAClient> c )ι->Await{ return Await{ move(x), move(c) }; }
+		α OnResponse( UA_Client *client, void *userdata, RequestId requestId, StatusCode status, UA_DataValue *var )ι->void;
 	}
 }

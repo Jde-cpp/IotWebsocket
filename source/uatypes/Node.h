@@ -4,30 +4,33 @@
 namespace Jde::Iot
 {
 	struct NodeId : UA_ExpandedNodeId{
-//		NodeId( const UA_ExpandedNodeId& x )ι{ UA_ExpandedNodeId_copy( &x, this ); }
-//		NodeId( const UA_NodeId& x )ι{ UA_NodeId_copy( &x, this ); namespaceUri=""_ua, serverIndex=0; }
-		NodeId( UA_NodeId&& x )ι:UA_ExpandedNodeId{move(x), ""_uv, 0}{}
-		NodeId( const UA_ExpandedNodeId& x )ι:UA_ExpandedNodeId{UA_EXPANDEDNODEID_NULL}{ UA_ExpandedNodeId_copy( &x, this ); }
-		//NodeId( const UA_ExpandedNodeId&& x )ι:UA_ExpandedNodeId{UA_EXPANDEDNODEID_NULL}{ UA_ExpandedNodeId_copy( &x, this ); }
+		NodeId()ι:UA_ExpandedNodeId{UA_EXPANDEDNODEID_NULL}{}
+		NodeId( UA_NodeId&& x )ι:UA_ExpandedNodeId{move(x), UA_EXPANDEDNODEID_NULL.namespaceUri, UA_EXPANDEDNODEID_NULL.serverIndex}{}
+		NodeId( const UA_NodeId& x )ι:NodeId{}{ UA_NodeId_copy( &x, &nodeId ); }
+		NodeId( const UA_ExpandedNodeId& x )ι:NodeId{}{ UA_ExpandedNodeId_copy( &x, this ); }
 		NodeId( const flat_map<string,string>& x )ι;
 		NodeId( const json& j )ε;
 		NodeId( const NodeId& x )ι;
+		NodeId( Proto::ExpandedNodeId&& x )ι;
 		NodeId( NodeId&& x )ι;
-		α operator=( NodeId&& x )ι->NodeId&{
-			nodeId = x.Move();
-			namespaceUri=x.namespaceUri;
-			serverIndex=x.serverIndex;
-			memset( &x, 0, sizeof(UA_ExpandedNodeId) );
-			return *this;
-		}
-
-		~NodeId();
+		Ω ToNodes( google::protobuf::RepeatedPtrField<Proto::ExpandedNodeId>&& proto )ι->flat_set<NodeId>;
+		α operator=( NodeId&& x )ι->NodeId&;
+		~NodeId(){ Clear(); }
 		α operator<( const NodeId& x )Ι->bool;
+		α operator=( const NodeId& x )ι->NodeId&;
+		α Clear()ι->void;
 		α Copy()Ι->UA_NodeId;
 		α Move()ι->UA_NodeId;
-		α ToJson()Ε->json;
+		α ToJson()Ι->json;
+		α ToProto()Ι->Proto::ExpandedNodeId;
+		α ToNodeProto()Ι->Proto::NodeId;
+		α to_string()Ι->string;
 	};
+	Ξ operator==( const NodeId& x, const NodeId& y )ι->bool{ return !(x<y) && !(y<x); }
+	α ToJson( const UA_NodeId& nodeId )ι->json;
+	α ToJson( const UA_ExpandedNodeId& nodeId )ι->json;
 
-	α ToJson( const UA_NodeId& nodeId )ε->json;
-	α ToJson( const UA_ExpandedNodeId& nodeId )ε->json;
+	struct NodeIdHash{
+		uint operator()(const NodeId& n)Ι;
+	};
 }

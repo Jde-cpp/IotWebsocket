@@ -9,7 +9,7 @@ namespace Jde::Iot{
 namespace Browse{
 
 	α ObjectsFolder( sp<UAClient> ua, NodeId node, Web::Rest::Request req, bool snapShot )ι->Task;
-	α OnResponse( UA_Client *ua, void* userdata, UA_UInt32 requestId, UA_BrowseResponse* response )ι->void;
+	α OnResponse( UA_Client *ua, void* userdata, RequestId requestId, UA_BrowseResponse* response )ι->void;
 
 	struct FoldersAwait final : IAwait
 	{
@@ -34,6 +34,6 @@ namespace Browse{
 		~Response(){ UA_BrowseResponse_clear(this); }
 
 		α Nodes()ι->flat_set<NodeId>;
-		α ToJson( up<flat_map<NodeId, Value>>&& pSnapshot )ε->json;
+		α ToJson( up<flat_map<NodeId, Value>>&& pSnapshot, flat_map<NodeId, NodeId>&& dataTypes )ε->json;
 	};
 }}

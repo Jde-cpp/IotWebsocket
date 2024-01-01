@@ -33,7 +33,6 @@ namespace Jde::Iot
 			auto pServer = ( co_await OpcServer::Select(id) ).UP<OpcServer>(); THROW_IF( !pServer, "Could not find opc server:  '{}'", id );
 			auto pClient = ms<UAClient>( move(*pServer) );
 			pClient->Create();
-			DBG( "created client ({:x})[{}]{}", pClient->Handle(), pClient->Target(), pClient->Url() );
 			pClient->OnSessionActivated( pClient, id );
 			var sc = UA_Client_connectAsync( *pClient, pClient->Url().c_str() ); THROW_IFX( sc, UAException(sc) );
 			pClient->Process();

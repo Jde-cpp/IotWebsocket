@@ -1,4 +1,13 @@
 #pragma once
+#include <boost/beast.hpp>
+#include <boost/beast/websocket/stream.hpp>
+#include <boost/asio.hpp>
+#include <boost/exception/diagnostic_information.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/unordered/concurrent_flat_map.hpp>
+#include <boost/unordered/concurrent_flat_set.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #include <open62541/client_config_default.h>
 #include <open62541/client_highlevel.h>
 #include <open62541/client_highlevel_async.h>
@@ -7,6 +16,11 @@
 #include <jde/Log.h>
 #include <jde/App.h>
 #include <jde/Str.h>
+#include "../../Framework/source/DateTime.h"
+#include "../../Public/src/web/Exports.h"
+#include "../../Public/src/web/proto/FromServer.pb.h"
+#include <jde/log/types/proto/FromClient.pb.h>
+#include <jde/log/types/proto/FromServer.pb.h>
 #include "../../Framework/source/DateTime.h"
 #include "../../Framework/source/coroutine/Alarm.h"
 #include "../../Framework/source/db/GraphQL.h"

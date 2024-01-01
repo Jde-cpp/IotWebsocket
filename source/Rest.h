@@ -13,5 +13,6 @@ namespace Jde::Iot
 		virtual ~Session(){}
 		α HandleRequest( string&& target, flat_map<string,string>&& params, Request&& req )ι->void override;
 		α MakeShared()ι->sp<ISession> override{ return shared_from_this(); }
+		Ω AddShutdown()ι->void;
 	};
 }

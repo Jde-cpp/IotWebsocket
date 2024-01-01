@@ -5,7 +5,8 @@ namespace Jde::Iot
 	NodeId::NodeId ( const NodeId& x )ι:
 		UA_ExpandedNodeId{UA_EXPANDEDNODEID_NULL}{
 		nodeId = x.Copy();
-		namespaceUri = UA_String_fromChars( string{ToSV(x.namespaceUri)}.c_str() );
+		if( x.namespaceUri.length )
+			namespaceUri = UA_String_fromChars( string{ToSV(x.namespaceUri)}.c_str() );
 		serverIndex = x.serverIndex;
 	}
 
@@ -71,16 +72,50 @@ namespace Jde::Iot
 	}
 
 	NodeId::NodeId( NodeId&& x )ι:
-		UA_ExpandedNodeId{UA_EXPANDEDNODEID_NULL}
-	{
+		UA_ExpandedNodeId{UA_EXPANDEDNODEID_NULL}{
 		nodeId = x.Move();
 		namespaceUri = x.namespaceUri;
 		serverIndex = x.serverIndex;
 		memset( &x, 0, sizeof(UA_ExpandedNodeId) );
 	}
+	NodeId::NodeId( Proto::ExpandedNodeId&& x )ι{
+		const auto& proto = x.node();
+		nodeId.namespaceIndex = proto.namespace_index();
+		if( proto.has_numeric() ){
+			nodeId.identifierType = UA_NodeIdType::UA_NODEIDTYPE_NUMERIC;
+			nodeId.identifier.numeric = proto.numeric();
+		}
+		else if( proto.has_string() ){
+			nodeId.identifierType = UA_NodeIdType::UA_NODEIDTYPE_STRING;
+			nodeId.identifier.string = UA_String_fromChars( proto.string().c_str() );
+		}
+		else if( proto.has_byte_string() ){
+			nodeId.identifierType = UA_NodeIdType::UA_NODEIDTYPE_BYTESTRING;
+			UA_ByteString_allocBuffer( &nodeId.identifier.byteString, proto.byte_string().size() );
+			memcpy( nodeId.identifier.byteString.data, proto.byte_string().data(), proto.byte_string().size() );
+		}
+		else if( proto.has_guid() ){
+			nodeId.identifierType = UA_NodeIdType::UA_NODEIDTYPE_GUID;
+			memcpy( &nodeId.identifier.guid, proto.guid().data(), std::min(sizeof(UA_Guid),proto.guid().size()) );
+		}
+		namespaceUri = UA_String_fromChars( x.namespace_uri().c_str() );
+		serverIndex = x.server_index();
+	}
+	α NodeId::operator=( NodeId&& x )ι->NodeId&{
+		nodeId = x.Move();
+		namespaceUri=x.namespaceUri;
+		serverIndex=x.serverIndex;
+		memset( &x, 0, sizeof(UA_ExpandedNodeId) );
+		return *this;
+	}
 
-	NodeId::~NodeId()
-	{
+	α NodeId::ToNodes( google::protobuf::RepeatedPtrField<Proto::ExpandedNodeId>&& proto )ι->flat_set<NodeId>{
+		flat_set<NodeId> nodes;
+		for( auto& node : proto )
+			nodes.emplace( move(node) );
+		return nodes;
+	}
+	α NodeId::Clear()ι->void{
 		if( namespaceUri.length )
 			UA_String_clear( &namespaceUri );
 		if( nodeId.identifierType==UA_NodeIdType::UA_NODEIDTYPE_STRING && nodeId.identifier.string.length )
@@ -89,6 +124,14 @@ namespace Jde::Iot
 			UA_ByteString_clear( &nodeId.identifier.byteString );
 	}
 
+	α NodeId::operator=( const NodeId& x )ι->NodeId&{
+		Clear();
+		nodeId = x.Copy();
+		if( x.namespaceUri.length )
+			namespaceUri = UA_String_fromChars( string{ToSV(x.namespaceUri)}.c_str() );
+		serverIndex = x.serverIndex;
+		return *this;
+	}
 	α NodeId::operator<( const NodeId& x )Ι->bool{
 		return
 			ToSV(namespaceUri)==ToSV(x.namespaceUri) ?
@@ -136,11 +179,10 @@ namespace Jde::Iot
 		return y;
 	}
 
-	α to_json( nlohmann::json& n, const UA_NodeId& nodeId )ε->void
+	α to_json( nlohmann::json& n, const UA_NodeId& nodeId )ι->void
 	{
-		const UA_NodeIdType type = nodeId.identifierType;
-		//n["identifierType"] = type;
 		n["ns"] = nodeId.namespaceIndex;
+		const UA_NodeIdType type = nodeId.identifierType;
 		if( type==UA_NodeIdType::UA_NODEIDTYPE_NUMERIC )
 			n["i"]=nodeId.identifier.numeric;
 		else if( type==UA_NodeIdType::UA_NODEIDTYPE_STRING )
@@ -150,13 +192,13 @@ namespace Jde::Iot
 		else if( type==UA_NodeIdType::UA_NODEIDTYPE_BYTESTRING )
 			n["b"] = ByteStringToJson( nodeId.identifier.byteString );
 	}
-	α ToJson( const UA_NodeId& nodeId )ε->json{
+	α ToJson( const UA_NodeId& nodeId )ι->json{
 		json j;
 		to_json( j, nodeId );
 		return j;
 	}
 
-	α ToJson( const UA_ExpandedNodeId& x )ε->json{
+	α ToJson( const UA_ExpandedNodeId& x )ι->json{
 		json j;
 		if( x.namespaceUri.length )
 			j["nsu"] = ToSV(x.namespaceUri);
@@ -165,7 +207,48 @@ namespace Jde::Iot
 		to_json( j, x.nodeId );
 		return j;
 	}
-	α NodeId::ToJson()Ε->nlohmann::json{
+	α NodeId::ToJson()Ι->nlohmann::json{
 		return Iot::ToJson( *this );
+	}
+
+	α NodeId::to_string()Ι->string{
+		return ToJson().dump();
+	}
+	α NodeId::ToProto()Ι->Proto::ExpandedNodeId{
+		Proto::ExpandedNodeId y;
+		if( namespaceUri.length )
+			y.set_allocated_namespace_uri( new string{ToSV(namespaceUri)} );
+		y.set_server_index( serverIndex );
+		y.set_allocated_node( new Proto::NodeId{ToNodeProto()} );
+		return y;
+	}
+	α NodeId::ToNodeProto()Ι->Proto::NodeId{
+		Proto::NodeId y;
+		y.set_namespace_index( nodeId.namespaceIndex );
+		if( nodeId.identifierType==UA_NodeIdType::UA_NODEIDTYPE_NUMERIC )
+			y.set_numeric( nodeId.identifier.numeric );
+		else if( nodeId.identifierType==UA_NodeIdType::UA_NODEIDTYPE_STRING )
+			y.set_allocated_string( new string{ToSV(nodeId.identifier.string)} );
+		else if( nodeId.identifierType==UA_NodeIdType::UA_NODEIDTYPE_BYTESTRING )
+			y.set_allocated_byte_string( new string{ToSV(nodeId.identifier.byteString)} );
+		else if( nodeId.identifierType==UA_NodeIdType::UA_NODEIDTYPE_GUID )
+			y.set_guid( ToBinaryString(nodeId.identifier.guid) );
+		return y;
+	}
+
+	std::size_t NodeIdHash::operator()(const NodeId& n)Ι{
+		std::size_t seed = 0;
+		boost::hash_combine( seed, ToSV(n.namespaceUri) );
+		boost::hash_combine( seed, n.serverIndex );
+		var& nodeId = n.nodeId;
+		if( nodeId.identifierType==UA_NodeIdType::UA_NODEIDTYPE_NUMERIC )
+			boost::hash_combine( seed, nodeId.identifier.numeric );
+		else if( nodeId.identifierType==UA_NodeIdType::UA_NODEIDTYPE_STRING )
+			boost::hash_combine( seed, ToSV(nodeId.identifier.string) );
+		else if( nodeId.identifierType==UA_NodeIdType::UA_NODEIDTYPE_GUID )
+			boost::hash_combine( seed, ToJson(nodeId.identifier.guid).dump() );
+		else if( nodeId.identifierType==UA_NodeIdType::UA_NODEIDTYPE_BYTESTRING )
+			boost::hash_combine( seed, ToSV(nodeId.identifier.byteString) );
+		return seed;//4452845294327023648
 	}
 }

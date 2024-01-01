@@ -1,13 +1,13 @@
 #include "Browse.h"
 #include "UAClient.h"
 #include "Value.h"
+#include "../async/Attributes.h"
 
 namespace Jde::Iot::Browse{
 
 	α FoldersAwait::await_suspend( HCoroutine h )ι->void{
 		IAwait::await_suspend( h );
-		_client->SendBrowseRequest( Request{move(_node)}, move(_client), move(h) );
-		DBG("~FoldersAwait::await_suspend");
+		_client->SendBrowseRequest( Request{move(_node)}, move(h) );
 	}
 
 	α Folders( NodeId&& node, sp<UAClient>& c )ι->FoldersAwait{ return FoldersAwait{ move(node), c }; }
@@ -16,29 +16,26 @@ namespace Jde::Iot::Browse{
 	{
 		try{
 			auto y = ( co_await Folders(move(node), ua) ).SP<Response>();
+			flat_set<NodeId> nodes = y->Nodes();
 			up<flat_map<NodeId, Value>> pValues;
-			if( snapshot )
-			 	pValues = ( co_await Read::SendRequest(y->Nodes(), move(ua)) ).UP<flat_map<NodeId, Value>>();
 
-			Web::Rest::ISession::Send(y->ToJson(move(pValues)), move(req) );
+			if( snapshot )
+			 	pValues = ( co_await Read::SendRequest(nodes, ua) ).UP<flat_map<NodeId, Value>>();
+			auto pDataTypes = (co_await Attributes::ReadDataTypeAttributes( move(nodes), move(ua) )).UP<flat_map<NodeId, NodeId>>();
+			Web::Rest::ISession::Send(y->ToJson(move(pValues), move(*pDataTypes)), move(req) );
 		}
 		catch( Exception& e ){
 			Web::Rest::ISession::Send( move(e), move(req) );
 		}
-
-		DBG("~Browse::ObjectsFolder");
 	}
 
-	α OnResponse( UA_Client *ua, void* userdata, UA_UInt32 requestId, UA_BrowseResponse* response )ι->void{
-		DBG( "Response::OnResponse={:x}.{}", (uint)ua, requestId );
-		optional<HCoroutine> h = UAClient::ClearRequest( ua, requestId ); if( !h ) return CRITICAL( "Could not find handle for client={:x}, request={}.", (uint)ua, requestId );
+	α OnResponse( UA_Client *ua, void* userdata, RequestId requestId, UA_BrowseResponse* response )ι->void{
+		auto h = UAClient::ClearRequestH( ua, requestId ); if( !h ) return CRITICAL( "Could not find handle for client={:x}, request={}.", (uint)ua, requestId );
 
 		if( !response->responseHeader.serviceResult )
-			ResumeSP( ms<Response>(move(*response)), move(*h) );
+			ResumeSP( ms<Response>(move(*response)), move(h) );
 		else
-			ResumeEx( UAException{response->responseHeader.serviceResult}, move(*h) );
-
-		DBG( "~Response::OnResponse={:x}", (uint)userdata );
+			ResumeEx( UAException{response->responseHeader.serviceResult, ua, requestId}, move(h) );
 	}
 
 	Request::Request( NodeId&& node )ι{
@@ -57,20 +54,25 @@ namespace Jde::Iot::Browse{
 		}
 		return y;
 	}
-	α Response::ToJson( up<flat_map<NodeId, Value>>&& pSnapshot )ε->json{
+	α Response::ToJson( up<flat_map<NodeId, Value>>&& pSnapshot, flat_map<NodeId, NodeId>&& dataTypes )ε->json{
 		try{
 			json references{ json::array() };
 	    for(size_t i = 0; i < resultsSize; ++i) {
 	      for(size_t j = 0; j < results[i].referencesSize; ++j) {
-	        const UA_ReferenceDescription& ref = results[i].references[j];
+	        UA_ReferenceDescription& ref = results[i].references[j];
+					const NodeId nodeId{ move(ref.nodeId) };
 					json reference;
 					if( pSnapshot ){
-						if( auto p = pSnapshot->find(ref.nodeId); p!=pSnapshot->end() )
+						if( auto p = pSnapshot->find(nodeId); p!=pSnapshot->end() )
 							reference["value"] = p->second.ToJson();
 					}
+					if( auto p = dataTypes.find(nodeId); p!=dataTypes.end() )
+						reference["dataType"] = Iot::ToJson( p->second );
+					else
+						WARN( "Could not find data type for node={}.", nodeId.ToJson().dump() );
 					reference["referenceType"] = Iot::ToJson( ref.referenceTypeId );
 					reference["isForward"] = ref.isForward;
-					reference["node"] = Iot::ToJson( ref.nodeId );
+					reference["node"] = Iot::ToJson( nodeId );
 
 					json bn;
 					const UA_QualifiedName& browseName = ref.browseName;

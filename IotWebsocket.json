@@ -1,9 +1,9 @@
 {
 	"logging":
 	{
-		"tags": [ "alarm", "ql", "_io", "_locks", "settings", "_threads", "sql" ],
+		"tags": [ "_alarm", "_ql", "_io", "_locks", "settings", "_threads", "_sql", "monitoring" ],
 		"console":{},
-		"file":{ "path": "$(ProgramData)\\Jde-cpp\\twsWebSocket\\logs", "md": true },
+		"file":{ "path": "$(ProgramData)\\Jde-cpp\\iotWebSocket\\logs", "md": true },
 		"server": { "port": 4321, "level": "Debug", "diagnosticsLevel": "Debug", "tags": ["_threads"] }
 	},
 	"db":

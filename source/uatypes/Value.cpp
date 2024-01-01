@@ -1,6 +1,6 @@
 #include "Value.h"
 #include "../uatypes/UAClient.h"
-
+#include "Variant.h"
 #define var const auto
 
 namespace Jde::Iot{
@@ -13,14 +13,13 @@ namespace Jde::Iot{
 		}
 		//α Execute( sp<UAClient> ua, NodeId node, Web::Rest::Request req, bool snapShot )ι->Task;
 
-		α OnResponse( UA_Client *ua, void *userdata, UA_UInt32 requestId, UA_StatusCode sc, UA_DataValue *val )ι->void
-		{
+		α OnResponse( UA_Client* ua, void* userdata, RequestId requestId, StatusCode sc, UA_DataValue* val )ι->void{
 			var handle = userdata ? (uint)userdata : requestId;
 			string logPrefix = format( "[{:x}.{}.{}]", (uint)ua, handle, requestId );
-			DBG( "[{}]Value::OnResponse()", logPrefix );
-			auto ppClient = Try<sp<UAClient>>( [ua](){return UAClient::Find(ua);} ); if( !ppClient ) return;
+			//DBG( "[{}]Value::OnResponse()", logPrefix );
+			auto pClient = UAClient::TryFind(ua); if( !pClient ) return;
 			up<flat_map<NodeId, Value>> results;
-			bool visited = (*ppClient)->_readRequests.visit( handle, [requestId, sc, val, &results]( auto& pair ){
+			bool visited = pClient->_readRequests.visit( handle, [requestId, sc, val, &results]( auto& pair ){
 				auto& x = pair.second;
 				if( auto pRequest=x.Requests.find(requestId); pRequest!=x.Requests.end() ){
 					x.Results.try_emplace( pRequest->second, sc ? Value{ sc } : Value{ *val } );
@@ -31,27 +30,38 @@ namespace Jde::Iot{
 			if( !visited )
 				CRITICAL( "{}Could not find handle.", logPrefix );
 			else if( results ){
-				(*ppClient)->_readRequests.erase( handle );
-				optional<HCoroutine> h = UAClient::ClearRequest( ua, handle ); if( !h ) return CRITICAL( "Could not find handle for client={:x}, request={}.", (uint)ua, requestId );
-				Resume( move(results), move(*h) );
+				pClient->_readRequests.erase( handle );
+				auto h = pClient->ClearRequestH( handle ); if( !h ) return CRITICAL( "Could not find handle for client={:x}, request={}.", (uint)ua, requestId );
+				Resume( move(results), move(h) );
 			}
-			DBG( "[{}]Value::~OnResponse()", logPrefix );
+			//DBG( "[{}]Value::~OnResponse()", logPrefix );
 		}
 	}
-#define ADD add.operator()
+//#define ADD add.operator()
 #define IS(ua) type==&UA_TYPES[ua]
-	α Value::ToJson()Ε->json{
+	α Value::ToJson()Ι->json{
 		if( status )
 			return json{ {"sc", status} };
-		var scaler = UA_Variant_isScalar( &value );
-		var count = scaler ? 1 : value.arrayLength;
+		var scaler = IsScaler();
 		var type = value.type;
 		json j{ scaler ? json::object() : json::array() };
-		auto add = [scaler, &j]<class T>( void* d, uint i ){ T& x = ((T*)d)[i]; if( scaler ) j = x; else j.push_back(x); };
+		auto add = [scaler, &j]( var& v, SRCE )ι{
+			try{
+				if( scaler )
+					j = v;
+				else
+					j.push_back(v);
+			}
+			catch( json::exception& e ){
+				CRITICAL( "Error converting to json.  {}", e.what() );
+				j = { "error", e.what() };
+			}
+		};
 		auto addExplicit = [scaler, &j]( json&& x ){ if( scaler ) j = x; else j.push_back(x); };
-		for( uint i=0; i<count; ++i ){
+
+		for( uint i=0; i<(scaler ? 1 : value.arrayLength); ++i ){
 			if( IS(UA_TYPES_BOOLEAN) )
-				ADD<UA_Boolean>( value.data, i );
+				add( Get<UA_Boolean>(i) );
 			else if( IS(UA_TYPES_BYTE) )
 				addExplicit( (unsigned char)((UA_Byte*)value.data)[i] );
 			else if( IS(UA_TYPES_BYTESTRING) ) [[unlikely]]
@@ -59,19 +69,19 @@ namespace Jde::Iot{
 			else if( IS(UA_TYPES_DATETIME) )
 				addExplicit( UADateTime{((UA_DateTime*)value.data)[i]}.ToJson() );
 			else if( IS(UA_TYPES_DOUBLE) )
-				ADD<UA_Double>( value.data, i );
+				add( Get<UA_Double>(i) );
 			else if( IS(UA_TYPES_DURATION) ) [[unlikely]]
-				ADD<UA_Duration>( value.data, i );
+				add( Get<UA_Duration>(i) );
 			else if( IS(UA_TYPES_EXPANDEDNODEID) ) [[unlikely]]
 				addExplicit( Iot::ToJson( ((UA_ExpandedNodeId*)value.data)[i] ) );
 			else if( IS(UA_TYPES_FLOAT) )
-				ADD<UA_Float>( value.data, i );
+				add( Get<UA_Float>(i) );
 			else if( IS(UA_TYPES_GUID) ) [[unlikely]]
 				addExplicit( Iot::ToJson(((UA_Guid*)value.data)[i]) );
 			else if( IS(UA_TYPES_INT16) ) [[likely]]
-				ADD<UA_Int16>( value.data, i );
+				add( Get<UA_Int16>(i) );
 			else if( IS(UA_TYPES_INT32) ) [[likely]]
-				ADD<UA_Int32>( value.data, i );
+				add( Get<UA_Int32>(i) );
 			else if( IS(UA_TYPES_INT64) )
 				addExplicit( Iot::ToJson(((UA_Int64*)value.data)[i]) );
 			else if( IS(UA_TYPES_NODEID) )
@@ -79,13 +89,13 @@ namespace Jde::Iot{
 			else if( IS(UA_TYPES_SBYTE) )
 				addExplicit( (char)((UA_SByte*)value.data)[i] );
 			else if( IS(UA_TYPES_STATUSCODE) )
-				ADD<UA_StatusCode>( value.data, i );
+				add( Get<StatusCode>(i) );
 			else if( IS(UA_TYPES_STRING) ) [[likely]]
 				addExplicit( ToSV(((UA_String*)value.data)[i]) );
 			else if( IS(UA_TYPES_UINT16) )
-				ADD<UA_UInt16>( value.data, i );
+				add( Get<UA_UInt16>(i) );
 			else if( IS(UA_TYPES_UINT32) ) [[likely]]
-				ADD<UA_UInt32>( value.data, i );
+				add( Get<UA_UInt32>(i) );
 			else if( IS(UA_TYPES_UINT64) )
 				addExplicit( Iot::ToJson(((UA_UInt64*)value.data)[i]) );
 			else if( IS(UA_TYPES_XMLELEMENT) ) [[unlikely]]
@@ -96,5 +106,93 @@ namespace Jde::Iot{
 			}
 		}
 		return j;
+	}
+	α Value::Set( json j )ε->void{
+		var scaler = UA_Variant_isScalar( &value );
+		var type = value.type;
+		if( IS(UA_TYPES_BOOLEAN) ){
+			if( scaler ){
+				THROW_IF( !j.is_boolean(), "Expected boolean '{}'.", j.dump() );
+				UA_Boolean v = j;
+				UA_Variant_setScalarCopy( &value, &v, type );
+			}
+			else
+				throw Exception( "Not implemented." );
+		}
+		else if( IS(UA_TYPES_DOUBLE) ){
+			if( scaler ){
+				THROW_IF( !j.is_number(), "Expected number '{}'.", j.dump() );
+				UA_Double v = j;
+				UA_Variant_setScalarCopy( &value, &v, type );
+			}
+			else
+				throw Exception( "Not implemented." );
+		}
+		else if( IS(UA_TYPES_STRING) ){
+			if( scaler ){
+				THROW_IF( !j.is_string(), "Expected string '{}'.", j.dump() );
+				UA_String v = UA_String_fromChars( j.get<string>().c_str() );
+				UA_Variant_setScalarCopy( &value, &v, type );
+			}
+		}
+		else
+			throw Exception( "Not implemented." );
+	}
+
+	α Value::ToProto( const OpcId& opcId, const NodeId& node )Ι->FromServer::MessageUnion{
+		var scaler = IsScaler();
+		var type = value.type;
+		auto nv = mu<FromServer::NodeValues>(); nv->set_allocated_node( new Proto::ExpandedNodeId{node.ToProto()} ); nv->set_opc_id( opcId );
+		//auto p = m.mutable_data_change();
+		for( uint i=0; i<(scaler ? 1 : value.arrayLength); ++i ){
+			auto& v = *nv->add_values();
+			if( IS(UA_TYPES_BOOLEAN) )
+				v.set_boolean( Get<UA_Boolean>(i) );
+			else if( IS(UA_TYPES_BYTE) )
+				v.set_byte( (uint8_t)Get<UA_Byte>(i) );
+			else if( IS(UA_TYPES_BYTESTRING) ) [[unlikely]]
+				v.set_allocated_byte_string( new string(ToSV(((UA_ByteString*)value.data)[i])) );
+			else if( IS(UA_TYPES_DATETIME) )
+				v.set_allocated_date( new google::protobuf::Timestamp{Get<UADateTime>(i).ToProto()} );
+			else if( IS(UA_TYPES_DOUBLE) )
+				v.set_double_value( Get<UA_Double>(i) );
+			else if( IS(UA_TYPES_DURATION) ) [[unlikely]]
+				v.set_allocated_duration( new google::protobuf::Duration{Get<UADateTime>(i).ToDuration()} );
+			else if( IS(UA_TYPES_EXPANDEDNODEID) ) [[unlikely]]
+				v.set_allocated_expanded_node( new Proto::ExpandedNodeId{NodeId{Get<UA_ExpandedNodeId>(i)}.ToProto()} );
+			else if( IS(UA_TYPES_FLOAT) )
+				v.set_float_value( Get<UA_Float>(i) );
+			else if( IS(UA_TYPES_GUID) ) [[unlikely]]
+				v.set_allocated_guid( new string{ToBinaryString(Get<UA_Guid>(i))} );
+			else if( IS(UA_TYPES_INT16) ) [[likely]]
+				v.set_int16( Get<UA_Int16>(i) );
+			else if( IS(UA_TYPES_INT32) ) [[likely]]
+				v.set_int32( Get<UA_Int32>(i) );
+			else if( IS(UA_TYPES_INT64) )
+				v.set_int64( Get<UA_Int64>(i) );
+			else if( IS(UA_TYPES_NODEID) )
+				v.set_allocated_node( new Proto::NodeId{NodeId{Get<UA_NodeId>(i)}.ToNodeProto()} );
+			else if( IS(UA_TYPES_SBYTE) )
+				v.set_sbyte( (int8_t)Get<UA_SByte>(i) );
+			else if( IS(UA_TYPES_STATUSCODE) )
+				v.set_status_code( Get<StatusCode>(i) );
+			else if( IS(UA_TYPES_STRING) ) [[likely]]
+				v.set_allocated_string_value( new string{ToSV(Get<UA_String>(i))} );
+			else if( IS(UA_TYPES_UINT16) )
+				v.set_uint16( Get<UA_UInt16>(i) );
+			else if( IS(UA_TYPES_UINT32) ) [[likely]]
+				v.set_uint32( Get<UA_UInt32>(i) );
+			else if( IS(UA_TYPES_UINT64) )
+				v.set_uint64( Get<UA_UInt64>(i) );
+			else if( IS(UA_TYPES_XMLELEMENT) ) [[unlikely]]
+				v.set_allocated_xml_element( new string{ToSV(Get<UA_XmlElement>(i))} );
+			else{
+				WARN( "Unsupported type {}.", type->typeName );
+				v.set_status_code( UA_STATUSCODE_BADNOTIMPLEMENTED );
+			}
+		}
+		FromServer::MessageUnion m;
+		m.set_allocated_node_values( nv.release() );
+		return m;
 	}
 }

@@ -1,75 +1,26 @@
 //source $JDE_DIR/Framework/common.sh;toBashDir $JDE_DIR JDE_BASH;source=$JDE_BASH/IotWebsocket/source/types/proto
-//ln -s $JDE_BASH/Public/jde/log/types/proto/FromClient.proto .
-//cd $source;file=IotFromClient;$JDE_BASH/Public/stage/release/protoc --cpp_out . $file.proto
+//cd $source;#$JDE_BASH/Public/stage/release/protoc --cpp_out . IotFromClient.proto
+//protoc --cpp_out . IotFromClient.proto
 
 syntax = "proto3";
 package Jde.Iot.FromClient;
-import "FromClient.proto";
+//import "google/protobuf/timestamp.proto";
+import "IotCommon.proto";
 
-enum ERequest
-{
+enum ERequest{
 	Ping = 0;
-	Negate = -1;
-	Statuses=1;
-	Power=2;
-	Logs=3;
-	Applications=4;
 }
 
-message Request
-{
-	ERequest Value=1;
+message Subscribe{
+	uint32 request_id=1;
+	string opc_id=2;
+	repeated Jde.Iot.Proto.ExpandedNodeId nodes=3;
 }
 
-message RequestId
-{
-	ERequest Value=1;
-	uint64 InstanceId=2;
-}
-
-message RequestLogs
-{
-	uint64 ApplicationId=1;
-	uint64 InstanceId=2;/*unused*/
-	uint32 Value=3;
-	uint32 Start=4;
-	uint32 Limit=5;
-}
-
-message LogValues
-{
-	uint64 InstanceId=1;
-	uint32 DbValue=2;
-	uint32 ClientValue=3;
-}
-
-enum EStringRequest
-{
-	MessageString = 0;
-	File = 1;
-	Function=2;
-	Thread=3;
-	User=4;
-}
-
-message RequestString
-{
-	uint32 ApplicationId=1;
-	EStringRequest Type=2;
-	uint32 Value=3;
-}
-
-message RequestStrings
-{
-	uint32 RequestId=1;
-	repeated RequestString Values=2;
-}
-
-message Custom
-{
-	uint32 RequestId=1;
-	uint32 ApplicationId=2;
-	bytes Message=3;
+message Unsubscribe{
+	uint32 request_id=1;
+	string opc_id=2;
+	repeated Jde.Iot.Proto.ExpandedNodeId nodes=3;
 }
 
 message Transmission
@@ -81,12 +32,8 @@ message MessageUnion
 {
 	oneof Value
 	{
-		Request Request=1;
-		ApplicationServer.Web.FromClient.GraphQL query=2;
-		RequestId RequestId=3;
-		RequestLogs RequestLogs=4;
-		LogValues LogValues=5;
-		RequestStrings RequestStrings=6;
-		Custom Custom=7;
+		uint32 session_id=1;
+		Subscribe subscribe=2;
+		Unsubscribe unsubscribe=3;
 	}
 }
