@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "helpers.h"
 
 namespace Jde::Iot{
@@ -12,7 +12,7 @@ namespace Jde::Iot{
 		Value( const UA_DataValue& x )ι{ UA_DataValue_copy( &x, this ); }
 		Value( const Value& x )ι{ UA_DataValue_copy( &x, this ); }
 		Value( Value&& x )ι:UA_DataValue{x}{ UA_DataValue_init(&x); }
-		~Value(){ UA_DataValue_deleteMembers(this); }
+		~Value(){ UA_DataValue_clear(this); }
 
 		α operator=( Value&& x )ι->Value&{ UA_DataValue_copy( &x, this ); return *this; }
 		α IsScaler()Ι->bool{ return UA_Variant_isScalar( &value ); }

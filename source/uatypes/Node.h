@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "helpers.h"
 
 namespace Jde::Iot

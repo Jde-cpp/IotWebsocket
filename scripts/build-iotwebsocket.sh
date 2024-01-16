@@ -10,10 +10,11 @@ scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 if [ -z $JDE_BASH ]; then JDE_BASH=$scriptDir/jde; fi;
 if [ -z $REPO_DIR ]; then REPO_DIR=$scriptDir/libraries; fi;
 
+if [ ! -d $JDE_BASH ]; then mkdir jde; fi;
+if [ ! -d $JDE_BASH/Framework ]; then cd $JDE_BASH; git clone https://github.com/Jde-cpp/Framework.git; cd ..; fi;
 if ! source $JDE_BASH/Framework/scripts/common-error.sh; then exit 1; fi;
-source $JDE_BASH/Framework/source-build.sh;
-
-$JDE_BASH/Framework/framework-build.sh $clean $shouldFetch $tests;
+source $JDE_BASH/Framework/scripts/source-build.sh;
+$JDE_BASH/Framework/scripts/framework-build.sh $clean $shouldFetch $tests;
 
 if [ ! windows -a ! -z "$install" ]; then #https://www.open62541.org/doc/open62541-1.3.pdf
 	sudo apt-get install git build-essential gcc pkg-config cmake python
@@ -32,37 +33,51 @@ if [ $shouldFetch -eq 1 ]; then
 	if [ -f bin/Debug/open62541.lib ]; then rm bin/Debug/open62541.lib; fi;
 	if [ -f bin/Release/open62541.lib ]; then rm bin/Debug/open62541.lib; fi;
 fi;
-if [ ! -f open62541.sln ]; then
-	echo open62541.sln - `pwd`
-	moveToDir build;
-	cmake -DUA_THREADSAFE=100 -DUA_LOGLEVEL=100 ..;
-fi;
+# Use pre-made sln
+# if [ ! -f open62541.sln ]; then
+# 	echo open62541.sln - `pwd`
+# 	moveToDir build;
+# 	CMAKE_CXX_FLAGS="-std=c++20 -wd"4068" -wd"5105" -Zc:__cplusplus -std:c17 -TP";
+# 	cmake -DUA_THREADSAFE=100 -DUA_LOGLEVEL=100 ..;
+# fi;
 stage=$JDE_BASH/Public/stage;
 if [[ ! -f $stage/debug/open62541.lib || ! -f $stage/release/open62541.lib ]]; then
-	build open62541 0;
-	cd $stage/debug; mklink open62541.lib $REPO_BASH/open62541/build/bin/Debug;
-	cd $stage/release; mklink open62541.lib $REPO_BASH/open62541/build/bin/Release;
+	cd build;
+	#build open62541-plugins 0;
+	#build open62541-object 0;
+	build open62541 0 open62541.lib;
+	#cd $stage/debug; mklink open62541.lib $REPO_BASH/open62541/build/bin/Debug;
+	#cd $stage/release; mklink open62541.lib $REPO_BASH/open62541/build/bin/Release;
 fi;
-
+echo REPO_BASH=$REPO_BASH
 cd $JDE_BASH;
 fetchDefault IotWebsocket;
+echo -------------------proto-------------------------;
 findProtoc;
 cd $JDE_BASH/IotWebsocket/source/types/proto;
-echo -------------------proto-------------------------;
+mklink "duration.proto" PROTOBUF_INCLUDE;
+mklink "timestamp.proto" PROTOBUF_INCLUDE;
+mklink "FromServer.proto" $JDE_BASH/Public/jde/appServer/proto;
 file=IotFromServer;
 if [[ ! -f $file.pb.h || $shouldFetch -eq 1 ]]; then
 	protoc --cpp_out=. $file.proto;
-	sed -i -e 's/PROTOBUF_CONSTINIT CustomDefaultTypeInternal/CustomDefaultTypeInternal/g' $file.pb.cc;
-	sed -i -e 's/PROTOBUF_CONSTINIT QueryResultDefaultTypeInternal/QueryResultDefaultTypeInternal/g' $file.pb.cc;
-	sed -i -e 's/PROTOBUF_CONSTINIT StatusDefaultTypeInternal/StatusDefaultTypeInternal/g' $file.pb.cc;
-	sed -i -e 's/PROTOBUF_CONSTINIT ApplicationStringDefaultTypeInternal/ApplicationStringDefaultTypeInternal/g' $file.pb.cc;
-	sed -i -e 's/PROTOBUF_CONSTINIT ErrorDefaultTypeInternal/ErrorDefaultTypeInternal/g' $file.pb.cc;
+	# sed -i -e 's/PROTOBUF_CONSTINIT CustomDefaultTypeInternal/CustomDefaultTypeInternal/g' $file.pb.cc;
+	# sed -i -e 's/PROTOBUF_CONSTINIT QueryResultDefaultTypeInternal/QueryResultDefaultTypeInternal/g' $file.pb.cc;
+	# sed -i -e 's/PROTOBUF_CONSTINIT StatusDefaultTypeInternal/StatusDefaultTypeInternal/g' $file.pb.cc;
+	# sed -i -e 's/PROTOBUF_CONSTINIT ApplicationStringDefaultTypeInternal/ApplicationStringDefaultTypeInternal/g' $file.pb.cc;
+	# sed -i -e 's/PROTOBUF_CONSTINIT ErrorDefaultTypeInternal/ErrorDefaultTypeInternal/g' $file.pb.cc;
 fi;
 file=IotFromClient;
 if [[ ! -f $file.pb.h  || $shouldFetch -eq 1 ]]; then
 	protoc --cpp_out=. $file.proto;
-	sed -i -e 's/PROTOBUF_CONSTINIT GraphQLDefaultTypeInternal/GraphQLDefaultTypeInternal/g' $file.pb.cc;
-	sed -i -e 's/PROTOBUF_CONSTINIT CustomDefaultTypeInternal/CustomDefaultTypeInternal/g' $file.pb.cc;
+	#sed -i -e 's/PROTOBUF_CONSTINIT GraphQLDefaultTypeInternal/GraphQLDefaultTypeInternal/g' $file.pb.cc;
+	#sed -i -e 's/PROTOBUF_CONSTINIT CustomDefaultTypeInternal/CustomDefaultTypeInternal/g' $file.pb.cc;
+fi;
+file=IotCommon;
+if [[ ! -f $file.pb.h  || $shouldFetch -eq 1 ]]; then
+	protoc --cpp_out=. $file.proto;
+	#sed -i -e 's/PROTOBUF_CONSTINIT GraphQLDefaultTypeInternal/GraphQLDefaultTypeInternal/g' $file.pb.cc;
+	#sed -i -e 's/PROTOBUF_CONSTINIT CustomDefaultTypeInternal/CustomDefaultTypeInternal/g' $file.pb.cc;
 fi;
 cd ../..;
 

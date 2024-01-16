@@ -1,8 +1,8 @@
-#include "AsyncRequest.h"
+﻿#include "AsyncRequest.h"
 #include "../uatypes/UAClient.h"
 
 namespace Jde::Iot{
-	static const LogTag& _logLevel = Logging::TagLevel( "requests" );
+	static sp<LogTag> _logLevel{ Logging::TagLevel("requests") };
 	flat_map<Handle,atomic_flag*> _stopProcessingLoops; shared_mutex _stopProcessingLoopMutex;
 	flat_map<UA_Client*,flat_set<uint>> _processingLoopThreadIds; mutex _processingLoopThreadIdsMutex;
 	α ProcessingLoop( Handle handle, sp<UAClient> pClient )ι->Task
@@ -19,8 +19,8 @@ namespace Jde::Iot{
 			{
 				lg _{ _processingLoopThreadIdsMutex };
 				auto p = _processingLoopThreadIds.emplace( pClient->UAPointer(), flat_set<uint>{} ).first;
-				isLoopThread = !p->second.emplace( Threading::ThreadId ).second;
-				LOG( "ThreadId({:x}), isLoopThread={}, ", Threading::ThreadId, isLoopThread );
+				isLoopThread = !p->second.emplace( Threading::GetThreadId() ).second;
+				LOG( "ThreadId({:x}), isLoopThread={}, ", Threading::GetThreadId(), isLoopThread );
 			}
 			if( auto sc = isLoopThread ? 0 : UA_Client_run_iterate(*pClient, 0); sc /*&& (sc!=UA_STATUSCODE_BADINTERNALERROR || i!=0)*/ ){
 				ERR( "UA_Client_run_iterate returned ({:x}){}", sc, UAException::Message(sc) );
@@ -29,8 +29,8 @@ namespace Jde::Iot{
 			{
 				lg _{ _processingLoopThreadIdsMutex };
 				if( auto p = _processingLoopThreadIds.find( pClient->UAPointer() ); p!=_processingLoopThreadIds.end() ){
-					p->second.erase( Threading::ThreadId );
-					LOG( "~ThreadId({:x}) deleting={}", Threading::ThreadId, p->second.empty() );
+					p->second.erase( Threading::GetThreadId() );
+					LOG( "~ThreadId({:x}) deleting={}", Threading::GetThreadId(), p->second.empty() );
 					if( p->second.empty() )
 						_processingLoopThreadIds.erase( p );
 				}

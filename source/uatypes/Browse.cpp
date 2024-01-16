@@ -1,4 +1,4 @@
-#include "Browse.h"
+﻿#include "Browse.h"
 #include "UAClient.h"
 #include "Value.h"
 #include "../async/Attributes.h"
@@ -33,9 +33,9 @@ namespace Jde::Iot::Browse{
 		auto h = UAClient::ClearRequestH( ua, requestId ); if( !h ) return CRITICAL( "Could not find handle for client={:x}, request={}.", (uint)ua, requestId );
 
 		if( !response->responseHeader.serviceResult )
-			ResumeSP( ms<Response>(move(*response)), move(h) );
+			Resume( ms<Response>(move(*response)), move(h) );
 		else
-			ResumeEx( UAException{response->responseHeader.serviceResult, ua, requestId}, move(h) );
+			Resume( UAException{response->responseHeader.serviceResult, ua, requestId}, move(h) );
 	}
 
 	Request::Request( NodeId&& node )ι{

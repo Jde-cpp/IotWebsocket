@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "../uatypes/UAClient.h"
 
 namespace Jde::Iot{

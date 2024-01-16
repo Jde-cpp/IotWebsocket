@@ -1,4 +1,4 @@
-#include "UAClient.h"
+﻿#include "UAClient.h"
 
 #include "Node.h"
 #include "helpers.h"
@@ -22,6 +22,7 @@ namespace Jde::Iot{
 	UAClient::UAClient(OpcServer&& opcServer)ε:
 		_opcServer{ move(opcServer) },
 		_ptr{ Create() },
+		_logger{ Handle() },
 		MonitoredNodes{ this }{
 		UA_ClientConfig_setDefault( &Configuration() );
 		DBG( "({:x})UAClient( '{}', '{}' )", Handle(), Target(), Url() );
@@ -68,10 +69,9 @@ namespace Jde::Iot{
 	α subscriptionInactivityCallback( UA_Client *client, SubscriptionId subscriptionId, void *subContext ){
 		DBG( "({:x}.{:x})subscriptionInactivityCallback", (uint)client, subscriptionId );
 	}
-
 	α UAClient::Create()ι->UA_Client*{
-		_config.logger = { Logger::UA_Log_Stdout_log, (void*)_logContext, Logger::clear };
-		_config.eventLoop = UA_EventLoop_new_POSIX(&_config.logger);
+		_config.logging = &_logger;
+		_config.eventLoop = UA_EventLoop_new_POSIX( _config.logging );
 		UA_ConnectionManager *tcpCM = UA_ConnectionManager_new_POSIX_TCP( "tcp connection manager"_uv );
 		_config.eventLoop->registerEventSource(_config.eventLoop, (UA_EventSource *)tcpCM);
 		_config.timeout = 10000; /*ms*/
@@ -81,7 +81,7 @@ namespace Jde::Iot{
 		UA_ConnectionManager *udpCM = UA_ConnectionManager_new_POSIX_UDP( "udp connection manager"_uv );
 		_config.eventLoop->registerEventSource( _config.eventLoop, (UA_EventSource *)udpCM );
 		auto ua = UA_Client_newWithConfig( &_config );
-		UA_Client_getConfig(ua)->eventLoop->logger = &_config.logger;
+		UA_Client_getConfig(ua)->eventLoop->logger = _config.logging;
 
 		return ua;
 	}
@@ -92,13 +92,16 @@ namespace Jde::Iot{
 	}
 	α UAClient::Process()ι->void{
 		//{ lg _{_requestMutex}; ASSERT( _requests.size() ); }
-		lg _{ _asyncRequestMutex };
+		_asyncRequestMutex.lock();
 		if( !_asyncRequest )
 		{
 			auto p = _asyncRequest = ms<AsyncRequest>( shared_from_this() );
 			_asyncRequestMutex.unlock();
+			//_asyncRequestMutex.unlock();
 			p->Process();
 		}
+		else
+			_asyncRequestMutex.unlock();
 	}
 	// α UAClient::Connect()ε->void
 	// {
@@ -123,11 +126,11 @@ namespace Jde::Iot{
 				f( move(pClient), move(h) );
 			}
 			catch( Exception& e ){
-				ResumeEx( move(e), move(h) );
+				Resume( move(e), move(h) );
 			}
 		}
 		else
-			ResumeEx( move(e), move(h) );
+			Resume( move(e), move(h) );
 	}
 	α UAClient::SendBrowseRequest( Browse::Request&& request, HCoroutine&& h )ι->void{
 		try{
@@ -166,11 +169,11 @@ namespace Jde::Iot{
 	}
 	α UAClient::SendWriteRequest( flat_map<NodeId,Value>&& values, HCoroutine&& h )ι->void{
 		flat_map<UA_UInt32, NodeId> ids;
-		Jde::Handle requestId{};
+		Iot::RequestId requestId{};
 		try{
 			for( auto&& [nodeId, value] : values ){
 				lg _{ _requestIdMutex };
-				UAε( UA_Client_writeValueAttribute_async(_ptr, nodeId.nodeId, &value.value, Write::OnResonse, (void*)requestId, &RequestIndex) );
+				UAε( UA_Client_writeValueAttribute_async(_ptr, nodeId.nodeId, &value.value, Write::OnResonse, (void*)(uint)requestId, &RequestIndex) );
 				if( !requestId )
 					requestId = RequestIndex;
 				ids.emplace( RequestIndex, nodeId );
@@ -216,7 +219,7 @@ namespace Jde::Iot{
 			void* contexts = nullptr;
 			ASSERT(CreatedSubscriptionResponse);
 			if( !CreatedSubscriptionResponse )
-				return ResumeEx( Exception{"CreatedSubscriptionResponse==null"}, move(h) );
+				return Resume( Exception{"CreatedSubscriptionResponse==null"}, move(h) );
 			request.subscriptionId = CreatedSubscriptionResponse->subscriptionId;
 			lg _{ _requestIdMutex };
 			UAε( UA_Client_MonitoredItems_createDataChanges_async(UAPointer(), request, &contexts, &notifications, &deleteCallbacks, CreateDataChangesCallback, (void*)requestHandle, &RequestIndex) );
@@ -243,7 +246,7 @@ namespace Jde::Iot{
 				_requests.emplace( RequestIndex, mu<UARequest>(nullptr) );
 			}
 			Process();
-			UA_DeleteMonitoredItemsRequest_deleteMembers( &request );
+			UA_DeleteMonitoredItemsRequest_clear( &request );
 		}
 		catch( const Exception&)
 		{}
@@ -252,11 +255,11 @@ namespace Jde::Iot{
 	α UAClient::RequestDataTypeAttributes( const flat_set<NodeId>&& x, HCoroutine&& h )ι->void
 	{
 		flat_map<UA_UInt32, NodeId> ids;
-		Jde::Handle requestId{};
+		Iot::RequestId requestId{};
 		try{
 			for( var& node : x ){
 				lg _{ _requestIdMutex };
-				UAε( UA_Client_readDataTypeAttribute_async(_ptr, node.nodeId, Attributes::OnResonse, (void*)requestId, &RequestIndex) );
+				UAε( UA_Client_readDataTypeAttribute_async(_ptr, node.nodeId, Attributes::OnResonse, (void*)(uint)requestId, &RequestIndex) );
 				if( !requestId )
 					requestId = RequestIndex;
 				ids.emplace( RequestIndex, node );

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <boost/algorithm/hex.hpp>
 #include <google/protobuf/duration.pb.h>
 #include <google/protobuf/timestamp.pb.h>
@@ -11,7 +11,7 @@ namespace Jde::Iot{
 	Ξ ToUV( sv s )ι->UA_String{ return { s.size(), (UA_Byte*)s.data() }; }
 	//Ξ mum( sv s )ι->UA_String{ return { s.size(), (UA_Byte*)s.data() }; }
 	Ŧ Zero( T& x )ι->void{ ::memset( &x, 0, sizeof(T) ); }
-	constexpr α operator "" _uv( const char* x, unsigned long len )ι->UA_String{ return UA_String{ len, (UA_Byte*)x }; }
+	constexpr α operator "" _uv( const char* x, uint len )ι->UA_String{ return UA_String{ len, (UA_Byte*)x }; }
 	Ξ ToJson( UA_UInt64 v )ι->json{ return json{ {"high", v>>32}, {"low", v&0xFFFFFFFF}, {"unsigned",true} }; };
 	Ξ ToJson( UA_Int64 v )ι->json{ return json{ {"high", v>>32}, {"low", v&0xFFFFFFFF}, {"unsigned",false} }; };
 	Ξ ToJson( UA_Guid v )ι->json{ boost::uuids::uuid id; memcpy(&id.data, &v, id.size() ); return json{ boost::uuids::to_string(id) }; }
@@ -46,15 +46,11 @@ namespace Jde::Iot{
 	{
 		UADateTime( const UA_DateTime& dt )ι:_dateTime{dt}{}
 		α ToJson()Ι->json{
-			var dts = UA_DateTime_toStruct( _dateTime );
-			var seconds = Clock::to_time_t( Chrono::ToTimePoint(dts.year, dts.month, dts.day, dts.hour, dts.min, dts.sec) );
-			var nanos = dts.milliSec*TimeSpan::MicrosPerMilli*TimeSpan::NanosPerMicro+dts.microSec*TimeSpan::NanosPerMicro+dts.nanoSec;
+			var [seconds,nanos] = ToParts();
 			return json{ {"seconds", seconds}, {"nanos", nanos} };
 		}
 		α ToProto()Ι->google::protobuf::Timestamp{
-			var dts = UA_DateTime_toStruct( _dateTime );
-			var seconds = Clock::to_time_t( Chrono::ToTimePoint(dts.year, dts.month, dts.day, dts.hour, dts.min, dts.sec) );
-			var nanos = dts.milliSec*TimeSpan::MicrosPerMilli*TimeSpan::NanosPerMicro+dts.microSec*TimeSpan::NanosPerMicro+dts.nanoSec;
+			var [seconds,nanos] = ToParts();
 			google::protobuf::Timestamp t;
 			t.set_seconds( seconds );
 			t.set_nanos( nanos );
@@ -67,7 +63,13 @@ namespace Jde::Iot{
 		}
 
 	private:
-			UA_DateTime _dateTime;
+		α ToParts()Ι->tuple<_int,int>{ 
+			var dts = UA_DateTime_toStruct( _dateTime );
+			_int seconds = Clock::to_time_t( Chrono::ToTimePoint((int16)dts.year, (int8)dts.month, (int8)dts.day, (int8)dts.hour, (int8)dts.min, (int8)dts.sec) );
+			int nanos = dts.milliSec*TimeSpan::MicrosPerMilli*TimeSpan::NanosPerMicro+dts.microSec*TimeSpan::NanosPerMicro+dts.nanoSec;
+			return make_tuple( seconds, nanos );
+		}
+		UA_DateTime _dateTime;
 	};
 }
 #undef var

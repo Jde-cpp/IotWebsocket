@@ -1,9 +1,9 @@
-#include "Attributes.h"
+﻿#include "Attributes.h"
 #define var const auto
 
 namespace Jde::Iot::Attributes{
 	α OnResonse( UA_Client* ua, void* userdata, RequestId requestId, StatusCode status, UA_NodeId* dataType )ι->void{
-		var handle = userdata ? (uint)userdata : requestId;
+		var handle = userdata ? (RequestId)(uint)userdata : requestId;
 		string logPrefix = format( "({:x}.{}.{})", (uint)ua, handle, requestId );
 		auto ppClient = Try<sp<UAClient>>( [ua](){return UAClient::Find(ua);} ); if( !ppClient ) return;
 		up<flat_map<NodeId, NodeId>> results;

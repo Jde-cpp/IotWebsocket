@@ -1,10 +1,10 @@
-#pragma once
+﻿#pragma once
 
 namespace Jde::Iot{
 	struct CreateMonitoredItemsRequest : UA_CreateMonitoredItemsRequest{
 		CreateMonitoredItemsRequest( flat_set<NodeId>&& nodes )ι;
 		CreateMonitoredItemsRequest( CreateMonitoredItemsRequest&& x )ι;
-		~CreateMonitoredItemsRequest(){ UA_CreateMonitoredItemsRequest_deleteMembers( this ); }
+		~CreateMonitoredItemsRequest(){ UA_CreateMonitoredItemsRequest_clear( this ); }
 		α operator=( CreateMonitoredItemsRequest&& )->UA_CreateMonitoredItemsRequest;
 	};
 

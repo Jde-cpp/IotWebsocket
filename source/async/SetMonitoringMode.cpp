@@ -1,4 +1,4 @@
-#include "SetMonitoringMode.h"
+﻿#include "SetMonitoringMode.h"
 #define var const auto
 
 namespace Jde::Iot{
@@ -31,10 +31,10 @@ namespace Jde::Iot{
 	}
 
 	α SetMonitoringModeAwait::await_resume()ι->AwaitResult{
-		ASSERT( _client->MonitoringModeResponse || (_pPromise && _pPromise->get_return_object().HasError()) );
+		ASSERT( _client->MonitoringModeResponse || (_pPromise && _pPromise->HasError()) );
 		AwaitResult y;
 		if( _pPromise )
-			y = move( _pPromise->get_return_object().Result() );
+			y = _pPromise->MoveResult();
 		else
 			y.Set( _client->MonitoringModeResponse );
 
@@ -52,12 +52,12 @@ namespace Jde::Iot{
 	}
 
 	α SetMonitoringModeAwait::Resume( sp<UAClient> pClient )ι->void{
-		Resume( pClient, [pClient](HCoroutine&& h){ResumeSP(pClient->MonitoringModeResponse, move(h));} );
+		Resume( pClient, [pClient](HCoroutine&& h){Jde::Resume((sp<UA_SetMonitoringModeResponse>)pClient->MonitoringModeResponse, move(h));} );
 	}
 	α SetMonitoringModeAwait::Resume( StatusCode sc, sp<UAClient>&& pClient )ι->void{
 		Resume( move(pClient), [sc](HCoroutine&& h)
 		{
-			ResumeEx(UAException{sc}, move(h));
+			Jde::Resume( UAException{sc}, move(h) );
 		} );
 	}
 }

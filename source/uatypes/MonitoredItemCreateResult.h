@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 namespace Jde::Iot{
 
@@ -8,7 +8,7 @@ namespace Jde::Iot{
 		MonitoredItemCreateResult( const UA_MonitoredItemCreateResult& x )ι{UA_MonitoredItemCreateResult_copy( &x, this );}
 		MonitoredItemCreateResult( const MonitoredItemCreateResult& x )ι:MonitoredItemCreateResult{(UA_MonitoredItemCreateResult&)x}{}
 		MonitoredItemCreateResult( MonitoredItemCreateResult&& x )ι:MonitoredItemCreateResult{x}{ Zero(x); }
-		~MonitoredItemCreateResult(){ UA_MonitoredItemCreateResult_deleteMembers(this);}
+		~MonitoredItemCreateResult(){ UA_MonitoredItemCreateResult_clear(this);}
 		α operator=( MonitoredItemCreateResult&& x )ι->MonitoredItemCreateResult&{ UA_MonitoredItemCreateResult_copy( &x, this ); return *this; }
 		α operator=( const MonitoredItemCreateResult& x )ι->MonitoredItemCreateResult&{ UA_MonitoredItemCreateResult_copy( &x, this ); return *this; }
 	};

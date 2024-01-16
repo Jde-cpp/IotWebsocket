@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "../uatypes/MonitoredItemCreateResult.h"
 
 namespace Jde::Iot{

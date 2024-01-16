@@ -24,6 +24,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
+    <EnableASAN>true</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -57,25 +58,28 @@
     <IntDir>.obj\$(Configuration)\</IntDir>
     <TargetName>Jde.$(ProjectName)</TargetName>
     <LibraryPath>$(JDE_DIR)\Public\stage\$(Configuration);$(LibraryPath)</LibraryPath>
+    <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;WIN32_LEAN_AND_MEAN;PROTOBUF_USE_DLLS;PROTOBUF_USE_EXCEPTIONS=0;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;_SILENCE_ALL_MS_EXT_DEPRECATION_WARNINGS;_WIN32_WINNT=0x0601;WIN32_LEAN_AND_MEAN;PROTOBUF_USE_DLLS;PROTOBUF_USE_EXCEPTIONS=0;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <DisableSpecificWarnings>4251;4275;5105</DisableSpecificWarnings>
-      <AdditionalOptions>/Zc:preprocessor %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(REPO_DIR)\json\include;$(REPO_DIR)\protobuf\src;$(REPO_DIR)\spdlog\include;$(BOOST_DIR);$(REPO_DIR)/vcpkg/installed/x64-windows/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4068;4251;4275;5104;5105</DisableSpecificWarnings>
+      <AdditionalIncludeDirectories>$(REPO_DIR)\json\include;$(REPO_DIR)\protobuf\src;$(REPO_DIR)\spdlog\include;$(BOOST_DIR);$(REPO_DIR)/vcpkg/installed/x64-windows/include;../../Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <ForcedIncludeFiles>stdafx.h</ForcedIncludeFiles>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>open62541.lib;ws2_32.lib;Iphlpapi.lib;libprotobufd.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OutDir);../../Public/stage/$(Configuration)</AdditionalLibraryDirectories>
+      <ShowProgress>NotSet</ShowProgress>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -84,14 +88,15 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;WIN32_LEAN_AND_MEAN;PROTOBUF_USE_DLLS;PROTOBUF_USE_EXCEPTIONS=0;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;_SILENCE_ALL_MS_EXT_DEPRECATION_WARNINGS;_WIN32_WINNT=0x0601;WIN32_LEAN_AND_MEAN;PROTOBUF_USE_DLLS;PROTOBUF_USE_EXCEPTIONS=0;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <DisableSpecificWarnings>4251;4275</DisableSpecificWarnings>
-      <AdditionalOptions>/Zc:preprocessor %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(REPO_DIR)\json\include;$(REPO_DIR)\protobuf\src;$(REPO_DIR)\spdlog\include;$(BOOST_DIR);$(REPO_DIR)/vcpkg/installed/x64-windows/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4068;4251;4275;5104;5105</DisableSpecificWarnings>
+      <AdditionalIncludeDirectories>$(REPO_DIR)\json\include;$(REPO_DIR)\protobuf\src;$(REPO_DIR)\spdlog\include;$(BOOST_DIR);$(REPO_DIR)/vcpkg/installed/x64-windows/include;../../Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <ForcedIncludeFiles>stdafx.h</ForcedIncludeFiles>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -99,15 +104,33 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>open62541.lib;ws2_32.lib;Iphlpapi.lib;libprotobuf.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OutDir);../../Public/stage/$(Configuration)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="async\AsyncRequest.cpp" />
+    <ClCompile Include="async\Attributes.cpp" />
+    <ClCompile Include="async\ConnectAwait.cpp" />
+    <ClCompile Include="async\CreateSubscriptions.cpp" />
+    <ClCompile Include="async\DataChanges.cpp" />
+    <ClCompile Include="async\SetMonitoringMode.cpp" />
+    <ClCompile Include="async\Write.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Rest.cpp" />
+    <ClCompile Include="Socket.cpp" />
+    <ClCompile Include="types\MonitoringNodes.cpp" />
+    <ClCompile Include="types\OpcServer.cpp" />
+    <ClCompile Include="types\proto\IotCommon.pb.cc" />
     <ClCompile Include="types\proto\IotFromClient.pb.cc" />
-    <ClCompile Include="types\proto\IotFromServer.pb.cc" />
-    <ClCompile Include="WebServer.cpp" />
-    <ClCompile Include="WebSession.cpp" />
+    <ClCompile Include="types\proto\IotFromServer.pb.cc">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4068;4244;4251;4275;5104;5105</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="uatypes\Browse.cpp" />
+    <ClCompile Include="uatypes\Logger.cpp" />
+    <ClCompile Include="uatypes\Node.cpp" />
+    <ClCompile Include="uatypes\UAClient.cpp" />
+    <ClCompile Include="uatypes\Value.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pc.h">
@@ -122,8 +145,25 @@
       <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ForcedIncludeFiles>
     </ClCompile>
-    <ClInclude Include="FromServer.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Rest.h" />
+    <ClInclude Include="Socket.h" />
+    <ClInclude Include="types\FromServer.h" />
+    <ClInclude Include="types\MonitoringNodes.h" />
+    <ClInclude Include="types\OpcServer.h" />
+    <ClInclude Include="uatypes\Browse.h" />
+    <ClInclude Include="uatypes\CreateMonitoredItemRequest.h" />
+    <ClInclude Include="uatypes\CreateMonitoredItemsRequest.h" />
+    <ClInclude Include="uatypes\CreateSubscriptionRequest.h" />
+    <ClInclude Include="uatypes\helpers.h" />
+    <ClInclude Include="uatypes\Logger.h" />
+    <ClInclude Include="uatypes\MonitoredItemCreateResult.h" />
+    <ClInclude Include="uatypes\Node.h" />
+    <ClInclude Include="uatypes\ReferenceDescription.h" />
+    <ClInclude Include="uatypes\UAClient.h" />
+    <ClInclude Include="uatypes\UAException.h" />
+    <ClInclude Include="uatypes\Value.h" />
+    <ClInclude Include="uatypes\Variant.h" />
     <ClInclude Include="WebServer.h" />
   </ItemGroup>
   <ItemGroup>

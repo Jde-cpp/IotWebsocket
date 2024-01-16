@@ -1,9 +1,9 @@
-#include "MonitoringNodes.h"
+﻿#include "MonitoringNodes.h"
 #include "../uatypes/UAClient.h"
 #define var const auto
 
 namespace Jde::Iot{
-	static const LogTag& _logLevel = Logging::TagLevel( "monitoring" );
+	static sp<LogTag> _logLevel{ Logging::TagLevel( "monitoring" ) };
 	//until orphaned UAClient's go away.
 	α UAMonitoringNodes::Shutdown()ι->void{
 		mutex lock;

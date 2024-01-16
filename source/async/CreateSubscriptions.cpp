@@ -1,4 +1,4 @@
-#include "CreateSubscriptions.h"
+﻿#include "CreateSubscriptions.h"
 #define var const auto
 
 namespace Jde::Iot{
@@ -32,9 +32,9 @@ namespace Jde::Iot{
 	}
 
 	α CreateSubscriptionAwait::await_resume()ι->AwaitResult{
-		ASSERT( _client->CreatedSubscriptionResponse || (_pPromise && _pPromise->get_return_object().HasError()) );
+		ASSERT( _client->CreatedSubscriptionResponse || (_pPromise && _pPromise->HasError()) );
 		return _pPromise
-			? _pPromise->get_return_object().Result()
+			? _pPromise->MoveResult()
 			: AwaitResult{ _client->CreatedSubscriptionResponse };
 	}
 	α CreateSubscriptionAwait::Resume( sp<UAClient> pClient, function<void(HCoroutine&&)> resume )ι->void{
@@ -48,11 +48,11 @@ namespace Jde::Iot{
 	α CreateSubscriptionAwait::Resume( sp<UAClient> pClient )ι->void{
 		Resume( pClient, [pClient](HCoroutine&& h)
 		{
-			Result(h).SetSP( sp<UA_CreateSubscriptionResponse>{pClient->CreatedSubscriptionResponse} );
+			h.promise().SetResult( sp<UA_CreateSubscriptionResponse>{pClient->CreatedSubscriptionResponse} );
 			Coroutine::CoroutinePool::Resume( move(h) ); //Cannot run EventLoop from the run method itself
 		});
 	}
 	α CreateSubscriptionAwait::Resume( StatusCode sc, sp<UAClient>&& pClient )ι->void{
-		Resume( move(pClient), [sc](HCoroutine&& h){ResumeEx(UAException{sc}, move(h));} );
+		Resume( move(pClient), [sc](HCoroutine&& h){Jde::Resume(UAException{sc}, move(h));} );
 	}
 }

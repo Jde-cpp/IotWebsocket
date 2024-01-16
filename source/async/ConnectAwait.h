@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 namespace Jde::Iot
 {
@@ -8,7 +8,7 @@ namespace Jde::Iot
 		ConnectAwait( string&& id, SRCE )ι:IAwait{sl},_id{move(id)}{}
 		α await_ready()ι->bool override;
 		α await_suspend( HCoroutine h )ι->void override;
-		α await_resume()ι->AwaitResult override{ return _pPromise ? _pPromise->get_return_object().Result() : _result; }
+		α await_resume()ι->AwaitResult override{ return _pPromise ? _pPromise->MoveResult() : _result; }
 		Ω Resume( sp<UAClient>&& pClient, string&& target )ι->void;
 		Ω Resume( sp<UAClient>&& pClient, string&& target, const UAException&& e )ι->void;
 	private:

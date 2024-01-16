@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Node.h"
 //#include "helpers.h"
 #include "Value.h"
@@ -15,7 +15,7 @@ namespace Browse{
 	{
 		FoldersAwait( NodeId&& node, sp<UAClient>& c, SRCE )ι:IAwait{sl}, _node{move(node)},_client{c}{}
 		α await_suspend( HCoroutine h )ι->void override;
-		α await_resume()ι->AwaitResult override{ return _pPromise->get_return_object().Result(); }
+		α await_resume()ι->AwaitResult override{ return _pPromise->MoveResult(); }
 	private:
 		NodeId _node;
 		sp<UAClient> _client;

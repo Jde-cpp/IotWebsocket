@@ -1,4 +1,4 @@
-#include "Value.h"
+﻿#include "Value.h"
 #include "../uatypes/UAClient.h"
 #include "Variant.h"
 #define var const auto
@@ -14,7 +14,7 @@ namespace Jde::Iot{
 		//α Execute( sp<UAClient> ua, NodeId node, Web::Rest::Request req, bool snapShot )ι->Task;
 
 		α OnResponse( UA_Client* ua, void* userdata, RequestId requestId, StatusCode sc, UA_DataValue* val )ι->void{
-			var handle = userdata ? (uint)userdata : requestId;
+			var handle = userdata ? (RequestId)(uint)userdata : requestId;
 			string logPrefix = format( "[{:x}.{}.{}]", (uint)ua, handle, requestId );
 			//DBG( "[{}]Value::OnResponse()", logPrefix );
 			auto pClient = UAClient::TryFind(ua); if( !pClient ) return;

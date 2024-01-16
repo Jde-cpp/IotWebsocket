@@ -11,16 +11,18 @@
 #include <open62541/client_config_default.h>
 #include <open62541/client_highlevel.h>
 #include <open62541/client_highlevel_async.h>
+#include <open62541/client_subscriptions.h>
 #include <open62541/plugin/log_stdout.h>
 #include <jde/TypeDefs.h>
+#include <jde/Exports.h>
 #include <jde/Log.h>
 #include <jde/App.h>
 #include <jde/Str.h>
 #include "../../Framework/source/DateTime.h"
 #include "../../Public/src/web/Exports.h"
 #include "../../Public/src/web/proto/FromServer.pb.h"
-#include <jde/log/types/proto/FromClient.pb.h>
-#include <jde/log/types/proto/FromServer.pb.h>
+#include "types/proto/IotFromServer.pb.h"
+#include "types/proto/IotFromClient.pb.h"
 #include "../../Framework/source/DateTime.h"
 #include "../../Framework/source/coroutine/Alarm.h"
 #include "../../Framework/source/db/GraphQL.h"
@@ -28,6 +30,10 @@
 #include "../../Framework/source/io/AsioContextThread.h"
 #include "../../Framework/source/io/Socket.h"
 #include "../../Public/src/web/RestServer.h"
+DISABLE_WARNINGS
 #include "types/proto/IotFromServer.pb.h"
 #include "types/proto/IotFromClient.pb.h"
+ENABLE_WARNINGS
 #include "types/FromServer.h"
+#include "uatypes/UAException.h"
+

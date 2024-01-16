@@ -1,10 +1,10 @@
-#include "Write.h"
+﻿#include "Write.h"
 #define var const auto
 
 namespace Jde::Iot::Write
 {
 	α OnResonse( UA_Client *ua, void *userdata, RequestId requestId, UA_WriteResponse *response )ι->void{
-		var handle = userdata ? (uint)userdata : requestId;
+		var handle = userdata ? (RequestId)(uint)userdata : requestId;
 		string logPrefix = format( "[{:x}.{}.{}]", (uint)ua, handle, requestId );
 		DBG( "[{}]Write::OnResponse()", logPrefix );
 		auto ppClient = Try<sp<UAClient>>( [ua](){return UAClient::Find(ua);} ); if( !ppClient ) return;

@@ -19,24 +19,81 @@
     <Filter Include="Source Files\types\proto">
       <UniqueIdentifier>{85962304-e6cd-4b92-9091-a01a3227ebde}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\types">
+      <UniqueIdentifier>{1af1d260-7225-4e5b-9e04-d244684a44b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\uaTypes">
+      <UniqueIdentifier>{fd111a23-7e18-4c91-a03b-91a3d1464f6d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\uaTypes">
+      <UniqueIdentifier>{0b028924-c650-4825-bb4d-b7755ce2aedf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\async">
+      <UniqueIdentifier>{148430bc-7d58-429f-a45b-48756bf6cfbb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WebServer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="pc.h">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="WebSession.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="types\proto\IotFromClient.pb.cc">
       <Filter>Source Files\types\proto</Filter>
     </ClCompile>
     <ClCompile Include="types\proto\IotFromServer.pb.cc">
+      <Filter>Source Files\types\proto</Filter>
+    </ClCompile>
+    <ClCompile Include="Rest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Socket.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="types\MonitoringNodes.cpp">
+      <Filter>Source Files\types</Filter>
+    </ClCompile>
+    <ClCompile Include="types\OpcServer.cpp">
+      <Filter>Source Files\types</Filter>
+    </ClCompile>
+    <ClCompile Include="uatypes\Browse.cpp">
+      <Filter>Source Files\uaTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="uatypes\Logger.cpp">
+      <Filter>Source Files\uaTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="uatypes\Node.cpp">
+      <Filter>Source Files\uaTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="uatypes\UAClient.cpp">
+      <Filter>Source Files\uaTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="uatypes\Value.cpp">
+      <Filter>Source Files\uaTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="async\AsyncRequest.cpp">
+      <Filter>Source Files\async</Filter>
+    </ClCompile>
+    <ClCompile Include="async\Attributes.cpp">
+      <Filter>Source Files\async</Filter>
+    </ClCompile>
+    <ClCompile Include="async\ConnectAwait.cpp">
+      <Filter>Source Files\async</Filter>
+    </ClCompile>
+    <ClCompile Include="async\CreateSubscriptions.cpp">
+      <Filter>Source Files\async</Filter>
+    </ClCompile>
+    <ClCompile Include="async\DataChanges.cpp">
+      <Filter>Source Files\async</Filter>
+    </ClCompile>
+    <ClCompile Include="async\SetMonitoringMode.cpp">
+      <Filter>Source Files\async</Filter>
+    </ClCompile>
+    <ClCompile Include="async\Write.cpp">
+      <Filter>Source Files\async</Filter>
+    </ClCompile>
+    <ClCompile Include="types\proto\IotCommon.pb.cc">
       <Filter>Source Files\types\proto</Filter>
     </ClCompile>
   </ItemGroup>
@@ -47,8 +104,59 @@
     <ClInclude Include="WebServer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FromServer.h">
-      <Filter>Source Files\types</Filter>
+    <ClInclude Include="types\FromServer.h">
+      <Filter>Header Files\types</Filter>
+    </ClInclude>
+    <ClInclude Include="types\MonitoringNodes.h">
+      <Filter>Header Files\types</Filter>
+    </ClInclude>
+    <ClInclude Include="types\OpcServer.h">
+      <Filter>Header Files\types</Filter>
+    </ClInclude>
+    <ClInclude Include="uatypes\Browse.h">
+      <Filter>Header Files\uaTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="uatypes\CreateMonitoredItemRequest.h">
+      <Filter>Header Files\uaTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="uatypes\CreateMonitoredItemsRequest.h">
+      <Filter>Header Files\uaTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="uatypes\CreateSubscriptionRequest.h">
+      <Filter>Header Files\uaTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="uatypes\helpers.h">
+      <Filter>Header Files\uaTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="uatypes\Logger.h">
+      <Filter>Header Files\uaTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="uatypes\MonitoredItemCreateResult.h">
+      <Filter>Header Files\uaTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="uatypes\Node.h">
+      <Filter>Header Files\uaTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="uatypes\ReferenceDescription.h">
+      <Filter>Header Files\uaTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="uatypes\UAClient.h">
+      <Filter>Header Files\uaTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="uatypes\UAException.h">
+      <Filter>Header Files\uaTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="uatypes\Value.h">
+      <Filter>Header Files\uaTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="uatypes\Variant.h">
+      <Filter>Header Files\uaTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="Rest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Socket.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

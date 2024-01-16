@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "../uatypes/helpers.h"
 #include "../uatypes/UAClient.h"
 #include "../uatypes/Value.h"

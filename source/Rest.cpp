@@ -1,4 +1,4 @@
-#include "Rest.h"
+﻿#include "Rest.h"
 #include <ranges>
 #include "../../Framework/source/db/GraphQL.h"
 #include "../../Framework/source/math/MathUtilities.h"
@@ -99,7 +99,7 @@ namespace Jde::Iot
 			else if( req.Method() == http::verb::post )
 				Session::Send( http::status::not_found, move(target), move(req) );
 			else
-	      Session::Send( http::status::forbidden, format("Only get/put verb is supported {}", req.Method()), move(req) );
+	      Session::Send( http::status::forbidden, format("Only get/put verb is supported {}", (int)req.Method()), move(req) );
 		}
 		catch( const json::basic_json::type_error& e ){
 			Session::Send( http::status::bad_request, format("Invalid json: {}", e.what()), move(req) );
@@ -129,7 +129,7 @@ namespace Jde::Iot
 				Session::Send( json{{"errorCodes", j}}, move(req) );
 			}
 		}
-		if( req.Session )
+		if( req.Session && params.contains("opc") )
 			CoHandleRequest( move(target), move(params), move(req) );
 	}
 }

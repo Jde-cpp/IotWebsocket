@@ -1,4 +1,4 @@
-#include "DataChanges.h"
+﻿#include "DataChanges.h"
 #include "../Socket.h"
 #define var const auto
 
@@ -8,7 +8,7 @@ namespace Jde::Iot{
 		auto pResponse = static_cast<UA_CreateMonitoredItemsResponse*>( response );
 		auto pRequest = pClient->ClearRequest<UARequest>( requestId );  if( !pRequest ) return CRITICAL( "Could not find handle for client={:x}, request={}.", (uint)ua, requestId );
 		if( var sc = pResponse->responseHeader.serviceResult; sc )
-			ResumeEx( UAException{sc}, move(pRequest->CoHandle) );
+			Resume( UAException{sc}, move(pRequest->CoHandle) );
 		else{
 			pClient->MonitoredNodes.OnCreateResponse( pResponse, (Handle)userdata );
 			pRequest->CoHandle.resume();
@@ -45,9 +45,9 @@ namespace Jde::Iot{
 	}
 	α DatachangeAwait::await_resume()ι->AwaitResult{
 		StatusCode sc{};
-		if( _pPromise && _pPromise->get_return_object().HasError() ){
-			up<IException> e = _pPromise->get_return_object().Result().Error();
-			sc = e->Code ? e->Code : UA_STATUSCODE_BADINTERNALERROR;
+		if( _pPromise && _pPromise->HasError() ){
+			up<IException> e = _pPromise->MoveResult().Error();
+			sc = e->Code ? (StatusCode)e->Code : UA_STATUSCODE_BADINTERNALERROR;
 		}
 		return AwaitResult{ mu<FromServer::SubscriptionAck>(_client->MonitoredNodes.GetResult(_requestId, sc)) };
 	}

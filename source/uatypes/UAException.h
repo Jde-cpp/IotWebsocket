@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #define UAε(x) var sc = x; if( sc ) throw UAException{ sc, ELogLevel::Debug };
 
@@ -17,6 +17,6 @@ namespace Jde::Iot{
 		α Ptr()ι->std::exception_ptr override{ return make_exception_ptr(move(*this)); }
 		[[noreturn]] α Throw()->void override{ throw move(*this); }
 
-		α ClientMessage()Ι->string{ return format( "({:x}){}", Code, Message(Code) ); }
+		α ClientMessage()Ι->string{ return format( "({:x}){}", Code, Message((StatusCode)Code) ); }
 	};
 }

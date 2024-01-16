@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Browse.h"
 #include "Logger.h"
 #include "CreateMonitoredItemsRequest.h"
@@ -78,7 +78,6 @@ namespace Jde::Iot{
 		α Create()ι->UA_Client*;
 		α OnSessionActivated( sp<UAClient> pClient, string id )ι->void;
 		UA_ClientConfig _config{};
-		void* _logContext{};
 		OpcServer _opcServer;
 
 		mutex _requestIdMutex;
@@ -95,6 +94,7 @@ namespace Jde::Iot{
 		friend α Read::OnResponse( UA_Client *client, void *userdata, RequestId requestId, StatusCode status, UA_DataValue *var )ι->void;
 		friend α Write::OnResonse( UA_Client *ua, void *userdata, RequestId requestId, UA_WriteResponse *response )ι->void;
 		friend α Attributes::OnResonse( UA_Client* ua, void* userdata, RequestId requestId, StatusCode status, UA_NodeId* dataType )ι->void;
+		Logger _logger;
 	public:
 		Ω Unsubscribe( const sp<IDataChange>&& dataChange )ι->void;
 		UAMonitoringNodes MonitoredNodes;//destroy first
@@ -106,7 +106,7 @@ namespace Jde::Iot{
 		 	auto p = Find( ua );
 			request = p->ClearRequest<T>( requestId );
 		}
-		catch( Exception& e ){}
+		catch( const Exception& ){}
 		return request;
 	}
 

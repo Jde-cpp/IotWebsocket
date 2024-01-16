@@ -1,4 +1,4 @@
-#include "ConnectAwait.h"
+﻿#include "ConnectAwait.h"
 #include "../uatypes/UAClient.h"
 
 #define var const auto
@@ -16,7 +16,7 @@ namespace Jde::Iot
 		IAwait::await_suspend( h );
 		lg _{ _requestMutex };
 		if( auto pClient = UAClient::Find(_id); pClient )
-			ResumeSP( pClient, move(h) );
+			Jde::Resume( move(pClient), move(h) );
 		else{
 			auto p = _requests.find( _id );
 			if( p==_requests.end() ){
@@ -41,7 +41,7 @@ namespace Jde::Iot
 			lg _{ _requestMutex };
 			var ua = dynamic_cast<const UAException*>( &e );
 			for( auto& r : _requests[id] ){
-				ResumeEx( ua ? UAException{*ua} : Exception{e.what(), e.Code, e.Level(), e.Stack().front()}, move(r) );
+				Jde::Resume( ua ? UAException{*ua} : Exception{e.what(), e.Code, e.Level(), e.Stack().front()}, move(r) );
 			}
 			_requests.erase( id );
 		}
@@ -56,9 +56,9 @@ namespace Jde::Iot
 	}
 
 	α ConnectAwait::Resume( sp<UAClient>&& pClient, string&& target )ι->void{
-		Resume( pClient, move(target), [p=pClient](HCoroutine&& h){ ResumeSP(p, move(h)); } );
+		Resume( pClient, move(target), [p=pClient](HCoroutine&& h){ Jde::Resume((sp<UAClient>)move(p), move(h)); } );
 	}
 	α ConnectAwait::Resume( sp<UAClient>&& pClient, string&& target, const UAException&& e )ι->void{
-		Resume( move(pClient), move(target), [sc=e.Code](HCoroutine&& h){ ResumeEx(UAException{sc}, move(h)); } );
+		Resume( move(pClient), move(target), [sc=e.Code](HCoroutine&& h){ Jde::Resume(UAException{(StatusCode)sc}, move(h)); } );
 	}
 }

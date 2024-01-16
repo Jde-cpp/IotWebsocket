@@ -44,3 +44,7 @@ source/.vscode/launch.json
 source/.vscode/settings.json
 source/.vscode/tasks.json
 source/.vscode/todo
+source/Microsoft.*
+source/types/proto/timestamp.proto
+source/types/proto/FromServer.proto
+source/types/proto/duration.proto

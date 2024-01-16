@@ -1,7 +1,7 @@
 {
 	"logging":
 	{
-		"tags": [ "_alarm", "_ql", "_io", "_locks", "settings", "_threads", "_sql", "monitoring" ],
+		"tags": [ "_alarm", "_ql", "_io", "_locks", "settings", "_threads", "_sql", "monitoring", "UANet", "UASecure", "UASession", "UAServer", "UAClient", "UAUser", "UASecurity", "UAEvent" ],
 		"console":{},
 		"file":{ "path": "$(ProgramData)\\Jde-cpp\\iotWebSocket\\logs", "md": true },
 		"server": { "port": 4321, "level": "Debug", "diagnosticsLevel": "Debug", "tags": ["_threads"] }

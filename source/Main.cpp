@@ -24,7 +24,7 @@ int main( int argc, char **argv ){
 	}
 	catch( const IException& e ){
 		std::cout << "Exiting on error:  (" <<e.Code << ")" << e.what() << std::endl;
-		exitCode = e.Code ? e.Code : EXIT_FAILURE;
+		exitCode = e.Code ? (int)e.Code : EXIT_FAILURE;
 	}
 	if( !exitCode){
 		IApplication::AddShutdownFunction( [](){Iot::UAClient::Shutdown();} );

@@ -1,4 +1,4 @@
-#include "Node.h"
+﻿#include "Node.h"
 #define var const auto
 namespace Jde::Iot
 {
@@ -18,7 +18,7 @@ namespace Jde::Iot
 			if( auto p = x.find("serverindex"); p!=x.end() )
 				serverIndex = stoul( p->second );
 			if( auto p = x.find("ns"); p!=x.end() )
-				nodeId.namespaceIndex = stoul( p->second );
+				nodeId.namespaceIndex = Str::TryTo<UA_UInt16>( p->second ).value_or( 0 );
 			if( auto p = x.find("s"); p!=x.end() ){
 				nodeId.identifierType = UA_NodeIdType::UA_NODEIDTYPE_STRING;
 				nodeId.identifier.string = UA_String_fromChars( p->second.c_str() );
@@ -37,10 +37,10 @@ namespace Jde::Iot
 				ToGuid( p->second, nodeId.identifier.guid );
 			}
 			else
-				throw Exception( "No identifier in nodeId" );
+				DBG( "No identifier in nodeId" );
 		}
 		catch( json::exception& e ){
-			throw Exception( SRCE_CUR, move(e) );
+			CRITICAL( "Could not create json: {}", e.what() );
 		}
 	}
 
