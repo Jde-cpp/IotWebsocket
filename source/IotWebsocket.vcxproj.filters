@@ -31,6 +31,9 @@
     <Filter Include="Source Files\async">
       <UniqueIdentifier>{148430bc-7d58-429f-a45b-48756bf6cfbb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\async">
+      <UniqueIdentifier>{16a81c53-d9bf-4b31-88b0-8c353b0f2516}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -157,6 +160,27 @@
     </ClInclude>
     <ClInclude Include="Socket.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="async\AsyncRequest.h">
+      <Filter>Header Files\async</Filter>
+    </ClInclude>
+    <ClInclude Include="async\Attributes.h">
+      <Filter>Header Files\async</Filter>
+    </ClInclude>
+    <ClInclude Include="async\ConnectAwait.h">
+      <Filter>Header Files\async</Filter>
+    </ClInclude>
+    <ClInclude Include="async\CreateSubscriptions.h">
+      <Filter>Header Files\async</Filter>
+    </ClInclude>
+    <ClInclude Include="async\DataChanges.h">
+      <Filter>Header Files\async</Filter>
+    </ClInclude>
+    <ClInclude Include="async\SetMonitoringMode.h">
+      <Filter>Header Files\async</Filter>
+    </ClInclude>
+    <ClInclude Include="async\Write.h">
+      <Filter>Header Files\async</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

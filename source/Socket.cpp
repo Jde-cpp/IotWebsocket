@@ -1,15 +1,16 @@
 ﻿#include "Socket.h"
-#include "uatypes/UAClient.h"
 #include "async/CreateSubscriptions.h"
 #include "async/SetMonitoringMode.h"
 #include "async/DataChanges.h"
-
+//#include "uatypes/UAClient.h"
+#include "types/MonitoringNodes.h"
 #define var const auto
 #define _listener TcpListener::GetInstance()
 
 namespace Jde::Iot
 {
-	const LogTag& _logLevel = Logging::TagLevel( "app-webRequests" );
+	static sp<LogTag> _logTag = Logging::Tag( "app.socket.requests" );
+	static sp<LogTag> _logTagResults = Logging::Tag( "app.socket.results" );
 	Socket _instance{ Settings::Get<PortType>("web/port").value_or(6708) };
 
 	Socket::Socket( PortType port )ι:
@@ -21,30 +22,30 @@ namespace Jde::Iot
 	{}
 
 	SocketSession::~SocketSession(){
-		LOG( "({})~SocketSession()"sv, Id );
+		TRACE( "({})~SocketSession()", Id );
 	}
 
 	α SocketSession::Run()ι->void{
 		base::Run();
-		LOG( "({})SocketSession::Run()"sv, Id );
+		TRACE( "({})SocketSession::Run()", Id );
 		//Server().UpdateStatus( Server() );
 	}
 
 	α SocketSession::OnAccept( beast::error_code ec )ι->void{
-		LOG( "({})SocketSession::OnAccept()", Id );
+		TRACE( "({})SocketSession::OnAccept()", Id );
 		Write( FromServer::ToAck(Id) );
 		base::OnAccept( ec );
 	}
 
 	α SocketSession::WriteException( Exception&& e, uint32 requestId )ι->Task
 	{
-		LOG( "({})WriteException( '{}', '{}' )"sv, Id, requestId, e.what() );
+		TRACE( "({})WriteException( '{}', '{}' )", Id, requestId, e.what() );
 		return Write( FromServer::ToException(requestId, e.what()) );
 	}
 
 	α SocketSession::WriteException( string m, uint32 requestId )ι->Task
 	{
-		LOG( "({})WriteException( '{}', '{}' )"sv, Id, requestId, m );
+		TRACE( "({})WriteException( '{}', '{}' )", Id, requestId, m );
 		return Write( FromServer::ToException(requestId, move(m)) );
 	}
 
@@ -58,9 +59,19 @@ namespace Jde::Iot
 		try{
 			auto spSocketSession = SharedFromThis();//keep alive
 			auto pClient = ( co_await UAClient::GetClient(opcId) ).SP<UAClient>();
-			( co_await Iot::CreateSubscription(pClient) ).CheckError();
+			TRACET( UAMonitoringNodes::LogTag(), "({:x})Subscribe:  {}", pClient->Handle(), NodeId::ToJson(nodes).dump() );
 
-			auto y = ( co_await DataChangesSubscribe(move(nodes), spSocketSession, move(pClient)) ).UP<FromServer::SubscriptionAck>();
+			( co_await Iot::CreateSubscription(pClient) ).CheckError();
+			up<FromServer::SubscriptionAck> y;
+			try{
+				y = ( co_await DataChangesSubscribe(nodes, spSocketSession, pClient) ).UP<FromServer::SubscriptionAck>();
+			}
+			catch( UAException& e ){
+				if( e.Code!=UA_STATUSCODE_BADSESSIONIDINVALID )
+					e.Throw();
+			}
+			if( ! y )
+				y = ( co_await DataChangesSubscribe(move(nodes), spSocketSession, move(pClient)) ).UP<FromServer::SubscriptionAck>();
 			y->set_request_id( requestId );
 			FromServer::MessageUnion m; m.set_allocated_subscription_ack( y.release() );
 			Write( move(m) );
@@ -82,16 +93,28 @@ namespace Jde::Iot
 	}
 
 	α SocketSession::OnRead( FromClient::Transmission t )ι->void{
+		var logPrefix = format("[{:x}", Id );
 		for( auto i=0; i<t.messages_size(); ++i ){
 			auto& m = *t.mutable_messages( i );
-			if( m.has_session_id() )
+			switch( m.Value_case() )
+			{
+			case FromClient::MessageUnion::kSessionId:
 				SessionId = m.session_id();
-			else if( auto p = m.has_subscribe() ? m.mutable_subscribe() : nullptr )
-				Subscribe( move(*p->mutable_opc_id()), NodeId::ToNodes(move(*p->mutable_nodes())), p->request_id() );
-			else if( auto p = m.has_unsubscribe() ? m.mutable_unsubscribe() : nullptr )
-				Unsubscribe( move(*p->mutable_opc_id()), NodeId::ToNodes(move(*p->mutable_nodes())), p->request_id() );
-			else
-				ERR( "Unknown message:  {}"sv, (uint)m.Value_case() );
+				TRACE("{}]Set Session id:  {:x}", logPrefix, SessionId );
+				break;
+			case FromClient::MessageUnion::kSubscribe:{
+				auto& s = *m.mutable_subscribe();
+				TRACE("{}.{}.{}]Subscribe:  {:x}", logPrefix, s.opc_id(), s.request_id(), s.nodes().size() );
+				Subscribe( move(*s.mutable_opc_id()), NodeId::ToNodes(move(*s.mutable_nodes())), s.request_id() );
+			}break;
+			case FromClient::MessageUnion::kUnsubscribe:{
+				auto& u = *m.mutable_unsubscribe(); 
+				TRACE("{}.{}.{}]Unsubscribe:  {:x}", logPrefix, u.opc_id(), u.request_id(), u.nodes().size() );
+				Unsubscribe( move(*u.mutable_opc_id()), NodeId::ToNodes(move(*u.mutable_nodes())), u.request_id() );
+			}break;
+			default:
+				ERR( "Unknown message:  {}", (uint)m.Value_case() );
+			}
 		}
 	}
 	α SocketSession::Write( FromServer::MessageUnion&& m )ι->Task{

@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "../uatypes/Node.h"
 
-#define $ noexcept->MessageUnion
+#define $ ι->MessageUnion
 #define var const auto
 #define SET(x) MessageUnion m; m.x( p.release() ); return m
 #define NEW(T) auto p = mu<T>()

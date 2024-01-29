@@ -48,3 +48,4 @@ source/Microsoft.*
 source/types/proto/timestamp.proto
 source/types/proto/FromServer.proto
 source/types/proto/duration.proto
+*.aps

@@ -4,18 +4,19 @@
 #include "../async/Attributes.h"
 
 namespace Jde::Iot::Browse{
+	sp<Jde::LogTag> _logTag{ Logging::Tag("app.browse") };
 
 	α FoldersAwait::await_suspend( HCoroutine h )ι->void{
 		IAwait::await_suspend( h );
 		_client->SendBrowseRequest( Request{move(_node)}, move(h) );
 	}
 
-	α Folders( NodeId&& node, sp<UAClient>& c )ι->FoldersAwait{ return FoldersAwait{ move(node), c }; }
+	α Folders( NodeId node, sp<UAClient>& c )ι->FoldersAwait{ return FoldersAwait{ move(node), c }; }
 
 	α ObjectsFolder( sp<UAClient> ua, NodeId node, Web::Rest::Request req, bool snapshot )ι->Task
 	{
 		try{
-			auto y = ( co_await Folders(move(node), ua) ).SP<Response>();
+			auto y = ( co_await Folders(node, ua) ).SP<Response>();
 			flat_set<NodeId> nodes = y->Nodes();
 			up<flat_map<NodeId, Value>> pValues;
 
@@ -24,13 +25,19 @@ namespace Jde::Iot::Browse{
 			auto pDataTypes = (co_await Attributes::ReadDataTypeAttributes( move(nodes), move(ua) )).UP<flat_map<NodeId, NodeId>>();
 			Web::Rest::ISession::Send(y->ToJson(move(pValues), move(*pDataTypes)), move(req) );
 		}
+		catch( UAException& e ){
+			if( e.Code==UA_STATUSCODE_BADSESSIONIDINVALID )
+				ObjectsFolder( ua, node, move(req), snapshot );
+			else
+				Web::Rest::ISession::Send( move(e), move(req) );
+		}
 		catch( Exception& e ){
 			Web::Rest::ISession::Send( move(e), move(req) );
 		}
 	}
 
 	α OnResponse( UA_Client *ua, void* userdata, RequestId requestId, UA_BrowseResponse* response )ι->void{
-		auto h = UAClient::ClearRequestH( ua, requestId ); if( !h ) return CRITICAL( "Could not find handle for client={:x}, request={}.", (uint)ua, requestId );
+		auto h = UAClient::ClearRequestH( ua, requestId ); RETURN_IF( !h, ELogLevel::Critical, "[{:x}.{:x}]Could not find handle.", (uint)ua, requestId );
 
 		if( !response->responseHeader.serviceResult )
 			Resume( ms<Response>(move(*response)), move(h) );

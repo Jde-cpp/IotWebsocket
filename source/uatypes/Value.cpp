@@ -4,25 +4,30 @@
 #define var const auto
 
 namespace Jde::Iot{
+	static sp<Jde::LogTag> _logTag = Logging::Tag( "app.read" );
+	α Read::LogTag()ι->sp<Jde::LogTag>{ return _logTag; }
 	namespace Read{
-		Await::Await( flat_set<NodeId>&& x, sp<UAClient>&& c, SL sl )ι:IAwait{sl}, _nodes{move(x)},_client{move(c)}{}
+
+		Await::Await( flat_set<NodeId>&& x, sp<UAClient>&& c, SL sl )ι:IAwait{sl}, _nodes{move(x)}, _client{move(c)}{}
 
 		α Await::await_suspend( HCoroutine h )ι->void{
 			IAwait::await_suspend( h );
-			_client->SendReadRequest( move(_nodes), move(_client), move(h) );
+			_client->SendReadRequest( move(_nodes), move(h) );
 		}
 		//α Execute( sp<UAClient> ua, NodeId node, Web::Rest::Request req, bool snapShot )ι->Task;
 
 		α OnResponse( UA_Client* ua, void* userdata, RequestId requestId, StatusCode sc, UA_DataValue* val )ι->void{
 			var handle = userdata ? (RequestId)(uint)userdata : requestId;
-			string logPrefix = format( "[{:x}.{}.{}]", (uint)ua, handle, requestId );
-			//DBG( "[{}]Value::OnResponse()", logPrefix );
+			string logPrefix = format( "({:x}.{}.{})", (uint)ua, handle, requestId );
+			if( sc )
+				TRACE( "{}Value::OnResponse ({})-{} Value={}", logPrefix, sc, UAException::Message(sc), val ? Value{*val}.ToJson().dump() : "null" );
 			auto pClient = UAClient::TryFind(ua); if( !pClient ) return;
 			up<flat_map<NodeId, Value>> results;
-			bool visited = pClient->_readRequests.visit( handle, [requestId, sc, val, &results]( auto& pair ){
+			bool visited = pClient->_readRequests.visit( handle, [requestId, sc, val, &results, &logPrefix]( auto& pair ){
 				auto& x = pair.second;
 				if( auto pRequest=x.Requests.find(requestId); pRequest!=x.Requests.end() ){
-					x.Results.try_emplace( pRequest->second, sc ? Value{ sc } : Value{ *val } );
+					auto p = x.Results.try_emplace( pRequest->second, sc ? Value{ sc } : Value{ *val } ).first;
+					TRACE( "{} Value={}", logPrefix, sc ? format("({:x}){}", sc, UAException::Message(sc)) : p->second.ToJson().dump() );
 					if( x.Results.size()==x.Requests.size() )
 						results = mu<flat_map<NodeId, Value>>( move(x.Results) );
 				}
@@ -31,7 +36,8 @@ namespace Jde::Iot{
 				CRITICAL( "{}Could not find handle.", logPrefix );
 			else if( results ){
 				pClient->_readRequests.erase( handle );
-				auto h = pClient->ClearRequestH( handle ); if( !h ) return CRITICAL( "Could not find handle for client={:x}, request={}.", (uint)ua, requestId );
+				auto h = pClient->ClearRequestH( handle ); RETURN_IF( !h, ELogLevel::Critical, "({})Could not find handle.", logPrefix );
+				TRACE( "{}Resume", logPrefix );
 				Resume( move(results), move(h) );
 			}
 			//DBG( "[{}]Value::~OnResponse()", logPrefix );
@@ -107,7 +113,8 @@ namespace Jde::Iot{
 		}
 		return j;
 	}
-	α Value::Set( json j )ε->void{
+	
+	α Value::Set( const json& j )ε->void{
 		var scaler = UA_Variant_isScalar( &value );
 		var type = value.type;
 		if( IS(UA_TYPES_BOOLEAN) ){
@@ -128,6 +135,8 @@ namespace Jde::Iot{
 			else
 				throw Exception( "Not implemented." );
 		}
+		else if( IS(UA_TYPES_INT32) )
+			SetNumber<UA_Int32>( j );
 		else if( IS(UA_TYPES_STRING) ){
 			if( scaler ){
 				THROW_IF( !j.is_string(), "Expected string '{}'.", j.dump() );
@@ -135,8 +144,10 @@ namespace Jde::Iot{
 				UA_Variant_setScalarCopy( &value, &v, type );
 			}
 		}
+		else if( IS(UA_TYPES_UINT16) )
+			SetNumber<UA_UInt16>( j );
 		else
-			throw Exception( "Not implemented." );
+			THROW( "Setting type '{}' has not been implemented.", type );
 	}
 
 	α Value::ToProto( const OpcId& opcId, const NodeId& node )Ι->FromServer::MessageUnion{

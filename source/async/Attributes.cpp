@@ -2,6 +2,7 @@
 #define var const auto
 
 namespace Jde::Iot::Attributes{
+	var _logTag = Logging::Tag( "app.attributes" );
 	α OnResonse( UA_Client* ua, void* userdata, RequestId requestId, StatusCode status, UA_NodeId* dataType )ι->void{
 		var handle = userdata ? (RequestId)(uint)userdata : requestId;
 		string logPrefix = format( "({:x}.{}.{})", (uint)ua, handle, requestId );
@@ -19,7 +20,7 @@ namespace Jde::Iot::Attributes{
 			CRITICAL( "{}Could not find handle.", logPrefix );
 		else if( results ){
 			(*ppClient)->_dataAttributeRequests.erase( handle );
-			HCoroutine h = (*ppClient)->ClearRequestH( handle ); if( !h ) return CRITICAL( "Could not find handle for client={:x}, request={}.", (uint)ua, requestId );
+			HCoroutine h = (*ppClient)->ClearRequestH( handle ); RETURN_IF( !h, ELogLevel::Critical, "[{:x}.{:x}]Could not find handle.", (uint)ua, requestId );
 			Resume( move(results), move(h) );
 		}
 	}

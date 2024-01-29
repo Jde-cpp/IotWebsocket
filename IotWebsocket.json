@@ -1,27 +1,29 @@
 {
-	"logging":
-	{
-		"tags": [ "_alarm", "_ql", "_io", "_locks", "settings", "_threads", "_sql", "monitoring", "UANet", "UASecure", "UASession", "UAServer", "UAClient", "UAUser", "UASecurity", "UAEvent" ],
+	"logging":{
+		"tags": {
+			"Trace":["app.monitoring", "app.client", "app.socket.requests", "net"],
+			"Debug":["app.read"],
+			"Information":["sql", "app.dataChanges"],
+			"Warning":["alarm", "ql", "io", "locks", "settings", "threads", "UANet", "UASecure", "UASession", "UAServer", "UAClient", "UAUser", "UASecurity", "UAEvent"],
+			"Error":[],
+			"Critical":[]
+		},
 		"console":{},
 		"file":{ "path": "$(ProgramData)\\Jde-cpp\\iotWebSocket\\logs", "md": true },
 		"server": { "port": 4321, "level": "Debug", "diagnosticsLevel": "Debug", "tags": ["_threads"] }
 	},
-	"db":
-	{
+	"db":{
 		"driver": "$(JDE_DB_DRIVER)",
 		"connectionString": "$(Jde_Iot_Connection)",
 		"meta": "../iot-meta.json"
 	},
-	"rest":
-	{
+	"rest":{
 		"port":  6707
 	},
-	"websocket":
-	{
+	"websocket":{
 		"port":  6708
 	},
-	"workers":
-	{
+	"workers":{
 		"drive":{ "threads":  1 },
 		"Alarm":{ "threads":  1 }
 	}

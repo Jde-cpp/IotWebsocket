@@ -52,16 +52,18 @@ namespace Jde::Iot{
 
 		//Ω GetAsyncRequest( sp<UAClient> p )ι{ lock_guard _{p->_asyncRequestMutex}; if(!p->_asyncRequest) p->_asyncRequest=ms<AsyncRequest>(move(p)); return _asyncRequest; };
 		α SendBrowseRequest( Browse::Request&& request, HCoroutine&& h )ι->void;
-		Ω SendReadRequest( const flat_set<NodeId>&& nodes, sp<UAClient>&& pClient, HCoroutine&& h )ι->void;
+		α SendReadRequest( const flat_set<NodeId>&& nodes, HCoroutine&& h )ι->void;
 		α SendWriteRequest( flat_map<NodeId,Value>&& values, HCoroutine&& h )ι->void;
 		α SetMonitoringMode( Iot::SubscriptionId subscriptionId )ι->void;
 		α RequestDataTypeAttributes( const flat_set<NodeId>&& x, HCoroutine&& h )ι->void;
 		Ṫ ClearRequest( UA_Client* ua, RequestId requestId )ι->up<T>;
-		Ω ClearRequestH( UA_Client* ua , RequestId requestId)ι->HCoroutine{ return ClearRequest<UARequest>( ua, requestId )->CoHandle; }
+		Ω ClearRequestH( UA_Client* ua , RequestId requestId)ι->HCoroutine{ auto r = ClearRequest<UARequest>( ua, requestId ); return r ? r->CoHandle : nullptr; }
 		Ŧ ClearRequest( RequestId requestId )ι->up<T>;
 		α ClearRequestH( RequestId requestId )ι->HCoroutine{ return ClearRequest<UARequest>( requestId )->CoHandle; }
 		Ω Retry( function<void(sp<UAClient>&&, HCoroutine&&)> f, UAException e, sp<UAClient> pClient, HCoroutine h )ι->Task;
 		α Process()ι->void;
+		α ProcessDataSubscriptions()ι->void;
+		α StopProcessDataSubscriptions()ι->void;
 		//α log()ι->void{ UA_LOG_INFO( &_config.logger, UA_LOGCATEGORY_EVENTLOOP, "Starting the EventLoop %s", "hi"); }
 		//α Connect()ε->void;
 
@@ -74,6 +76,7 @@ namespace Jde::Iot{
 		sp<UA_SetMonitoringModeResponse> MonitoringModeResponse;
 		sp<UA_CreateSubscriptionResponse> CreatedSubscriptionResponse;
 	private:
+		Ω LogTag()ι->sp<Jde::LogTag>;
 		α Configuration()ι->UA_ClientConfig&{ return *UA_Client_getConfig(_ptr); }
 		α Create()ι->UA_Client*;
 		α OnSessionActivated( sp<UAClient> pClient, string id )ι->void;
@@ -100,6 +103,7 @@ namespace Jde::Iot{
 		UAMonitoringNodes MonitoredNodes;//destroy first
 	};
 
+#define _logTag LogTag()
 	Ŧ UAClient::ClearRequest( UA_Client* ua, RequestId requestId )ι->up<T>{
 		up<T> request;
 		try{
@@ -112,7 +116,6 @@ namespace Jde::Iot{
 
 	Ŧ UAClient::ClearRequest( RequestId requestId )ι->up<T>{
 		up<T> request;
-	 	//lg _{ _requestMutex };
 	 	if( _requests.visit( requestId, [&request](auto& x){request.reset( dynamic_cast<T*>(x.second.get()) ); if(request) x.second.release();}) ){
 			_requests.erase( requestId );
 			lg _{ _asyncRequestMutex };
@@ -124,3 +127,4 @@ namespace Jde::Iot{
 		return request;
 	}
 }
+#undef _logTag

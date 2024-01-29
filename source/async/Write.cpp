@@ -1,8 +1,8 @@
 ﻿#include "Write.h"
 #define var const auto
 
-namespace Jde::Iot::Write
-{
+namespace Jde::Iot::Write{
+	sp<LogTag> _logTag{ Logging::Tag("app.write") };
 	α OnResonse( UA_Client *ua, void *userdata, RequestId requestId, UA_WriteResponse *response )ι->void{
 		var handle = userdata ? (RequestId)(uint)userdata : requestId;
 		string logPrefix = format( "[{:x}.{}.{}]", (uint)ua, handle, requestId );
@@ -21,7 +21,7 @@ namespace Jde::Iot::Write
 			CRITICAL( "{}Could not find handle.", logPrefix );
 		else if( results ){
 			(*ppClient)->_readRequests.erase( handle );
-			HCoroutine h = (*ppClient)->ClearRequestH( handle ); if( !h ) return CRITICAL( "Could not find handle for client={:x}, request={}.", (uint)ua, requestId );
+			HCoroutine h = (*ppClient)->ClearRequestH( handle ); RETURN_IF( !h, ELogLevel::Critical, "[{:x}.{:x}]Could not find handle.", (uint)ua, requestId );
 			Resume( move(results), move(h) );
 		}
 		DBG( "[{}]Value::~OnResponse()", logPrefix );

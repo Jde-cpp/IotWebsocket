@@ -30,6 +30,7 @@ namespace Jde::Iot{
 		α SendDataChange( Handle h, const Value&& value )ι->uint;
 		α OnCreateResponse( UA_CreateMonitoredItemsResponse* response, Handle requestId )ι->void;
 		α GetResult( Handle requestId, StatusCode status )ι->FromServer::SubscriptionAck;
+		Ω LogTag()ι->sp<LogTag>;
 	private:
 		struct Subscription{
 			Subscription( /*OpcId opcId,*/ NodeId node, MonitoredItemCreateResult result, sp<IDataChange> clientCall )ι: /*OpcId{move(opcId)},*/ Node{ move(node) }, Result{ move(result) }, ClientCalls{ move(clientCall) }{}

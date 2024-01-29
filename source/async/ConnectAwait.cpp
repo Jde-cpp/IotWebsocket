@@ -14,18 +14,21 @@ namespace Jde::Iot
 
 	α ConnectAwait::await_suspend( HCoroutine h )ι->void{
 		IAwait::await_suspend( h );
-		lg _{ _requestMutex };
 		if( auto pClient = UAClient::Find(_id); pClient )
 			Jde::Resume( move(pClient), move(h) );
 		else{
+			_requestMutex.lock();
 			auto p = _requests.find( _id );
 			if( p==_requests.end() ){
 				_requests[_id] = {h};
 				_requestMutex.unlock();
 				Create( _id );
 			}
-			else
+			else{
 				p->second.push_back( move(h) );
+				_requestMutex.unlock();
+			}
+	
 		}
 	}
 	α ConnectAwait::Create( string id )ι->Task{

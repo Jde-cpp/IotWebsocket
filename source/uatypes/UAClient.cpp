@@ -9,9 +9,12 @@
 #include "../async/DataChanges.h"
 #include "../async/SetMonitoringMode.h"
 #include "../async/Write.h"
+#include "../types/MonitoringNodes.h"
 #define var const auto
 
 namespace Jde::Iot{
+	sp<LogTag> _logTag{ Logging::Tag("app.client") };
+	α UAClient::LogTag()ι->sp<Jde::LogTag>{ return _logTag; }
 	flat_map<string,sp<UAClient>> _clients; shared_mutex _clientsMutex;
 	flat_map<sp<UAClient>,string> _awaitingActivation; mutex _awaitingActivationMutex;
 
@@ -43,8 +46,8 @@ namespace Jde::Iot{
 	}
 	α stateCallback( UA_Client *ua, UA_SecureChannelState channelState, UA_SessionState sessionState, StatusCode connectStatus )ι->void{
 		DBG( "({:x})channelState='{}', sessionState='{}', connectStatus='({:x}){}'", (uint)ua, UAException::Message(channelState), UAException::Message(sessionState), connectStatus, UAException::Message(connectStatus) );
-		if( sessionState == UA_SESSIONSTATE_ACTIVATED || connectStatus==UA_STATUSCODE_BADCONNECTIONREJECTED ){
-			lg _{ _awaitingActivationMutex };
+		if( sessionState == UA_SESSIONSTATE_ACTIVATED || connectStatus==UA_STATUSCODE_BADIDENTITYTOKENINVALID || connectStatus==UA_STATUSCODE_BADCONNECTIONREJECTED ){
+			_awaitingActivationMutex.lock();
 			if( auto p=find_if(_awaitingActivation, [ua](auto x){return ua==x.first->UAPointer();}); p!=_awaitingActivation.end() ){
 				auto pClient = move(p->first);
 				auto target = move(p->second);
@@ -61,6 +64,8 @@ namespace Jde::Iot{
 				else
 					ConnectAwait::Resume( move(pClient), move(target), UAException{connectStatus} );
 			}
+			else
+				_awaitingActivationMutex.unlock();
 		}
 	}
 	α inactivityCallback(UA_Client *client)->void{
@@ -91,22 +96,26 @@ namespace Jde::Iot{
 		_awaitingActivation[pClient] = id;
 	}
 	α UAClient::Process()ι->void{
-		//{ lg _{_requestMutex}; ASSERT( _requests.size() ); }
 		_asyncRequestMutex.lock();
 		if( !_asyncRequest )
 		{
 			auto p = _asyncRequest = ms<AsyncRequest>( shared_from_this() );
 			_asyncRequestMutex.unlock();
-			//_asyncRequestMutex.unlock();
 			p->Process();
 		}
 		else
 			_asyncRequestMutex.unlock();
 	}
-	// α UAClient::Connect()ε->void
-	// {
-	// 	var r = UA_Client_connect( _ptr, _pOpcServer->Url.c_str() ); THROW_IFX( r!= UA_STATUSCODE_GOOD, UAException{ r } );
-	// }
+	
+	α UAClient::ProcessDataSubscriptions()ι->void{
+		_requests.try_emplace( 0, nullptr );
+		Process();
+	}
+	
+	α UAClient::StopProcessDataSubscriptions()ι->void{
+		ClearRequest<UARequest>( 0 );
+	}
+
 	α UAClient::Retry( function<void(sp<UAClient>&&, HCoroutine&&)> f, UAException e, sp<UAClient> pClient, HCoroutine h )ι->Task{
 		//TODO limit retry attempts.
 		str target = pClient->Target();
@@ -134,9 +143,12 @@ namespace Jde::Iot{
 	}
 	α UAClient::SendBrowseRequest( Browse::Request&& request, HCoroutine&& h )ι->void{
 		try{
-			lg _{ _requestIdMutex };
-			UAε( UA_Client_sendAsyncBrowseRequest(_ptr, &request, Browse::OnResponse, nullptr, &RequestIndex) );
-			_requests.emplace( RequestIndex, mu<UARequest>(move(h)) );
+			{
+				lg _{ _requestIdMutex };
+				UAε( UA_Client_sendAsyncBrowseRequest(_ptr, &request, Browse::OnResponse, nullptr, &RequestIndex) );
+				_requests.emplace( RequestIndex, mu<UARequest>(move(h)) );
+			}
+			Process();
 		}
 		catch( UAException& e ){
 			//Browse::Request b2{ move(request) };
@@ -144,27 +156,28 @@ namespace Jde::Iot{
 			//var f = [r{move(request)}]( sp<UAClient>&& p, HCoroutine&& h )mutable{ var b2{move(r)}; };
 			Retry( [r{move(request)}]( sp<UAClient>&& p, HCoroutine&& h )mutable{p->SendBrowseRequest( move(r), move(h) );}, move(e), shared_from_this(), move(h) );
 		}
-		Process();
 //		DBG( "~Browse::Send" );
 	}
 
-	α UAClient::SendReadRequest( const flat_set<NodeId>&& nodeIds, sp<UAClient>&& pClient, HCoroutine&& h )ι->void{
+	α UAClient::SendReadRequest( const flat_set<NodeId>&& nodeIds, HCoroutine&& h )ι->void{
 		flat_map<UA_UInt32, NodeId> ids;
 		RequestId requestId{};
 		try{
+			//assume 1st will fail if any, request all again if latter node failed.
 			for( auto&& nodeId : nodeIds ){
-				lg _{ pClient->_requestIdMutex };
-				UAε( UA_Client_readValueAttribute_async(pClient->_ptr, nodeId.nodeId, Read::OnResponse, (void*)(uint)requestId, &pClient->RequestIndex) );
+				lg _{ _requestIdMutex };
+				UAε( UA_Client_readValueAttribute_async(_ptr, nodeId.nodeId, Read::OnResponse, (void*)(uint)requestId, &RequestIndex) );
 				if( !requestId )
-					requestId = pClient->RequestIndex;
-				ids.emplace( pClient->RequestIndex, nodeId );
+					requestId = RequestIndex;
+				ids.emplace( RequestIndex, nodeId );
 	 		}
-			pClient->_requests.emplace( requestId, mu<UARequest>(move(h)) );
-			pClient->_readRequests.try_emplace( requestId, UARequestMulti<Value>{move(ids), pClient} );
-			pClient->Process();
+			TRACET( Read::LogTag(), "({:x}.{})SendReadRequest - count={}", Handle(), requestId, ids.size() );
+			_requests.emplace( requestId, mu<UARequest>(move(h)) );
+			_readRequests.try_emplace( requestId, UARequestMulti<Value>{move(ids)} );
+			Process();
 		}
 		catch( UAException& e ){
-			Retry( [n=move(nodeIds)]( sp<UAClient>&& p, HCoroutine&& h )mutable{SendReadRequest( move(n), move(p), move(h) );}, move(e), move(pClient), move(h) );
+			Retry( [n=move(nodeIds)]( sp<UAClient>&& p, HCoroutine&& h )mutable{p->SendReadRequest( move(n), move(h) );}, move(e), shared_from_this(), move(h) );
 		}
 	}
 	α UAClient::SendWriteRequest( flat_map<NodeId,Value>&& values, HCoroutine&& h )ι->void{
@@ -203,6 +216,7 @@ namespace Jde::Iot{
 	α UAClient::CreateSubscriptions()ι->void{
 		try{
 			lg _{ _requestIdMutex };
+			TRACET( UAMonitoringNodes::LogTag(), "({:x}.{})CreateSubscription", Handle(), RequestIndex );
 			UAε( UA_Client_Subscriptions_create_async(UAPointer(), UA_CreateSubscriptionRequest_default(), nullptr, StatusChangeNotificationCallback, DeleteSubscriptionCallback, CreateSubscriptionCallback, nullptr, &RequestIndex) );
 			_requests.emplace( RequestIndex, nullptr );
 		}
@@ -222,6 +236,7 @@ namespace Jde::Iot{
 				return Resume( Exception{"CreatedSubscriptionResponse==null"}, move(h) );
 			request.subscriptionId = CreatedSubscriptionResponse->subscriptionId;
 			lg _{ _requestIdMutex };
+			TRACET( UAMonitoringNodes::LogTag(), "({:x}.{:x})DataSubscriptions - {}", Handle(), RequestIndex, request.ToJson().dump() );
 			UAε( UA_Client_MonitoredItems_createDataChanges_async(UAPointer(), request, &contexts, &notifications, &deleteCallbacks, CreateDataChangesCallback, (void*)requestHandle, &RequestIndex) );
 			_requests.emplace( RequestIndex, mu<UARequest>(move(h)) );
 		}

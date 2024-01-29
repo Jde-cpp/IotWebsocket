@@ -22,6 +22,7 @@ namespace Jde::Iot
 		α Copy()Ι->UA_NodeId;
 		α Move()ι->UA_NodeId;
 		α ToJson()Ι->json;
+		Ω ToJson( flat_set<NodeId> nodes )ι->json{ auto j=json::array(); for_each(nodes, [&j](const auto& n){ j.push_back( n.ToJson() ); }); return j; }
 		α ToProto()Ι->Proto::ExpandedNodeId;
 		α ToNodeProto()Ι->Proto::NodeId;
 		α to_string()Ι->string;

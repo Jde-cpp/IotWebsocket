@@ -1,7 +1,7 @@
 ﻿#include "Node.h"
 #define var const auto
-namespace Jde::Iot
-{
+namespace Jde::Iot{
+
 	NodeId::NodeId ( const NodeId& x )ι:
 		UA_ExpandedNodeId{UA_EXPANDEDNODEID_NULL}{
 		nodeId = x.Copy();
@@ -37,10 +37,10 @@ namespace Jde::Iot
 				ToGuid( p->second, nodeId.identifier.guid );
 			}
 			else
-				DBG( "No identifier in nodeId" );
+				DBGT( AppTag(), "No identifier in nodeId" );
 		}
 		catch( json::exception& e ){
-			CRITICAL( "Could not create json: {}", e.what() );
+			CRITICALT( AppTag(), "Could not create json: {}", e.what() );
 		}
 	}
 

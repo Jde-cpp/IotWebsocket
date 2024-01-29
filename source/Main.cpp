@@ -29,7 +29,7 @@ int main( int argc, char **argv ){
 	if( !exitCode){
 		IApplication::AddShutdownFunction( [](){Iot::UAClient::Shutdown();} );
 		Iot::Rest::DoAccept();//todo throw on error... port already in use etc.
-		INFO( "Started IotWebSocket" );
+		INFOT( AppTag(), "Started IotWebSocket" );
 		IApplication::Pause();
 	}
 	IApplication::Cleanup();

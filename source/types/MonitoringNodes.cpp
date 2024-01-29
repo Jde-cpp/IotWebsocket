@@ -3,7 +3,9 @@
 #define var const auto
 
 namespace Jde::Iot{
-	static sp<LogTag> _logLevel{ Logging::TagLevel( "monitoring" ) };
+	static sp<LogTag> _logTag{ Logging::Tag( "app.monitoring" ) };
+	α UAMonitoringNodes::LogTag()ι->sp<Jde::LogTag>{ return _logTag; }
+
 	//until orphaned UAClient's go away.
 	α UAMonitoringNodes::Shutdown()ι->void{
 		mutex lock;
@@ -61,13 +63,15 @@ namespace Jde::Iot{
 			for( auto pNode = nodes.begin(); i<response->resultsSize && pNode!=nodes.end(); ++pNode, ++i ){
 		  	MonitoredItemCreateResult result{ move(response->results[i]) };
 				if( result.statusCode ){
-					LOG( "({:x})Could not create monitored item for node '{}':  {}.", requestId, pNode->to_string(), UAException::Message(result.statusCode) );
+					DBG( "({:x})Could not create monitored item for node '{}':  {}.", requestId, pNode->to_string(), UAException::Message(result.statusCode) );
 					_errors.try_emplace( requestId ).first->second.try_emplace( move(*pNode), result.statusCode );
 				}
 				else{
 					var h = MonitorHandle{ requestHandle.SubscriptionId(), result.monitoredItemId };
-					LOG( "({:x}.{:x})Monitoring '{}'", _pClient->Handle(), h, pNode->to_string() );
+					TRACE( "({:x}.{:x})Monitoring '{}'", _pClient->Handle(), h, pNode->to_string() );
 					_subscriptions.emplace( h, Subscription{move(*pNode), move(result), dataChange} );
+					if( _subscriptions.size()==1 )
+						_pClient->ProcessDataSubscriptions();
 				}
   		}
 			_calls.erase( requestId );
@@ -148,7 +152,7 @@ namespace Jde::Iot{
 					toDelete.try_emplace( id.SubscriptionId() ).first->second.emplace( id.MonitorId() );
 			}
 			else{
-				LOG( "Could not find node '{}' for unsubscription.", node.to_string() );
+				TRACE( "Could not find node '{}' for unsubscription.", node.to_string() );
 				get<1>(successFailures).emplace( move(node) );
 			}
 		}
@@ -167,12 +171,14 @@ namespace Jde::Iot{
 			for( auto& monitoredId : monitoredIds ){
 				const MonitorHandle h{subscriptionId,monitoredId};
 				if( auto p = _subscriptions.find(h); p!=_subscriptions.end() && p->second.ClientCalls.empty() ){
-					LOG( "({:x}.{:x})DeleteMonitoring for:  {}", _pClient->Handle(), h, p->second.Node.to_string() );
+					TRACE( "({:x}.{:x})DeleteMonitoring for:  {}", _pClient->Handle(), h, p->second.Node.to_string() );
 					_subscriptions.erase( h );
 					toDelete.try_emplace( subscriptionId ).first->second.emplace( monitoredId );
 				}
 			}
 		}
+		if( _subscriptions.size()==0 )
+			_pClient->StopProcessDataSubscriptions();
 		lock.unlock();
 		for( auto& [subscriptionId, monitorIds] : toDelete )
 			pClient->DataSubscriptionDelete( subscriptionId, move(monitorIds) );

@@ -11,7 +11,7 @@ namespace Jde::Iot{
 
 		Ω Resume( sp<UAClient> pClient, function<void(HCoroutine&&)> resume )ι->void;
 		Ω Resume( sp<UAClient> pClient )ι->void;
-		Ω Resume( StatusCode sc, sp<UAClient>&& pClient )ι->void;
+		Ω Resume( UAException&& e, sp<UAClient>&& pClient )ι->void;
 	private:
 		sp<UAClient> _client;
 	};

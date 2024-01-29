@@ -2,14 +2,16 @@
 #define var const auto
 
 namespace Jde::Iot{
+	static sp<LogTag> _logTag{ Logging::Tag( "app.monitoring" ) };
 	boost::concurrent_flat_map<sp<UAClient>,vector<HCoroutine>> _subscriptionRequests;
 	α CreateSubscriptionCallback(UA_Client* ua, void* /*userdata*/, RequestId requestId, void *response)ι->void{
 		auto pResponse = static_cast<UA_CreateSubscriptionResponse*>( response );
 		auto ppClient = Try<sp<UAClient>>( [ua](){return UAClient::Find(ua);} ); if( !ppClient ) return;
 		(*ppClient)->ClearRequest<UARequest>( requestId );
 		if( var sc = pResponse->responseHeader.serviceResult; sc )
-			CreateSubscriptionAwait::Resume( sc, move(*ppClient) );
+			CreateSubscriptionAwait::Resume( UAException{sc}, move(*ppClient) );
 		else{
+			TRACE( "({:x}.{})CreateSubscriptionCallback - subscriptionId={}", (uint)ua, requestId, pResponse->subscriptionId );
 			(*ppClient)->CreatedSubscriptionResponse = ms<UA_CreateSubscriptionResponse>(move(*pResponse));
 			CreateSubscriptionAwait::Resume( move(*ppClient) );
 		}
@@ -17,11 +19,11 @@ namespace Jde::Iot{
 
 	α StatusChangeNotificationCallback(UA_Client* ua, UA_UInt32 subId, void *subContext, UA_StatusChangeNotification *notification)ι->void{
 		BREAK;
-		DBG( "StatusChangeNotificationCallback={:x}.{}", (uint)ua, subId );
+		TRACE( "({:x}.{})StatusChangeNotificationCallback", (uint)ua, subId );
 	}
 
 	α DeleteSubscriptionCallback(UA_Client* ua, UA_UInt32 subId, void *subContext)ι->void{
-		DBG( "DeleteSubscriptionCallback={:x}.{}", (uint)ua, subId );
+		TRACE( "({:x}.{})DeleteSubscriptionCallback", (uint)ua, subId );
 	}
 
 	α CreateSubscriptionAwait::await_ready()ι->bool{ return _client->CreatedSubscriptionResponse!=nullptr; }
@@ -52,7 +54,7 @@ namespace Jde::Iot{
 			Coroutine::CoroutinePool::Resume( move(h) ); //Cannot run EventLoop from the run method itself
 		});
 	}
-	α CreateSubscriptionAwait::Resume( StatusCode sc, sp<UAClient>&& pClient )ι->void{
-		Resume( move(pClient), [sc](HCoroutine&& h){Jde::Resume(UAException{sc}, move(h));} );
+	α CreateSubscriptionAwait::Resume( UAException&& e, sp<UAClient>&& pClient )ι->void{
+		Resume( move(pClient), [e2=move(e)](HCoroutine&& h)mutable{Jde::Resume(move(e2), move(h));} );
 	}
 }

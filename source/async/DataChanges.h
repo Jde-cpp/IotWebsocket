@@ -16,7 +16,7 @@ namespace Jde::Iot{
 		flat_map<NodeId, MonitoredItemCreateResult> _existingNodes;
 	};
 
-	Ξ DataChangesSubscribe( flat_set<NodeId>&& nodes, sp<IDataChange> socketSession, sp<UAClient> c )ι{ return DatachangeAwait{ move(nodes), move(socketSession), move(c) }; }
+	Ξ DataChangesSubscribe( flat_set<NodeId> nodes, sp<IDataChange> socketSession, sp<UAClient> c )ι{ return DatachangeAwait{ move(nodes), move(socketSession), move(c) }; }
 	α DataChangesDeleteCallback( UA_Client* ua, UA_UInt32 subId, void* subContext, UA_UInt32 monId, void* monContext )->void;
 	α DataChangesCallback( UA_Client *client, UA_UInt32 subId, void* subContext, UA_UInt32 monId, void* monContext, UA_DataValue *value )->void;
 	α CreateDataChangesCallback(UA_Client* ua, void *userdata, RequestId requestId, void *response)ι->void;
