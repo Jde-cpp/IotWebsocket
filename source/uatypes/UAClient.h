@@ -15,23 +15,6 @@ namespace Jde::Iot{
 
 	struct UAClient;
 	struct Value;
-//	using CreateMonitoredItemsRequestPtr = UAUP<UA_CreateMonitoredItemsRequest, UA_CreateMonitoredItemsRequest_delete>;
-	struct UARequest{
-		UARequest( HCoroutine&& h )ι:CoHandle{ move(h) }{}
-		virtual ~UARequest(){ /*DBG("~UARequest({:x})", (uint)this);*/ }
-//		virtual ~UARequest(){};
-		HCoroutine CoHandle;
-	};
-
-	Τ struct TUARequest : UARequest{
-		TUARequest( T&& args, HCoroutine&& h )ι:UARequest{move(h)}, Args{move(args)}{}
-		T Args;
-	};
-	Τ struct UARequestMulti{
-		flat_map<UA_UInt32, NodeId> Requests;
-		sp<UAClient> ClientPtr;
-		flat_map<NodeId, T> Results;
-	};
 
 	struct UAClient final : std::enable_shared_from_this<UAClient>
 	{
@@ -50,7 +33,6 @@ namespace Jde::Iot{
 		α DataSubscriptions( CreateMonitoredItemsRequest&& r, Handle requestHandle, HCoroutine&& h )ι->void;
 		α DataSubscriptionDelete( Iot::SubscriptionId subscriptionId, flat_set<MonitorId>&& monitoredItemIds )ι->void;
 
-		//Ω GetAsyncRequest( sp<UAClient> p )ι{ lock_guard _{p->_asyncRequestMutex}; if(!p->_asyncRequest) p->_asyncRequest=ms<AsyncRequest>(move(p)); return _asyncRequest; };
 		α SendBrowseRequest( Browse::Request&& request, HCoroutine&& h )ι->void;
 		α SendReadRequest( const flat_set<NodeId>&& nodes, HCoroutine&& h )ι->void;
 		α SendWriteRequest( flat_map<NodeId,Value>&& values, HCoroutine&& h )ι->void;
@@ -61,11 +43,11 @@ namespace Jde::Iot{
 		Ŧ ClearRequest( RequestId requestId )ι->up<T>;
 		α ClearRequestH( RequestId requestId )ι->HCoroutine{ return ClearRequest<UARequest>( requestId )->CoHandle; }
 		Ω Retry( function<void(sp<UAClient>&&, HCoroutine&&)> f, UAException e, sp<UAClient> pClient, HCoroutine h )ι->Task;
-		α Process()ι->void;
+		α Process( RequestId requestId, up<UARequest>&& userData )ι->void;
 		α ProcessDataSubscriptions()ι->void;
 		α StopProcessDataSubscriptions()ι->void;
-		//α log()ι->void{ UA_LOG_INFO( &_config.logger, UA_LOGCATEGORY_EVENTLOOP, "Starting the EventLoop %s", "hi"); }
-		//α Connect()ε->void;
+		α AddSessionAwait( HCoroutine&& h )ι->void{ lg _{_sessionAwaitableMutex}; _sessionAwaitables.emplace_back( move(h) ); }
+		α TriggerSessionAwaitables()ι->void;
 
 
 		α Target()ι->str{ return _opcServer.Target; }
@@ -75,56 +57,44 @@ namespace Jde::Iot{
 		α UAPointer()ι->UA_Client*{return _ptr;}
 		sp<UA_SetMonitoringModeResponse> MonitoringModeResponse;
 		sp<UA_CreateSubscriptionResponse> CreatedSubscriptionResponse;
+		UA_ClientConfig _config{};//TODO move private.
+
 	private:
 		Ω LogTag()ι->sp<Jde::LogTag>;
 		α Configuration()ι->UA_ClientConfig&{ return *UA_Client_getConfig(_ptr); }
 		α Create()ι->UA_Client*;
-		α OnSessionActivated( sp<UAClient> pClient, string id )ι->void;
-		UA_ClientConfig _config{};
+		α Connect()ε->void;
 		OpcServer _opcServer;
 
-		mutex _requestIdMutex;
-		RequestId RequestIndex{};
+		//mutex _requestIdMutex;
+		//RequestId RequestIndex{};
 
-		boost::concurrent_flat_map<UA_UInt32, up<UARequest>> _requests;
-		boost::concurrent_flat_map<Jde::Handle, UARequestMulti<Value>> _readRequests;
-		boost::concurrent_flat_map<Jde::Handle, UARequestMulti<UA_WriteResponse>> _writeRequests;
-		boost::concurrent_flat_map<Jde::Handle, UARequestMulti<NodeId>> _dataAttributeRequests;
+		concurrent_flat_map<Jde::Handle, UARequestMulti<Value>> _readRequests;
+		concurrent_flat_map<Jde::Handle, UARequestMulti<UA_WriteResponse>> _writeRequests;
+		concurrent_flat_map<Jde::Handle, UARequestMulti<NodeId>> _dataAttributeRequests;
+		vector<HCoroutine> _sessionAwaitables; mutable mutex _sessionAwaitableMutex;
 
-		sp<AsyncRequest> _asyncRequest; mutable mutex _asyncRequestMutex;
-		UA_Client* _ptr{};//needs to be after _logContext & _config.
+		AsyncRequest _asyncRequest;
+		Logger _logger;
+		UA_Client* _ptr{};//needs to be after _logger & _config.
 		friend ConnectAwait;
 		friend α Read::OnResponse( UA_Client *client, void *userdata, RequestId requestId, StatusCode status, UA_DataValue *var )ι->void;
 		friend α Write::OnResonse( UA_Client *ua, void *userdata, RequestId requestId, UA_WriteResponse *response )ι->void;
 		friend α Attributes::OnResonse( UA_Client* ua, void* userdata, RequestId requestId, StatusCode status, UA_NodeId* dataType )ι->void;
-		Logger _logger;
 	public:
 		Ω Unsubscribe( const sp<IDataChange>&& dataChange )ι->void;
+		Ω StateCallback( UA_Client *ua, UA_SecureChannelState channelState, UA_SessionState sessionState, StatusCode connectStatus )ι->void;
 		UAMonitoringNodes MonitoredNodes;//destroy first
 	};
 
 #define _logTag LogTag()
 	Ŧ UAClient::ClearRequest( UA_Client* ua, RequestId requestId )ι->up<T>{
-		up<T> request;
-		try{
-		 	auto p = Find( ua );
-			request = p->ClearRequest<T>( requestId );
-		}
-		catch( const Exception& ){}
-		return request;
+		auto p = TryFind( ua ); 
+		return p ? p->ClearRequest<T>( requestId ) : up<T>{};
 	}
 
 	Ŧ UAClient::ClearRequest( RequestId requestId )ι->up<T>{
-		up<T> request;
-	 	if( _requests.visit( requestId, [&request](auto& x){request.reset( dynamic_cast<T*>(x.second.get()) ); if(request) x.second.release();}) ){
-			_requests.erase( requestId );
-			lg _{ _asyncRequestMutex };
-			if( _requests.empty() )
-				_asyncRequest = nullptr;
-		}
-		else
-			CRITICAL( "Could not find handle for client={}, request={}.", Target(), requestId );
-		return request;
+		return _asyncRequest.ClearRequest<T>( requestId );
 	}
 }
 #undef _logTag

@@ -5,7 +5,7 @@ namespace Jde::Iot::Attributes{
 	var _logTag = Logging::Tag( "app.attributes" );
 	α OnResonse( UA_Client* ua, void* userdata, RequestId requestId, StatusCode status, UA_NodeId* dataType )ι->void{
 		var handle = userdata ? (RequestId)(uint)userdata : requestId;
-		string logPrefix = format( "({:x}.{}.{})", (uint)ua, handle, requestId );
+		string logPrefix = format( "[{:x}.{}.{}]", (uint)ua, handle, requestId );
 		auto ppClient = Try<sp<UAClient>>( [ua](){return UAClient::Find(ua);} ); if( !ppClient ) return;
 		up<flat_map<NodeId, NodeId>> results;
 		bool visited = (*ppClient)->_dataAttributeRequests.visit( handle, [requestId, dataType, &results]( auto& pair ){

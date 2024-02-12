@@ -51,8 +51,10 @@ namespace Jde::Iot
 					if( nodes.empty() )
 						co_return Session::Send( http::status::bad_request, "Invalid json: empty nodes", move(req) );
 					auto results = ( co_await Read::SendRequest(nodes, pClient) ).UP<flat_map<NodeId, Value>>();
-					if( find_if( *results, []( var& pair )->bool{ return pair.second.hasStatus && pair.second.status==UA_STATUSCODE_BADSESSIONIDINVALID; } )!=results->end() )
+					if( find_if( *results, []( var& pair )->bool{ return pair.second.hasStatus && pair.second.status==UA_STATUSCODE_BADSESSIONIDINVALID; } )!=results->end() ){
+						co_await AwaitSessionActivation( pClient );
 						results = ( co_await Read::SendRequest(nodes, pClient) ).UP<flat_map<NodeId, Value>>();
+					}
 
 					if( target=="/Snapshot" )
 						SendSnapshots( move(*results), json::array(), move(req) );
@@ -98,11 +100,13 @@ namespace Jde::Iot
 								updatedResults = ( co_await Read::SendRequest(move(successNodes), move(pClient)) ).UP<flat_map<NodeId, Value>>();
 							}
 							catch( UAException& e ){
-								if( e.Code!=UA_STATUSCODE_BADSESSIONIDINVALID )
+								if( !e.IsBadSession() )
 									e.Throw();
 							}	
-							if( !updatedResults )
+							if( !updatedResults ){
+								co_await AwaitSessionActivation( pClient );
 								updatedResults = ( co_await Read::SendRequest(move(successNodes), move(pClient)) ).UP<flat_map<NodeId, Value>>();
+							}
 							SendSnapshots( move(*updatedResults), move(array), move(req) );
 						}
 					}

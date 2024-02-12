@@ -16,7 +16,7 @@ namespace Jde::Iot{
 	sp<LogTag> _logTag{ Logging::Tag("app.client") };
 	α UAClient::LogTag()ι->sp<Jde::LogTag>{ return _logTag; }
 	flat_map<string,sp<UAClient>> _clients; shared_mutex _clientsMutex;
-	flat_map<sp<UAClient>,string> _awaitingActivation; mutex _awaitingActivationMutex;
+	concurrent_flat_set<sp<UAClient>> _awaitingActivation;
 
 	UAClient::UAClient( str address )ε:
 		UAClient{ OpcServer{address} }
@@ -24,92 +24,100 @@ namespace Jde::Iot{
 
 	UAClient::UAClient(OpcServer&& opcServer)ε:
 		_opcServer{ move(opcServer) },
+		_logger{ 0 },
 		_ptr{ Create() },
-		_logger{ Handle() },
 		MonitoredNodes{ this }{
 		UA_ClientConfig_setDefault( &Configuration() );
-		DBG( "({:x})UAClient( '{}', '{}' )", Handle(), Target(), Url() );
+		DBG( "[{:x}] Creating UAClient( '{}', '{}' )", Handle(), Target(), Url() );
 //		DBG( "sizeof(UA_Client)={}", sizeof(UA_Client) );
 	}
 	UAClient::~UAClient(){
+#undef free
 		_config.eventLoop->free( _config.eventLoop );
+#define free _free_dbg
 		UA_Client_delete( _ptr );
-		DBG( "({:x})~UAClient( '{}', '{}' )", Handle(), Target(), Url() );
+		DBG( "[{:x}]~UAClient( '{}', '{}' )", Handle(), Target(), Url() );
 	}
 	α UAClient::Shutdown()ι->void{
 		for( var& [_,p] : _clients ){
-			WARN_IF( p.use_count()>1, "({:x})use_count={}", p->Handle(), p.use_count() );
 			p->MonitoredNodes.Shutdown();
+			p->_asyncRequest.Stop();
+			WARN_IF( p.use_count()>1, "[{:x}]use_count={}", p->Handle(), p.use_count() );
 		}
 		ul _{ _clientsMutex };
 		_clients.clear();
 	}
-	α stateCallback( UA_Client *ua, UA_SecureChannelState channelState, UA_SessionState sessionState, StatusCode connectStatus )ι->void{
-		DBG( "({:x})channelState='{}', sessionState='{}', connectStatus='({:x}){}'", (uint)ua, UAException::Message(channelState), UAException::Message(sessionState), connectStatus, UAException::Message(connectStatus) );
+
+	α UAClient::TriggerSessionAwaitables()ι->void{
+		vector<HCoroutine> handles;
+		{
+			lg _{_sessionAwaitableMutex}; 
+			for_each(_sessionAwaitables, [&handles](auto&& h){handles.emplace_back(move(h));} );
+			_sessionAwaitables.clear();
+		}
+		for_each( handles, [](auto&& h){h.resume();} );
+	}
+
+	α UAClient::StateCallback( UA_Client *ua, UA_SecureChannelState channelState, UA_SessionState sessionState, StatusCode connectStatus )ι->void{
+		constexpr std::array<sv,6> sessionStates = {"Closed", "CreateRequested", "Created", "ActivateRequested", "Activated", "Closing"};
+		DBG( "[{:x}]channelState='{}', sessionState='{}', connectStatus='({:x}){}'", (uint)ua, UAException::Message(channelState), Str::FromEnum(sessionStates, sessionState), connectStatus, UAException::Message(connectStatus) );
+		if( auto pClient = sessionState == UA_SESSIONSTATE_ACTIVATED ? UAClient::TryFind(ua) : sp<UAClient>{}; pClient )
+			pClient->TriggerSessionAwaitables();
 		if( sessionState == UA_SESSIONSTATE_ACTIVATED || connectStatus==UA_STATUSCODE_BADIDENTITYTOKENINVALID || connectStatus==UA_STATUSCODE_BADCONNECTIONREJECTED ){
-			_awaitingActivationMutex.lock();
-			if( auto p=find_if(_awaitingActivation, [ua](auto x){return ua==x.first->UAPointer();}); p!=_awaitingActivation.end() ){
-				auto pClient = move(p->first);
-				auto target = move(p->second);
-				_awaitingActivation.erase( p );
-				_awaitingActivationMutex.unlock();
+			_awaitingActivation.erase_if( [ua, sessionState,connectStatus]( sp<UAClient> pClient){
+				if( pClient->UAPointer()!=ua )return false;
 				if( sessionState == UA_SESSIONSTATE_ACTIVATED ){
+					pClient->ClearRequest<UARequest>( std::numeric_limits<RequestId>::max() );
 					{
 						ul _{ _clientsMutex };
-						ASSERT( _clients.find(target)==_clients.end() );
-						_clients[target] = pClient;
+						ASSERT( _clients.find(pClient->Target())==_clients.end() );
+						_clients[pClient->Target()] = pClient;
 					}
-					ConnectAwait::Resume( move(pClient), move(target) );
+					ConnectAwait::Resume( move(pClient), pClient->Target() );
 				}
 				else
-					ConnectAwait::Resume( move(pClient), move(target), UAException{connectStatus} );
-			}
-			else
-				_awaitingActivationMutex.unlock();
+					ConnectAwait::Resume( move(pClient), pClient->Target(), UAException{connectStatus} );
+				return true;
+			});
 		}
 	}
 	α inactivityCallback(UA_Client *client)->void{
 		BREAK;
 	}
 	α subscriptionInactivityCallback( UA_Client *client, SubscriptionId subscriptionId, void *subContext ){
-		DBG( "({:x}.{:x})subscriptionInactivityCallback", (uint)client, subscriptionId );
+		DBG( "[{:x}.{:x}]subscriptionInactivityCallback", (uint)client, subscriptionId );
 	}
 	α UAClient::Create()ι->UA_Client*{
 		_config.logging = &_logger;
 		_config.eventLoop = UA_EventLoop_new_POSIX( _config.logging );
 		UA_ConnectionManager *tcpCM = UA_ConnectionManager_new_POSIX_TCP( "tcp connection manager"_uv );
-		_config.eventLoop->registerEventSource(_config.eventLoop, (UA_EventSource *)tcpCM);
+		_config.eventLoop->registerEventSource(_config.eventLoop, (UA_EventSource*)tcpCM);
 		_config.timeout = 10000; /*ms*/
-		_config.stateCallback = stateCallback;
+		_config.stateCallback = StateCallback;
 		_config.inactivityCallback = inactivityCallback;
 		_config.subscriptionInactivityCallback = subscriptionInactivityCallback;
 		UA_ConnectionManager *udpCM = UA_ConnectionManager_new_POSIX_UDP( "udp connection manager"_uv );
-		_config.eventLoop->registerEventSource( _config.eventLoop, (UA_EventSource *)udpCM );
+		_config.eventLoop->registerEventSource( _config.eventLoop, (UA_EventSource*)udpCM );
 		auto ua = UA_Client_newWithConfig( &_config );
+		_logger.context = ua;
 		UA_Client_getConfig(ua)->eventLoop->logger = _config.logging;
 
 		return ua;
 	}
-	α UAClient::OnSessionActivated( sp<UAClient> pClient, string id )ι->void{
-		lg _{ _awaitingActivationMutex };
-		ASSERT( _awaitingActivation.find(pClient)==_awaitingActivation.end() );
-		_awaitingActivation[pClient] = id;
+	α UAClient::Connect()ε->void{
+		auto p = shared_from_this();
+		ASSERT( !_awaitingActivation.contains(p) );
+		_awaitingActivation.emplace( shared_from_this() );
+		var sc = UA_Client_connectAsync( UAPointer(), Url().c_str() ); THROW_IFX( sc, UAException(sc) );
+		_asyncRequest.SetParent( p );
+		Process( std::numeric_limits<RequestId>::max(), nullptr );
 	}
-	α UAClient::Process()ι->void{
-		_asyncRequestMutex.lock();
-		if( !_asyncRequest )
-		{
-			auto p = _asyncRequest = ms<AsyncRequest>( shared_from_this() );
-			_asyncRequestMutex.unlock();
-			p->Process();
-		}
-		else
-			_asyncRequestMutex.unlock();
+	α UAClient::Process( RequestId requestId, up<UARequest>&& userData )ι->void{
+		_asyncRequest.Process( requestId, move(userData) );
 	}
 	
 	α UAClient::ProcessDataSubscriptions()ι->void{
-		_requests.try_emplace( 0, nullptr );
-		Process();
+		Process( 0, nullptr );
 	}
 	
 	α UAClient::StopProcessDataSubscriptions()ι->void{
@@ -122,7 +130,8 @@ namespace Jde::Iot{
 		{
 			ul _{ _clientsMutex };
 			if( auto p =_clients.find(target); p!=_clients.end() ){
-				DBG( "({:x})Removing client: ({:x}){}.", pClient->Handle(), e.Code, e.what() );
+				DBG( "[{:x}]Removing client: ({:x}){}.", pClient->Handle(), e.Code, e.what() );
+				pClient->_asyncRequest.Stop();
 				_clients.erase(p);
 			}
 			else
@@ -143,57 +152,53 @@ namespace Jde::Iot{
 	}
 	α UAClient::SendBrowseRequest( Browse::Request&& request, HCoroutine&& h )ι->void{
 		try{
-			{
-				lg _{ _requestIdMutex };
-				UAε( UA_Client_sendAsyncBrowseRequest(_ptr, &request, Browse::OnResponse, nullptr, &RequestIndex) );
-				_requests.emplace( RequestIndex, mu<UARequest>(move(h)) );
-			}
-			Process();
+			RequestId requestId{};
+			TRACET( Browse::Tag(), "[{:x}]SendBrowseRequest", Handle() );
+			UAε( UA_Client_sendAsyncBrowseRequest(_ptr, &request, Browse::OnResponse, nullptr, &requestId) );
+			Process( requestId, mu<UARequest>(move(h)) );
 		}
 		catch( UAException& e ){
-			//Browse::Request b2{ move(request) };
-			//SendBrowseRequest( move(request), move(pClient), move(h) );
-			//var f = [r{move(request)}]( sp<UAClient>&& p, HCoroutine&& h )mutable{ var b2{move(r)}; };
 			Retry( [r{move(request)}]( sp<UAClient>&& p, HCoroutine&& h )mutable{p->SendBrowseRequest( move(r), move(h) );}, move(e), shared_from_this(), move(h) );
 		}
-//		DBG( "~Browse::Send" );
 	}
 
 	α UAClient::SendReadRequest( const flat_set<NodeId>&& nodeIds, HCoroutine&& h )ι->void{
+		if( nodeIds.empty() )
+			return Resume( Exception("no nodes sent"), move(h) );
 		flat_map<UA_UInt32, NodeId> ids;
-		RequestId requestId{};
+		RequestId firstRequestId{};
 		try{
 			//assume 1st will fail if any, request all again if latter node failed.
 			for( auto&& nodeId : nodeIds ){
-				lg _{ _requestIdMutex };
-				UAε( UA_Client_readValueAttribute_async(_ptr, nodeId.nodeId, Read::OnResponse, (void*)(uint)requestId, &RequestIndex) );
-				if( !requestId )
-					requestId = RequestIndex;
-				ids.emplace( RequestIndex, nodeId );
+				RequestId requestId{};
+				UAε( UA_Client_readValueAttribute_async(_ptr, nodeId.nodeId, Read::OnResponse, (void*)(uint)firstRequestId, &requestId) );
+				if( !firstRequestId )
+					firstRequestId = requestId;
+				ids.emplace( requestId, nodeId );
 	 		}
-			TRACET( Read::LogTag(), "({:x}.{})SendReadRequest - count={}", Handle(), requestId, ids.size() );
-			_requests.emplace( requestId, mu<UARequest>(move(h)) );
-			_readRequests.try_emplace( requestId, UARequestMulti<Value>{move(ids)} );
-			Process();
+			TRACET( Read::LogTag(), "[{:x}.{}]SendReadRequest - count={}", Handle(), firstRequestId, ids.size() );
+			_readRequests.try_emplace( firstRequestId, UARequestMulti<Value>{move(ids)} );
+			Process( firstRequestId, mu<UARequest>(move(h)) );
 		}
 		catch( UAException& e ){
 			Retry( [n=move(nodeIds)]( sp<UAClient>&& p, HCoroutine&& h )mutable{p->SendReadRequest( move(n), move(h) );}, move(e), shared_from_this(), move(h) );
 		}
 	}
 	α UAClient::SendWriteRequest( flat_map<NodeId,Value>&& values, HCoroutine&& h )ι->void{
+		if( values.empty() )
+			return Resume( Exception("no nodes sent"), move(h) );
 		flat_map<UA_UInt32, NodeId> ids;
-		Iot::RequestId requestId{};
+		Iot::RequestId firstRequestId{};
 		try{
 			for( auto&& [nodeId, value] : values ){
-				lg _{ _requestIdMutex };
-				UAε( UA_Client_writeValueAttribute_async(_ptr, nodeId.nodeId, &value.value, Write::OnResonse, (void*)(uint)requestId, &RequestIndex) );
-				if( !requestId )
-					requestId = RequestIndex;
-				ids.emplace( RequestIndex, nodeId );
+				RequestId requestId{};
+				UAε( UA_Client_writeValueAttribute_async(_ptr, nodeId.nodeId, &value.value, Write::OnResonse, (void*)(uint)firstRequestId, &requestId) );
+				if( !firstRequestId )
+					firstRequestId = requestId;
+				ids.emplace( requestId, nodeId );
 	 		}
-			_requests.emplace( requestId, mu<UARequest>(move(h)) );
-			_writeRequests.try_emplace( requestId, UARequestMulti<UA_WriteResponse>{move(ids), shared_from_this()} );
-			Process();
+			_writeRequests.try_emplace( firstRequestId, UARequestMulti<UA_WriteResponse>{move(ids), shared_from_this()} );
+			Process( firstRequestId, mu<UARequest>(move(h)) );
 		}
 		catch( UAException& e ){
 			Retry( [n=move(values)]( sp<UAClient>&& p, HCoroutine&& h )mutable{p->SendWriteRequest( move(n), move(h) );}, move(e), shared_from_this(), move(h) );
@@ -203,27 +208,25 @@ namespace Jde::Iot{
 		UA_SetMonitoringModeRequest request{};
 		request.subscriptionId = subscriptionId;
 		try{
-			lg _{ _requestIdMutex };
-			UAε( UA_Client_MonitoredItems_setMonitoringMode_async(UAPointer(), move(request), SetMonitoringModeCallback, nullptr, &RequestIndex) );
-			_requests.emplace( RequestIndex, nullptr );
+			RequestId requestId{};
+			UAε( UA_Client_MonitoredItems_setMonitoringMode_async(UAPointer(), move(request), SetMonitoringModeCallback, nullptr, &requestId) );
+			Process( requestId, nullptr );//if retry fails, don't want to process.
 		}
 		catch( UAException& e ){
 			Retry( [subscriptionId]( sp<UAClient>&& p, HCoroutine&& h )mutable{p->SetMonitoringMode( subscriptionId );}, move(e), shared_from_this(), {} );
 		}
-		Process();
 	}
 
 	α UAClient::CreateSubscriptions()ι->void{
 		try{
-			lg _{ _requestIdMutex };
-			TRACET( UAMonitoringNodes::LogTag(), "({:x}.{})CreateSubscription", Handle(), RequestIndex );
-			UAε( UA_Client_Subscriptions_create_async(UAPointer(), UA_CreateSubscriptionRequest_default(), nullptr, StatusChangeNotificationCallback, DeleteSubscriptionCallback, CreateSubscriptionCallback, nullptr, &RequestIndex) );
-			_requests.emplace( RequestIndex, nullptr );
+			RequestId requestId{};
+			UAε( UA_Client_Subscriptions_create_async(UAPointer(), UA_CreateSubscriptionRequest_default(), nullptr, StatusChangeNotificationCallback, DeleteSubscriptionCallback, CreateSubscriptionCallback, nullptr, &requestId) );
+			TRACET( UAMonitoringNodes::LogTag(), "[{:x}.{:x}]CreateSubscription", Handle(), requestId );
+			Process( requestId, nullptr );
 		}
 		catch( UAException& e ){
 			Retry( []( sp<UAClient>&& p, HCoroutine&& h )mutable{p->CreateSubscriptions();}, move(e), shared_from_this(), {} );
 		}
-		Process();
 	}
 
 	α UAClient::DataSubscriptions( CreateMonitoredItemsRequest&& request, Jde::Handle requestHandle, HCoroutine&& h )ι->void{
@@ -235,15 +238,16 @@ namespace Jde::Iot{
 			if( !CreatedSubscriptionResponse )
 				return Resume( Exception{"CreatedSubscriptionResponse==null"}, move(h) );
 			request.subscriptionId = CreatedSubscriptionResponse->subscriptionId;
-			lg _{ _requestIdMutex };
-			TRACET( UAMonitoringNodes::LogTag(), "({:x}.{:x})DataSubscriptions - {}", Handle(), RequestIndex, request.ToJson().dump() );
-			UAε( UA_Client_MonitoredItems_createDataChanges_async(UAPointer(), request, &contexts, &notifications, &deleteCallbacks, CreateDataChangesCallback, (void*)requestHandle, &RequestIndex) );
-			_requests.emplace( RequestIndex, mu<UARequest>(move(h)) );
+
+			RequestId requestId{};
+			UAε( UA_Client_MonitoredItems_createDataChanges_async(UAPointer(), request, &contexts, &notifications, &deleteCallbacks, CreateDataChangesCallback, (void*)requestHandle, &requestId) );
+			TRACET( UAMonitoringNodes::LogTag(), "[{:x}.{:x}]DataSubscriptions - {}", Handle(), requestId, request.ToJson().dump() );
+			Process( requestId, mu<UARequest>(move(h)) );//TODO handle BadSubscriptionIdInvalid
 		}
 		catch( UAException& e ){
-			Retry( [&x=request,requestHandle]( sp<UAClient>&& p, HCoroutine&& h )mutable{p->DataSubscriptions(move(x), requestHandle, move(h));}, move(e), shared_from_this(), move(h) );
+			Resume( move(e), move(h) );//retry will leave CreatedSubscriptionResponse null...
+			//Retry( [&x=request,requestHandle]( sp<UAClient>&& p, HCoroutine&& h )mutable{p->DataSubscriptions(move(x), requestHandle, move(h));}, move(e), shared_from_this(), move(h) );
 		}
-		Process();
 	}
 
 	α UAClient::DataSubscriptionDelete( Iot::SubscriptionId subscriptionId, flat_set<MonitorId>&& monitoredItemIds )ι->void{
@@ -255,12 +259,9 @@ namespace Jde::Iot{
 		for( auto& id : monitoredItemIds )
 			request.monitoredItemIds[i++] = id;
 		try{
-			{
-				lg lock{ _requestIdMutex };
-				UAε( UA_Client_MonitoredItems_delete_async(UAPointer(), move(request), MonitoredItemsDeleteCallback, nullptr, &RequestIndex) );
-				_requests.emplace( RequestIndex, mu<UARequest>(nullptr) );
-			}
-			Process();
+			RequestId requestId{};
+			UAε( UA_Client_MonitoredItems_delete_async(UAPointer(), move(request), MonitoredItemsDeleteCallback, nullptr, &requestId) );
+			Process( requestId, nullptr );
 			UA_DeleteMonitoredItemsRequest_clear( &request );
 		}
 		catch( const Exception&)
@@ -270,18 +271,17 @@ namespace Jde::Iot{
 	α UAClient::RequestDataTypeAttributes( const flat_set<NodeId>&& x, HCoroutine&& h )ι->void
 	{
 		flat_map<UA_UInt32, NodeId> ids;
-		Iot::RequestId requestId{};
+		Iot::RequestId firstRequestId{};
 		try{
 			for( var& node : x ){
-				lg _{ _requestIdMutex };
-				UAε( UA_Client_readDataTypeAttribute_async(_ptr, node.nodeId, Attributes::OnResonse, (void*)(uint)requestId, &RequestIndex) );
-				if( !requestId )
-					requestId = RequestIndex;
-				ids.emplace( RequestIndex, node );
+				RequestId requestId{};
+				UAε( UA_Client_readDataTypeAttribute_async(_ptr, node.nodeId, Attributes::OnResonse, (void*)(uint)firstRequestId, &requestId) );
+				if( !firstRequestId )
+					firstRequestId = requestId;
+				ids.emplace( requestId, node );
 	 		}
-			_requests.emplace( requestId, mu<UARequest>(move(h)) );
-			_dataAttributeRequests.try_emplace( requestId, UARequestMulti<NodeId>{move(ids), shared_from_this()} );
-			Process();
+			_dataAttributeRequests.try_emplace( firstRequestId, UARequestMulti<NodeId>{move(ids), shared_from_this()} );
+			Process( firstRequestId, mu<UARequest>(move(h)) );
 		}
 		catch( UAException& e ){
 			Retry( [n=move(x)]( sp<UAClient>&& p, HCoroutine&& h )mutable{p->RequestDataTypeAttributes( move(n), move(h) );}, move(e), shared_from_this(), move(h) );
@@ -297,10 +297,12 @@ namespace Jde::Iot{
 	α UAClient::Find( UA_Client* ua, SL srce )ε->sp<UAClient>{
 		sl _{ _clientsMutex };
 		sp<UAClient> y;
+		if( IApplication::ShuttingDown() )
+			throw Exception{ srce, ELogLevel::Debug, "Application is shutting down." }; //_clients getting removed calls ~UAClient, which makes _clients access ub.
 		if( auto p = find_if( _clients, [ua](var& c){return c.second->_ptr==ua;} ); p!=_clients.end() )
 			y = p->second;
 		else
-		 	throw Exception{ srce, ELogLevel::Critical, "({})Could not find client.", format("{:x}", (uint)ua) };
+		 	throw Exception{ srce, ELogLevel::Debug, "[{}]Could not find client.", format("{:x}", (uint)ua) };
 
 		return y;
 	}

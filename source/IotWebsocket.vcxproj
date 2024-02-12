@@ -2,6 +2,10 @@
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="packages\Microsoft.Windows.CppWinRT.2.0.210806.1\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('packages\Microsoft.Windows.CppWinRT.2.0.210806.1\build\native\Microsoft.Windows.CppWinRT.props')" />
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="DebugMem|x64">
+      <Configuration>DebugMem</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
@@ -26,6 +30,13 @@
     <CharacterSet>MultiByte</CharacterSet>
     <EnableASAN>true</EnableASAN>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugMem|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <EnableASAN>false</EnableASAN>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -41,6 +52,9 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugMem|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -48,14 +62,21 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(JDE_DIR)\Public\;$(REPO_DIR)\vcpkg\installed\x64-windows\include;$(REPO_DIR)\open62541\build\src_generated;$(REPO_DIR)\open62541\arch;$(REPO_DIR)\open62541\plugins\include;$(REPO_DIR)\open62541\include;</IncludePath>
     <OutDir>$(SolutionDir).bin\$(Configuration)\</OutDir>
-    <IntDir>.obj\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir).obj\$(ProjectName)\$(Configuration)\</IntDir>
+    <TargetName>Jde.$(ProjectName)</TargetName>
+    <LibraryPath>$(JDE_DIR)\Public\stage\$(Configuration);$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugMem|x64'">
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(JDE_DIR)\Public\;$(REPO_DIR)\vcpkg\installed\x64-windows\include;$(REPO_DIR)\open62541\build\src_generated;$(REPO_DIR)\open62541\arch;$(REPO_DIR)\open62541\plugins\include;$(REPO_DIR)\open62541\include;</IncludePath>
+    <OutDir>$(SolutionDir).bin\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir).obj\$(ProjectName)\$(Configuration)\</IntDir>
     <TargetName>Jde.$(ProjectName)</TargetName>
     <LibraryPath>$(JDE_DIR)\Public\stage\$(Configuration);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(JDE_DIR)\Public\;$(REPO_DIR)\vcpkg\installed\x64-windows\include;$(REPO_DIR)\open62541\build\src_generated;$(REPO_DIR)\open62541\arch;$(REPO_DIR)\open62541\plugins\include;$(REPO_DIR)\open62541\include;</IncludePath>
     <OutDir>$(SolutionDir).bin\$(Configuration)\</OutDir>
-    <IntDir>.obj\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir).obj\$(ProjectName)\$(Configuration)\</IntDir>
     <TargetName>Jde.$(ProjectName)</TargetName>
     <LibraryPath>$(JDE_DIR)\Public\stage\$(Configuration);$(LibraryPath)</LibraryPath>
     <LinkIncremental>false</LinkIncremental>
@@ -64,7 +85,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;_SILENCE_ALL_MS_EXT_DEPRECATION_WARNINGS;_WIN32_WINNT=0x0601;WIN32_LEAN_AND_MEAN;PROTOBUF_USE_DLLS;PROTOBUF_USE_EXCEPTIONS=0;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;_SILENCE_ALL_MS_EXT_DEPRECATION_WARNINGS;WINVER=0x0A00;_WIN32_WINNT=0x0A00;WIN32_LEAN_AND_MEAN;PROTOBUF_USE_DLLS;PROTOBUF_USE_EXCEPTIONS=0;WINVER=0x0A00;_WIN32_WINNT=0x0A00;WIN32_LEAN_AND_MEAN;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <DisableSpecificWarnings>4068;4251;4275;5104;5105</DisableSpecificWarnings>
@@ -83,13 +104,37 @@
       <ShowProgress>NotSet</ShowProgress>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugMem|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;_SILENCE_ALL_MS_EXT_DEPRECATION_WARNINGS;WINVER=0x0A00;_WIN32_WINNT=0x0A00;WIN32_LEAN_AND_MEAN;PROTOBUF_USE_DLLS;PROTOBUF_USE_EXCEPTIONS=0;WINVER=0x0A00;_WIN32_WINNT=0x0A00;_CRTDBG_MAP_ALLOC;WIN32_LEAN_AND_MEAN;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <DisableSpecificWarnings>4068;4251;4275;5104;5105</DisableSpecificWarnings>
+      <AdditionalIncludeDirectories>$(REPO_DIR)\json\include;$(REPO_DIR)\protobuf\src;$(REPO_DIR)\spdlog\include;$(BOOST_DIR);$(REPO_DIR)/vcpkg/installed/x64-windows/include;../../Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <ForcedIncludeFiles>stdafx.h</ForcedIncludeFiles>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>open62541.lib;ws2_32.lib;Iphlpapi.lib;libprotobufd.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);../../Public/stage/$(Configuration)</AdditionalLibraryDirectories>
+      <ShowProgress>NotSet</ShowProgress>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;_SILENCE_ALL_MS_EXT_DEPRECATION_WARNINGS;_WIN32_WINNT=0x0601;WIN32_LEAN_AND_MEAN;PROTOBUF_USE_DLLS;PROTOBUF_USE_EXCEPTIONS=0;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;_SILENCE_ALL_MS_EXT_DEPRECATION_WARNINGS;WINVER=0x0A00;_WIN32_WINNT=0x0A00;WIN32_LEAN_AND_MEAN;_WIN32_WINNT=0x0601;WIN32_LEAN_AND_MEAN;PROTOBUF_USE_DLLS;PROTOBUF_USE_EXCEPTIONS=0;WINVER=0x0A00;_WIN32_WINNT=0x0A00;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <DisableSpecificWarnings>4068;4251;4275;5104;5105</DisableSpecificWarnings>
@@ -115,6 +160,7 @@
     <ClCompile Include="async\ConnectAwait.cpp" />
     <ClCompile Include="async\CreateSubscriptions.cpp" />
     <ClCompile Include="async\DataChanges.cpp" />
+    <ClCompile Include="async\SessionAwait.cpp" />
     <ClCompile Include="async\SetMonitoringMode.cpp" />
     <ClCompile Include="async\Write.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -126,7 +172,9 @@
     <ClCompile Include="types\proto\IotFromClient.pb.cc" />
     <ClCompile Include="types\proto\IotFromServer.pb.cc">
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='DebugMem|x64'">TurnOffAllWarnings</WarningLevel>
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4068;4244;4251;4275;5104;5105</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='DebugMem|x64'">4068;4244;4251;4275;5104;5105</DisableSpecificWarnings>
     </ClCompile>
     <ClCompile Include="uatypes\Browse.cpp" />
     <ClCompile Include="uatypes\Logger.cpp" />
@@ -137,12 +185,17 @@
   <ItemGroup>
     <ClCompile Include="pc.h">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='DebugMem|x64'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </PrecompiledHeaderFile>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='DebugMem|x64'">
       </PrecompiledHeaderFile>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </PrecompiledHeaderFile>
       <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='DebugMem|x64'">
       </ForcedIncludeFiles>
       <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ForcedIncludeFiles>
@@ -152,11 +205,13 @@
     <ClInclude Include="async\ConnectAwait.h" />
     <ClInclude Include="async\CreateSubscriptions.h" />
     <ClInclude Include="async\DataChanges.h" />
+    <ClInclude Include="async\SessionAwait.h" />
     <ClInclude Include="async\SetMonitoringMode.h" />
     <ClInclude Include="async\Write.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Rest.h" />
     <ClInclude Include="Socket.h" />
+    <ClInclude Include="typedefs.h" />
     <ClInclude Include="types\FromServer.h" />
     <ClInclude Include="types\MonitoringNodes.h" />
     <ClInclude Include="types\OpcServer.h" />

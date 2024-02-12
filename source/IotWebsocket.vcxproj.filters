@@ -99,6 +99,9 @@
     <ClCompile Include="types\proto\IotCommon.pb.cc">
       <Filter>Source Files\types\proto</Filter>
     </ClCompile>
+    <ClCompile Include="async\SessionAwait.cpp">
+      <Filter>Source Files\async</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
@@ -180,6 +183,12 @@
       <Filter>Header Files\async</Filter>
     </ClInclude>
     <ClInclude Include="async\Write.h">
+      <Filter>Header Files\async</Filter>
+    </ClInclude>
+    <ClInclude Include="typedefs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="async\SessionAwait.h">
       <Filter>Header Files\async</Filter>
     </ClInclude>
   </ItemGroup>

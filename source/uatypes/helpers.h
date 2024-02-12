@@ -5,7 +5,6 @@
 
 #define var const auto
 namespace Jde::Iot{
-	using NamespaceId = uint16;
 
 	Ξ ToSV( const UA_String& s )ι->sv{ return sv{ (const char*)s.data, s.length }; }
 	Ξ ToUV( sv s )ι->UA_String{ return { s.size(), (UA_Byte*)s.data() }; }
@@ -18,18 +17,6 @@ namespace Jde::Iot{
 	Ξ ByteStringToJson( const UA_ByteString& v )ι->json{ string hex; hex.reserve( v.length*2 ); boost::algorithm::hex_lower( ToSV(v), std::back_inserter(hex) ); return json{hex}; }
 	Ξ ToGuid( string x, UA_Guid& ua )ι->void{ std::erase( x, '-' ); var uuid{boost::lexical_cast<boost::uuids::uuid>(x)}; ::memcpy( &ua, &uuid, sizeof(UA_Guid) ); }
 	Ξ ToBinaryString( const UA_Guid& ua )ι->string{ return {(const char*)&ua, sizeof(UA_Guid)}; }
-
-	template <auto F> //https://stackoverflow.com/questions/19053351/how-do-i-use-a-custom-deleter-with-a-stdunique-ptr-member
-	struct DeleterFromFunction {
-    Τ constexpr α operator()(T* arg)Ι->void{ F(arg); }
-	};
-
-	template <typename T, auto F> using UAUP = std::unique_ptr<T, DeleterFromFunction<F>>;
-	using OpcId=string;
-	using MonitorId=UA_UInt32;
-	using SubscriptionId=UA_UInt32;
-	using StatusCode = UA_StatusCode;
-
 
 	Τ struct Iterable{
 		Iterable( T* begin, uint size )ι:_begin{begin}, _size{size}{}

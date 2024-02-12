@@ -47,6 +47,6 @@ namespace Jde::Iot{
 			UA_Variant_setScalarCopy( &value, &v, value.type );
 		}
 		else
-			throw Exception( "Not implemented." );
+			throw Exception( "Arrays Not implemented." );
 	}
 }

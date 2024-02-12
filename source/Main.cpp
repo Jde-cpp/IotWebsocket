@@ -17,6 +17,15 @@ namespace Jde::Iot{
 int main( int argc, char **argv ){
 	using namespace Jde;
 	auto exitCode = EXIT_SUCCESS;
+#ifdef _MSC_VER
+	#ifndef _NDEBUG
+	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
+	char* placeholder = new char[795];
+	std::cout << (uint)placeholder << std::endl;//7286
+	std::fill(placeholder, placeholder + 795, '~'); 
+	//std::fill(placeholder, placeholder + 795, 'X'); 
+	#endif
+#endif
 	try{
 		OSApp::Startup( argc, argv, "IotWebSocket", "IOT Connection" );
 		DB::CreateSchema();
@@ -33,5 +42,14 @@ int main( int argc, char **argv ){
 		IApplication::Pause();
 	}
 	IApplication::Cleanup();
+#ifdef _MSC_VER
+	#ifndef _NDEBUG
+    std::this_thread::sleep_for( 5s );
+		//_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG); 
+
+
+//		_CrtDumpMemoryLeaks();
+	#endif
+#endif
 	return EXIT_SUCCESS;
 }

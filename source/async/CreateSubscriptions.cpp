@@ -6,24 +6,27 @@ namespace Jde::Iot{
 	boost::concurrent_flat_map<sp<UAClient>,vector<HCoroutine>> _subscriptionRequests;
 	α CreateSubscriptionCallback(UA_Client* ua, void* /*userdata*/, RequestId requestId, void *response)ι->void{
 		auto pResponse = static_cast<UA_CreateSubscriptionResponse*>( response );
-		auto ppClient = Try<sp<UAClient>>( [ua](){return UAClient::Find(ua);} ); if( !ppClient ) return;
-		(*ppClient)->ClearRequest<UARequest>( requestId );
+		auto pClient = UAClient::TryFind(ua); if( !pClient ) return;
+		pClient->ClearRequest<UARequest>( requestId );
 		if( var sc = pResponse->responseHeader.serviceResult; sc )
-			CreateSubscriptionAwait::Resume( UAException{sc}, move(*ppClient) );
+			CreateSubscriptionAwait::Resume( UAException{sc}, move(pClient) );
 		else{
-			TRACE( "({:x}.{})CreateSubscriptionCallback - subscriptionId={}", (uint)ua, requestId, pResponse->subscriptionId );
-			(*ppClient)->CreatedSubscriptionResponse = ms<UA_CreateSubscriptionResponse>(move(*pResponse));
-			CreateSubscriptionAwait::Resume( move(*ppClient) );
+			TRACE( "[{:x}.{}]CreateSubscriptionCallback - subscriptionId={}", (uint)ua, requestId, pResponse->subscriptionId );
+			pClient->CreatedSubscriptionResponse = ms<UA_CreateSubscriptionResponse>(move(*pResponse));
+			CreateSubscriptionAwait::Resume( move(pClient) );
 		}
 	}
 
 	α StatusChangeNotificationCallback(UA_Client* ua, UA_UInt32 subId, void *subContext, UA_StatusChangeNotification *notification)ι->void{
 		BREAK;
-		TRACE( "({:x}.{})StatusChangeNotificationCallback", (uint)ua, subId );
+		TRACE( "[{:x}.{}]StatusChangeNotificationCallback", (uint)ua, subId );
 	}
 
-	α DeleteSubscriptionCallback(UA_Client* ua, UA_UInt32 subId, void *subContext)ι->void{
-		TRACE( "({:x}.{})DeleteSubscriptionCallback", (uint)ua, subId );
+	α DeleteSubscriptionCallback( UA_Client* ua, UA_UInt32 subId, void* /*subContext*/ )ι->void{
+		TRACE( "[{:x}.{}]DeleteSubscriptionCallback", (uint)ua, subId );
+		auto pClient = UAClient::TryFind(ua); 
+		if( pClient )
+			pClient->CreatedSubscriptionResponse = nullptr;
 	}
 
 	α CreateSubscriptionAwait::await_ready()ι->bool{ return _client->CreatedSubscriptionResponse!=nullptr; }

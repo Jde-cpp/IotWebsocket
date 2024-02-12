@@ -30,16 +30,6 @@ target_link_libraries( Jde.IotWebsocket Jde.Ssl )
 target_link_libraries( Jde.IotWebsocket Jde.Web )
 target_link_libraries( Jde.IotWebsocket Jde.XZ )
 
-#target_link_libraries(Jde.IotWebsocket Threads::Threads)
-#target_link_libraries(Jde.IotWebsocket dl)
-#target_link_libraries( Jde.IotWebsocket crypto )
-
-#target_link_libraries(Jde.IotWebsocket stdc++)
-#target_link_libraries(Jde.IotWebsocket boost_system)
-#target_link_libraries(Jde.IotWebsocket boost_thread)
-#target_link_libraries(Jde.IotWebsocket mysqlcppconn8)
-#target_link_libraries(Jde.IotWebsocket Jde.MySql)
-#######################################################
 target_precompile_headers(Jde.IotWebsocket
 	PRIVATE
 	<boost/asio.hpp>
@@ -56,7 +46,7 @@ target_precompile_headers(Jde.IotWebsocket
 	<open62541/client_highlevel_async.h>
 	<open62541/plugin/log_stdout.h>
 	<open62541/client_subscriptions.h>
-	<jde/TypeDefs.h>
+	"TypeDefs.h"
 	<jde/Log.h>
 	<jde/App.h>
 	<jde/Str.h>
@@ -65,6 +55,7 @@ target_precompile_headers(Jde.IotWebsocket
 	"../../Public/src/web/proto/FromServer.pb.h"
 	"types/proto/IotFromServer.pb.h"
 	"types/proto/IotFromClient.pb.h"
+	"async/SessionAwait.h"
 	"types/FromServer.h"
 	"uatypes/UAException.h"
 	"../../Framework/source/coroutine/Alarm.h"

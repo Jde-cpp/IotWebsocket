@@ -18,50 +18,47 @@ namespace Jde::Iot
 			Jde::Resume( move(pClient), move(h) );
 		else{
 			_requestMutex.lock();
-			auto p = _requests.find( _id );
-			if( p==_requests.end() ){
+			if( auto p = _requests.find( _id ); p!=_requests.end() ){
+				p->second.push_back( move(h) );
+				_requestMutex.unlock();
+			}
+			else{
 				_requests[_id] = {h};
 				_requestMutex.unlock();
 				Create( _id );
 			}
-			else{
-				p->second.push_back( move(h) );
-				_requestMutex.unlock();
-			}
-	
 		}
 	}
-	α ConnectAwait::Create( string id )ι->Task{
+	α ConnectAwait::Create( str opcServerId )ι->Task{
 		try{
-			auto pServer = ( co_await OpcServer::Select(id) ).UP<OpcServer>(); THROW_IF( !pServer, "Could not find opc server:  '{}'", id );
+			auto pServer = ( co_await OpcServer::Select(opcServerId) ).UP<OpcServer>(); THROW_IF( !pServer, "Could not find opc server:  '{}'", opcServerId );
 			auto pClient = ms<UAClient>( move(*pServer) );
-			pClient->Create();
-			pClient->OnSessionActivated( pClient, id );
-			var sc = UA_Client_connectAsync( *pClient, pClient->Url().c_str() ); THROW_IFX( sc, UAException(sc) );
-			pClient->Process();
+			pClient->Connect();
 		}
 		catch( const Exception& e ){
 			lg _{ _requestMutex };
 			var ua = dynamic_cast<const UAException*>( &e );
-			for( auto& r : _requests[id] ){
-				Jde::Resume( ua ? UAException{*ua} : Exception{e.what(), e.Code, e.Level(), e.Stack().front()}, move(r) );
-			}
-			_requests.erase( id );
+			for( auto& h : _requests[opcServerId] )
+				Jde::Resume( ua ? UAException{*ua} : Exception{e.what(), e.Code, e.Level(), e.Stack().front()}, move(h) );
+			_requests.erase( opcServerId );
 		}
 	}
-	α ConnectAwait::Resume( sp<UAClient> pClient, string&& target, function<void(HCoroutine&&)> resume )ι->void{
+	α ConnectAwait::Resume( sp<UAClient> pClient, str target, function<void(HCoroutine&&)> resume )ι->void{
 		ASSERT( pClient );
-		pClient->_asyncRequest = nullptr;
-		lg _{ _requestMutex };
-		for( auto h : _requests[target] )
+		vector<HCoroutine> handles;
+		{
+			lg _{ _requestMutex };
+			handles = move( _requests[target] );
+			_requests.erase( target );
+		}
+		for( auto h : handles )
 			resume( move(h) );
-		_requests.erase( target );
 	}
 
-	α ConnectAwait::Resume( sp<UAClient>&& pClient, string&& target )ι->void{
-		Resume( pClient, move(target), [p=pClient](HCoroutine&& h){ Jde::Resume((sp<UAClient>)move(p), move(h)); } );
+	α ConnectAwait::Resume( sp<UAClient>&& pClient, str target )ι->void{
+		Resume( pClient, target, [p=pClient](HCoroutine&& h){ Jde::Resume((sp<UAClient>)move(p), move(h)); } );
 	}
-	α ConnectAwait::Resume( sp<UAClient>&& pClient, string&& target, const UAException&& e )ι->void{
-		Resume( move(pClient), move(target), [sc=e.Code](HCoroutine&& h){ Jde::Resume(UAException{(StatusCode)sc}, move(h)); } );
+	α ConnectAwait::Resume( sp<UAClient>&& pClient, str target, const UAException&& e )ι->void{
+		Resume( move(pClient), target, [sc=e.Code](HCoroutine&& h){ Jde::Resume(UAException{(StatusCode)sc}, move(h)); } );
 	}
 }

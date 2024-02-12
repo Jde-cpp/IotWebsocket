@@ -1,10 +1,10 @@
 {
 	"logging":{
 		"tags": {
-			"Trace":["app.monitoring", "app.client", "app.socket.requests", "net"],
-			"Debug":["app.read"],
-			"Information":["sql", "app.dataChanges"],
-			"Warning":["alarm", "ql", "io", "locks", "settings", "threads", "UANet", "UASecure", "UASession", "UAServer", "UAClient", "UAUser", "UASecurity", "UAEvent"],
+			"Trace":["app", "app.read", "app.monitoring", "app.browse", "app.client", "app.socket_requests", "net", "UANet", "UASecure", "UASession", "UAServer", "UAClient", "UAUser", "UASecurity", "UAEvent"],
+			"Debug":["app.processingLoop", "app.socket_results"],
+			"Information":["sql", "app.dataChanges", "threads"],
+			"Warning":["alarm", "ql", "io", "locks", "settings"],
 			"Error":[],
 			"Critical":[]
 		},

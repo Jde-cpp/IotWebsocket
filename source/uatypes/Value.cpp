@@ -18,7 +18,7 @@ namespace Jde::Iot{
 
 		α OnResponse( UA_Client* ua, void* userdata, RequestId requestId, StatusCode sc, UA_DataValue* val )ι->void{
 			var handle = userdata ? (RequestId)(uint)userdata : requestId;
-			string logPrefix = format( "({:x}.{}.{})", (uint)ua, handle, requestId );
+			string logPrefix = format( "[{:x}.{}.{}]", (uint)ua, handle, requestId );
 			if( sc )
 				TRACE( "{}Value::OnResponse ({})-{} Value={}", logPrefix, sc, UAException::Message(sc), val ? Value{*val}.ToJson().dump() : "null" );
 			auto pClient = UAClient::TryFind(ua); if( !pClient ) return;
@@ -27,7 +27,7 @@ namespace Jde::Iot{
 				auto& x = pair.second;
 				if( auto pRequest=x.Requests.find(requestId); pRequest!=x.Requests.end() ){
 					auto p = x.Results.try_emplace( pRequest->second, sc ? Value{ sc } : Value{ *val } ).first;
-					TRACE( "{} Value={}", logPrefix, sc ? format("({:x}){}", sc, UAException::Message(sc)) : p->second.ToJson().dump() );
+					TRACE( "{} Value={}", logPrefix, sc ? format("[{:x}]{}", sc, UAException::Message(sc)) : p->second.ToJson().dump() );
 					if( x.Results.size()==x.Requests.size() )
 						results = mu<flat_map<NodeId, Value>>( move(x.Results) );
 				}
@@ -36,7 +36,7 @@ namespace Jde::Iot{
 				CRITICAL( "{}Could not find handle.", logPrefix );
 			else if( results ){
 				pClient->_readRequests.erase( handle );
-				auto h = pClient->ClearRequestH( handle ); RETURN_IF( !h, ELogLevel::Critical, "({})Could not find handle.", logPrefix );
+				auto h = pClient->ClearRequestH( handle ); RETURN_IF( !h, ELogLevel::Critical, "[{}]Could not find handle.", logPrefix );
 				TRACE( "{}Resume", logPrefix );
 				Resume( move(results), move(h) );
 			}
@@ -126,17 +126,16 @@ namespace Jde::Iot{
 			else
 				throw Exception( "Not implemented." );
 		}
-		else if( IS(UA_TYPES_DOUBLE) ){
-			if( scaler ){
-				THROW_IF( !j.is_number(), "Expected number '{}'.", j.dump() );
-				UA_Double v = j;
-				UA_Variant_setScalarCopy( &value, &v, type );
-			}
-			else
-				throw Exception( "Not implemented." );
-		}
+		else if( IS(UA_TYPES_DOUBLE) )
+			SetNumber<UA_Double>( j );
+		else if( IS(UA_TYPES_FLOAT) )
+			SetNumber<UA_Float>( j );
+		else if( IS(UA_TYPES_INT16) )
+			SetNumber<UA_Int16>( j );
 		else if( IS(UA_TYPES_INT32) )
 			SetNumber<UA_Int32>( j );
+		else if( IS(UA_TYPES_INT64) )
+			SetNumber<UA_Int64>( j );
 		else if( IS(UA_TYPES_STRING) ){
 			if( scaler ){
 				THROW_IF( !j.is_string(), "Expected string '{}'.", j.dump() );
@@ -146,8 +145,12 @@ namespace Jde::Iot{
 		}
 		else if( IS(UA_TYPES_UINT16) )
 			SetNumber<UA_UInt16>( j );
+		else if( IS(UA_TYPES_UINT32) )
+			SetNumber<UA_UInt32>( j );
+		else if( IS(UA_TYPES_UINT64) )
+			SetNumber<UA_UInt64>( j );
 		else
-			THROW( "Setting type '{}' has not been implemented.", type );
+			THROW( "Setting type '{}' has not been implemented.", type->typeName );
 	}
 
 	α Value::ToProto( const OpcId& opcId, const NodeId& node )Ι->FromServer::MessageUnion{

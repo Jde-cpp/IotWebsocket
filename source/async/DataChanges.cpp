@@ -9,7 +9,7 @@ namespace Jde::Iot{
 		auto pClient = UAClient::TryFind(ua); if( !pClient ) return;
 		auto pResponse = static_cast<UA_CreateMonitoredItemsResponse*>( response );
 		auto pRequest = pClient->ClearRequest<UARequest>( requestId );  RETURN_IF( !pRequest, ELogLevel::Critical, "[{:x}.{:x}]Could not find handle.", (uint)ua, requestId );
-		TRACE( "({:x}.{:x})CreateDataChangesCallback - {:x}", (uint)ua, requestId, (Handle)userdata );
+		TRACE( "[{:x}.{:x}]CreateDataChangesCallback - {:x}", (uint)ua, requestId, (Handle)userdata );
 		if( var sc = pResponse->responseHeader.serviceResult; sc )
 			Resume( UAException{sc}, move(pRequest->CoHandle) );
 		else{
@@ -20,7 +20,7 @@ namespace Jde::Iot{
 	α MonitoredItemsDeleteCallback( UA_Client* ua, void* _userdata_, RequestId requestId, void* response )ι->void{
 		auto pClient = UAClient::TryFind(ua); if( !pClient ) return;
 		auto pResponse = static_cast<UA_DeleteMonitoredItemsResponse*>( response );
-		auto pRequest = pClient->ClearRequest<UARequest>( requestId );  RETURN_IF( !pRequest, ELogLevel::Critical, "[{:x}.{:x}]Could not find handle for", (uint)ua, requestId );
+		pClient->ClearRequest<UARequest>( requestId );
 		TRACE( "[{:x}.{:x}]MonitoredItemsDeleteCallback", (uint)ua, requestId );
 		if( var sc = pResponse->responseHeader.serviceResult; sc )
 			WARN( "[{:x}.{:x}]Could not delete monitored items:  {}.", (uint)ua, requestId, UAException::Message(sc) );
@@ -36,7 +36,7 @@ namespace Jde::Iot{
 		var h = MonitorHandle{ subId, monId };
 		TRACET( _logDataChanges, "[{:x}.{:x}] DataChangesCallback - {}", (uint)ua, h, value.ToJson().dump() );
 		if( !pClient->MonitoredNodes.SendDataChange(h, move(value)) )
-			WARNT( _logDataChanges, "[{:x}.{:x}]Could not find node monitored item.", (uint)ua, MonitorHandle{subId, monId} );
+			DBGT( _logDataChanges, "[{:x}.{:x}]Could not find node monitored item.", (uint)ua, MonitorHandle{subId, monId} );
 	}
 
 	α DataChangesDeleteCallback( UA_Client* ua, SubscriptionId subId, void* _subContext_, MonitorId monId, void* _monContext_ )->void{

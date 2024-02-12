@@ -5,6 +5,7 @@
 
 namespace Jde::Iot::Browse{
 	sp<Jde::LogTag> _logTag{ Logging::Tag("app.browse") };
+	α Tag()ι->sp<LogTag>{return _logTag;}
 
 	α FoldersAwait::await_suspend( HCoroutine h )ι->void{
 		IAwait::await_suspend( h );
@@ -13,8 +14,8 @@ namespace Jde::Iot::Browse{
 
 	α Folders( NodeId node, sp<UAClient>& c )ι->FoldersAwait{ return FoldersAwait{ move(node), c }; }
 
-	α ObjectsFolder( sp<UAClient> ua, NodeId node, Web::Rest::Request req, bool snapshot )ι->Task
-	{
+	α ObjectsFolder( sp<UAClient> ua, NodeId node, Web::Rest::Request req, bool snapshot )ι->Task{
+		bool retry{};
 		try{
 			auto y = ( co_await Folders(node, ua) ).SP<Response>();
 			flat_set<NodeId> nodes = y->Nodes();
@@ -26,13 +27,19 @@ namespace Jde::Iot::Browse{
 			Web::Rest::ISession::Send(y->ToJson(move(pValues), move(*pDataTypes)), move(req) );
 		}
 		catch( UAException& e ){
-			if( e.Code==UA_STATUSCODE_BADSESSIONIDINVALID )
-				ObjectsFolder( ua, node, move(req), snapshot );
-			else
+			if( retry=e.IsBadSession(); retry )
+				e.PrependWhat( "Retry ObjectsFolder.  " );
+			else{
+				TRACE( "ObjectsFolder - Failed {}", e.what() );
 				Web::Rest::ISession::Send( move(e), move(req) );
+			}
 		}
 		catch( Exception& e ){
 			Web::Rest::ISession::Send( move(e), move(req) );
+		}
+		if( retry ){
+			co_await AwaitSessionActivation( ua );
+			ObjectsFolder( ua, node, move(req), snapshot );
 		}
 	}
 

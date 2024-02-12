@@ -9,8 +9,8 @@
 
 namespace Jde::Iot
 {
-	static sp<LogTag> _logTag = Logging::Tag( "app.socket.requests" );
-	static sp<LogTag> _logTagResults = Logging::Tag( "app.socket.results" );
+	static sp<LogTag> _logTag = Logging::Tag( "app.socket_requests" );
+	static sp<LogTag> _logTagResults = Logging::Tag( "app.socket_results" );
 	Socket _instance{ Settings::Get<PortType>("web/port").value_or(6708) };
 
 	Socket::Socket( PortType port )ι:
@@ -22,30 +22,30 @@ namespace Jde::Iot
 	{}
 
 	SocketSession::~SocketSession(){
-		TRACE( "({})~SocketSession()", Id );
+		TRACE( "[{}]~SocketSession()", Id );
 	}
 
 	α SocketSession::Run()ι->void{
 		base::Run();
-		TRACE( "({})SocketSession::Run()", Id );
+		TRACE( "[{}]SocketSession::Run()", Id );
 		//Server().UpdateStatus( Server() );
 	}
 
 	α SocketSession::OnAccept( beast::error_code ec )ι->void{
-		TRACE( "({})SocketSession::OnAccept()", Id );
+		TRACE( "[{}]SocketSession::OnAccept()", Id );
 		Write( FromServer::ToAck(Id) );
 		base::OnAccept( ec );
 	}
 
 	α SocketSession::WriteException( Exception&& e, uint32 requestId )ι->Task
 	{
-		TRACE( "({})WriteException( '{}', '{}' )", Id, requestId, e.what() );
+		TRACE( "[{}]WriteException( '{}', '{}' )", Id, requestId, e.what() );
 		return Write( FromServer::ToException(requestId, e.what()) );
 	}
 
 	α SocketSession::WriteException( string m, uint32 requestId )ι->Task
 	{
-		TRACE( "({})WriteException( '{}', '{}' )", Id, requestId, m );
+		TRACE( "[{}]WriteException( '{}', '{}' )", Id, requestId, m );
 		return Write( FromServer::ToException(requestId, move(m)) );
 	}
 
@@ -59,7 +59,7 @@ namespace Jde::Iot
 		try{
 			auto spSocketSession = SharedFromThis();//keep alive
 			auto pClient = ( co_await UAClient::GetClient(opcId) ).SP<UAClient>();
-			TRACET( UAMonitoringNodes::LogTag(), "({:x})Subscribe:  {}", pClient->Handle(), NodeId::ToJson(nodes).dump() );
+			TRACET( UAMonitoringNodes::LogTag(), "[{:x}]Subscribe:  {}", pClient->Handle(), NodeId::ToJson(nodes).dump() );
 
 			( co_await Iot::CreateSubscription(pClient) ).CheckError();
 			up<FromServer::SubscriptionAck> y;
@@ -67,11 +67,13 @@ namespace Jde::Iot
 				y = ( co_await DataChangesSubscribe(nodes, spSocketSession, pClient) ).UP<FromServer::SubscriptionAck>();
 			}
 			catch( UAException& e ){
-				if( e.Code!=UA_STATUSCODE_BADSESSIONIDINVALID )
+				if( !e.IsBadSession() )
 					e.Throw();
 			}
-			if( ! y )
+			if( !y ){
+				co_await AwaitSessionActivation( pClient );
 				y = ( co_await DataChangesSubscribe(move(nodes), spSocketSession, move(pClient)) ).UP<FromServer::SubscriptionAck>();
+			}
 			y->set_request_id( requestId );
 			FromServer::MessageUnion m; m.set_allocated_subscription_ack( y.release() );
 			Write( move(m) );

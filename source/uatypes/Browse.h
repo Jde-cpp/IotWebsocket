@@ -7,7 +7,7 @@ namespace Jde::Iot{
 	struct UAClient;
 //	struct Value;
 namespace Browse{
-
+	α Tag()ι->sp<LogTag>;
 	α ObjectsFolder( sp<UAClient> ua, NodeId node, Web::Rest::Request req, bool snapShot )ι->Task;
 	α OnResponse( UA_Client *ua, void* userdata, RequestId requestId, UA_BrowseResponse* response )ι->void;
 

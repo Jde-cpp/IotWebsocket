@@ -13,7 +13,7 @@
 #include <open62541/client_highlevel_async.h>
 #include <open62541/client_subscriptions.h>
 #include <open62541/plugin/log_stdout.h>
-#include <jde/TypeDefs.h>
+#include "typedefs.h"
 #include <jde/Exports.h>
 #include <jde/Log.h>
 #include <jde/App.h>
@@ -34,6 +34,6 @@ DISABLE_WARNINGS
 #include "types/proto/IotFromServer.pb.h"
 #include "types/proto/IotFromClient.pb.h"
 ENABLE_WARNINGS
+#include "async/SessionAwait.h"
 #include "types/FromServer.h"
 #include "uatypes/UAException.h"
-

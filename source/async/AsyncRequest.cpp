@@ -2,59 +2,41 @@
 #include "../uatypes/UAClient.h"
 
 namespace Jde::Iot{
-	static sp<LogTag> _logTag{ Logging::Tag("requests") };
-	flat_map<Handle,atomic_flag*> _stopProcessingLoops; shared_mutex _stopProcessingLoopMutex;
-	flat_map<UA_Client*,flat_set<uint>> _processingLoopThreadIds; mutex _processingLoopThreadIdsMutex;
-	α ProcessingLoop( Handle handle, sp<UAClient> pClient )ι->Task{
-		atomic_flag stop;
+	static sp<LogTag> _logTag{ Logging::Tag("app.processingLoop") };
+	α AsyncRequest::LogTag()ι->sp<Jde::LogTag>{ return _logTag; }
+
+	// 1 per UAClient
+	α AsyncRequest::ProcessingLoop()ι->Task{
+		auto logPrefix = format( "[{:x}]", _pClient->Handle() );
+		DBG( "{}ProcessingLoop started", logPrefix );
+		while( _running.test() ){
+			if( auto sc = UA_Client_run_iterate(*_pClient, 0); sc /*&& (sc!=UA_STATUSCODE_BADINTERNALERROR || i!=0)*/ ){
+				ERR( "{}UA_Client_run_iterate returned ({:x}){}", logPrefix, sc, UAException::Message(sc) );
+				break;
+			}
+			if( !_running.test() )
+				break;
+			co_await Threading::Alarm::Wait( 500ms ); //UA_CreateSubscriptionRequest_default
+			Threading::SetThreadDscrptn( "ProcessingLoop" );
+		}
+		DBG( "{}ProcessingLoop stopped", logPrefix );
+	}
+
+	α AsyncRequest::Process( RequestId requestId, up<UARequest>&& userData )ι->void{
+		if( _stopped.test() ) return;
 		{
-			ul _{ _stopProcessingLoopMutex };
-			ASSERT_DESC( _stopProcessingLoops.find(handle)==_stopProcessingLoops.end(), format("Duplicated processing loop: {}", handle) );
-			_stopProcessingLoops[handle]=&stop;
+			lg _{_requestMutex};
+			_requests.emplace( requestId, move(userData) );
 		}
-		DBG("ProcessingLoop({}) started", handle );
-		while( !stop.test() ){
-			bool isLoopThread;
-			{
-				lg _{ _processingLoopThreadIdsMutex };
-				auto p = _processingLoopThreadIds.emplace( pClient->UAPointer(), flat_set<uint>{} ).first;
-				isLoopThread = !p->second.emplace( Threading::GetThreadId() ).second;
-				TRACE( "ThreadId({:x}), isLoopThread={}, ", Threading::GetThreadId(), isLoopThread );
-			}
-			if( auto sc = isLoopThread ? 0 : UA_Client_run_iterate(*pClient, 0); sc /*&& (sc!=UA_STATUSCODE_BADINTERNALERROR || i!=0)*/ ){
-				ERR( "UA_Client_run_iterate returned ({:x}){}", sc, UAException::Message(sc) );
-				co_return;
-			}
-			{
-				lg _{ _processingLoopThreadIdsMutex };
-				if( auto p = _processingLoopThreadIds.find( pClient->UAPointer() ); p!=_processingLoopThreadIds.end() ){
-					p->second.erase( Threading::GetThreadId() );
-					TRACE( "~ThreadId({:x}) deleting={}", Threading::GetThreadId(), p->second.empty() );
-					if( p->second.empty() )
-						_processingLoopThreadIds.erase( p );
-				}
-			}
-			if( !stop.test() ){
-				co_await Threading::Alarm::Wait( 500ms ); //UA_CreateSubscriptionRequest_default
-				Threading::SetThreadDscrptn( "ProcessingLoop" );
-			}
-		}
-		DBG("ProcessingLoop({}) stopped", handle );
-	}
-	atomic<Handle> AsyncRequest::_index{};
-	AsyncRequest::AsyncRequest( sp<UAClient> pClient )ι:_pClient{move(pClient)},_handle{++_index}{}
-
-	α AsyncRequest::Process()ι->void{
-		ASSERT( _pClient );
-		ProcessingLoop( _handle, move(_pClient) );
+		if( !_running.test_and_set() )
+			ProcessingLoop();
 	}
 
-	AsyncRequest::~AsyncRequest(){
-		ul _{ _stopProcessingLoopMutex };
-		TRACE( "{}~AsyncRequest",  _handle );
-		if( auto p = _stopProcessingLoops.find(_handle); p!=_stopProcessingLoops.end() )
-			p->second->test_and_set();
-		else
-			CRITICAL( "Lost processing loop: {}", _handle );
+	α AsyncRequest::Stop()ι->void{
+		_stopped.test_and_set();
+		_requests.clear();
+		_running.clear();
+		_pClient=nullptr;
 	}
+	α AsyncRequest::UAHandle()ι->Handle{ return _pClient ? _pClient->Handle() : 0; }
 }
