@@ -47,7 +47,13 @@ namespace Jde::Iot{
 		ul _{ _clientsMutex };
 		_clients.clear();
 	}
-
+	α UAClient::AddSessionAwait( HCoroutine&& h )ι->void{ 
+		{
+			lg _{_sessionAwaitableMutex}; 
+			_sessionAwaitables.emplace_back( move(h) ); 
+		}
+		Process( std::numeric_limits<RequestId>::max(), nullptr );
+	}
 	α UAClient::TriggerSessionAwaitables()ι->void{
 		vector<HCoroutine> handles;
 		{
@@ -61,13 +67,15 @@ namespace Jde::Iot{
 	α UAClient::StateCallback( UA_Client *ua, UA_SecureChannelState channelState, UA_SessionState sessionState, StatusCode connectStatus )ι->void{
 		constexpr std::array<sv,6> sessionStates = {"Closed", "CreateRequested", "Created", "ActivateRequested", "Activated", "Closing"};
 		DBG( "[{:x}]channelState='{}', sessionState='{}', connectStatus='({:x}){}'", (uint)ua, UAException::Message(channelState), Str::FromEnum(sessionStates, sessionState), connectStatus, UAException::Message(connectStatus) );
-		if( auto pClient = sessionState == UA_SESSIONSTATE_ACTIVATED ? UAClient::TryFind(ua) : sp<UAClient>{}; pClient )
+		if( auto pClient = sessionState == UA_SESSIONSTATE_ACTIVATED ? UAClient::TryFind(ua) : sp<UAClient>{}; pClient ){
 			pClient->TriggerSessionAwaitables();
+			pClient->ClearRequest<UARequest>( std::numeric_limits<RequestId>::max() );
+		}
 		if( sessionState == UA_SESSIONSTATE_ACTIVATED || connectStatus==UA_STATUSCODE_BADIDENTITYTOKENINVALID || connectStatus==UA_STATUSCODE_BADCONNECTIONREJECTED ){
 			_awaitingActivation.erase_if( [ua, sessionState,connectStatus]( sp<UAClient> pClient){
 				if( pClient->UAPointer()!=ua )return false;
+				pClient->ClearRequest<UARequest>( std::numeric_limits<RequestId>::max() );//previous clear didn't have pClient
 				if( sessionState == UA_SESSIONSTATE_ACTIVATED ){
-					pClient->ClearRequest<UARequest>( std::numeric_limits<RequestId>::max() );
 					{
 						ul _{ _clientsMutex };
 						ASSERT( _clients.find(pClient->Target())==_clients.end() );
@@ -230,17 +238,17 @@ namespace Jde::Iot{
 	}
 
 	α UAClient::DataSubscriptions( CreateMonitoredItemsRequest&& request, Jde::Handle requestHandle, HCoroutine&& h )ι->void{
+		ASSERT(CreatedSubscriptionResponse);
+		if( !CreatedSubscriptionResponse )
+			return Resume( Exception{"CreatedSubscriptionResponse==null"}, move(h) );
 		try{
-			UA_Client_DataChangeNotificationCallback notifications = DataChangesCallback;
-			UA_Client_DeleteMonitoredItemCallback deleteCallbacks = DataChangesDeleteCallback;
-			void* contexts = nullptr;
-			ASSERT(CreatedSubscriptionResponse);
-			if( !CreatedSubscriptionResponse )
-				return Resume( Exception{"CreatedSubscriptionResponse==null"}, move(h) );
+			vector<UA_Client_DeleteMonitoredItemCallback> deleteCallbacks{request.itemsToCreateSize, DataChangesDeleteCallback};
+			vector<UA_Client_DataChangeNotificationCallback> dataChangeCallbacks{request.itemsToCreateSize, DataChangesCallback};
+			void** contexts = nullptr;
 			request.subscriptionId = CreatedSubscriptionResponse->subscriptionId;
 
 			RequestId requestId{};
-			UAε( UA_Client_MonitoredItems_createDataChanges_async(UAPointer(), request, &contexts, &notifications, &deleteCallbacks, CreateDataChangesCallback, (void*)requestHandle, &requestId) );
+			UAε( UA_Client_MonitoredItems_createDataChanges_async(UAPointer(), request, contexts, dataChangeCallbacks.data(), deleteCallbacks.data(), CreateDataChangesCallback, (void*)requestHandle, &requestId) );
 			TRACET( UAMonitoringNodes::LogTag(), "[{:x}.{:x}]DataSubscriptions - {}", Handle(), requestId, request.ToJson().dump() );
 			Process( requestId, mu<UARequest>(move(h)) );//TODO handle BadSubscriptionIdInvalid
 		}

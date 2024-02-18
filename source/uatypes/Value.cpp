@@ -126,6 +126,8 @@ namespace Jde::Iot{
 			else
 				throw Exception( "Not implemented." );
 		}
+		else if( IS(UA_TYPES_BYTE) )
+			SetNumber<UA_Byte>( j );
 		else if( IS(UA_TYPES_DOUBLE) )
 			SetNumber<UA_Double>( j );
 		else if( IS(UA_TYPES_FLOAT) )

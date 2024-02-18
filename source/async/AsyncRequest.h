@@ -39,12 +39,9 @@ namespace Jde::Iot{
 		if( auto p = _requests.find(requestId); p!=_requests.end() ){
 			userData.reset( dynamic_cast<T*>(p->second.release()) ); 
 			_requests.erase( p );
-			if( _requests.empty() )
-				_running.clear();
 		}
 		else
 			CRITICALT( LogTag(), "[{:x}.{:x}]Could not find request handle.", UAHandle(), requestId );
 		return userData;
 	}
-
 }
