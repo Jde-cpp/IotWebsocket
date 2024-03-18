@@ -25,7 +25,7 @@ namespace Jde::Iot{
 				where << "is_default=1";
 		}
 
-		auto y = (co_await DB::SelectCo<vector<OpcServer>>(format("select id, url, is_default, name, target from iot_opc_servers {}", where.Move()), params, []( vector<OpcServer>& result, const DB::IRow& r ){
+		auto y = (co_await DB::SelectCo<vector<OpcServer>>(Jde::format("select id, url, is_default, name, target from iot_opc_servers {}", where.Move()), params, []( vector<OpcServer>& result, const DB::IRow& r ){
 			result.push_back(OpcServer{r});
 		} )).UP<vector<OpcServer>>();
 		if( id )

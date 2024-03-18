@@ -1,4 +1,6 @@
 ﻿#pragma once
+#ifndef NODE_H
+#define NODE_H
 #include "helpers.h"
 
 namespace Jde::Iot
@@ -35,3 +37,4 @@ namespace Jde::Iot
 		uint operator()(const NodeId& n)Ι;
 	};
 }
+#endif

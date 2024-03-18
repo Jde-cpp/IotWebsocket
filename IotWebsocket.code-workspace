@@ -1,0 +1,160 @@
+{
+	"folders": [
+		{
+			"path": "source",
+			"name": "IotWebsocket"
+		},
+		{
+			"path": "../MySql/source",
+			"name": "MySql"
+		},
+		{
+			"path": "../Ssl/source",
+			"name": "Ssl"
+		},
+		{
+			"path": "../Public/src/web"
+		},
+		{
+			"path": "../Framework/source",
+			"name": "Framework"
+		},
+		{
+			"path": "../XZ/source",
+			"name": "XZ"
+		},
+		{
+			"path": "../Public/jde",
+			"name": "headers"
+		},
+	],
+	"settings": {
+		"window.title": "Socket",
+		"files.associations": {
+			"*.sqlm": "sql",
+			"vector": "cpp",
+			"system_error": "cpp",
+			"__locale": "cpp",
+			"functional": "cpp",
+			"bitset": "cpp",
+			"forward_list": "cpp",
+			"future": "cpp",
+			"list": "cpp",
+			"array": "cpp",
+			"atomic": "cpp",
+			"*.tcc": "cpp",
+			"cctype": "cpp",
+			"chrono": "cpp",
+			"clocale": "cpp",
+			"cmath": "cpp",
+			"compare": "cpp",
+			"concepts": "cpp",
+			"condition_variable": "cpp",
+			"cstdarg": "cpp",
+			"cstddef": "cpp",
+			"cstdint": "cpp",
+			"cstdio": "cpp",
+			"cstdlib": "cpp",
+			"cstring": "cpp",
+			"ctime": "cpp",
+			"cwchar": "cpp",
+			"cwctype": "cpp",
+			"string": "cpp",
+			"unordered_map": "cpp",
+			"exception": "cpp",
+			"algorithm": "cpp",
+			"iterator": "cpp",
+			"memory": "cpp",
+			"memory_resource": "cpp",
+			"random": "cpp",
+			"ratio": "cpp",
+			"string_view": "cpp",
+			"tuple": "cpp",
+			"type_traits": "cpp",
+			"utility": "cpp",
+			"initializer_list": "cpp",
+			"iosfwd": "cpp",
+			"iostream": "cpp",
+			"istream": "cpp",
+			"limits": "cpp",
+			"mutex": "cpp",
+			"new": "cpp",
+			"ostream": "cpp",
+			"stdexcept": "cpp",
+			"streambuf": "cpp",
+			"thread": "cpp",
+			"typeinfo": "cpp",
+			"variant": "cpp",
+			"numbers": "cpp",
+			"__bit_reference": "cpp",
+			"__config": "cpp",
+			"__debug": "cpp",
+			"__errc": "cpp",
+			"__mutex_base": "cpp",
+			"__split_buffer": "cpp",
+			"__threading_support": "cpp",
+			"__verbose_abort": "cpp",
+			"ios": "cpp",
+			"locale": "cpp",
+			"span": "cpp",
+			"valarray": "cpp",
+			"__hash_table": "cpp",
+			"__tree": "cpp",
+			"deque": "cpp",
+			"map": "cpp",
+			"queue": "cpp",
+			"set": "cpp",
+			"stack": "cpp",
+			"unordered_set": "cpp",
+			"shared_mutex": "cpp",
+			"charconv": "cpp",
+			"coroutine": "cpp",
+			"optional": "cpp",
+			"__node_handle": "cpp",
+			"__memory": "cpp",
+			"*.ipp": "cpp",
+			"codecvt": "cpp",
+			"fstream": "cpp",
+			"iomanip": "cpp",
+			"source_location": "cpp",
+			"sstream": "cpp",
+			"bit": "cpp",
+			"cinttypes": "cpp",
+			"semaphore": "cpp",
+			"stop_token": "cpp",
+			"regex": "cpp",
+			"rope": "cpp",
+			"slist": "cpp",
+			"ranges": "cpp",
+			"strstream": "cpp",
+			"typeindex": "cpp",
+			"syncstream": "cpp",
+			"scoped_allocator": "cpp",
+			"any": "cpp",
+			"complex": "cpp",
+			"csignal": "cpp",
+			"numeric": "cpp",
+			"fromserver.pb.h": "c",
+			"format": "cpp",
+			"version": "cpp"
+		},
+		"C_Cpp.loggingLevel": "Debug"
+	},
+	"tasks": {
+		"version": "2.0.0",
+		"tasks": [
+			{
+				"label": "build",
+				"type": "shell",
+				"command": "tput reset;./build.sh",
+				"problemMatcher": {"owner": "cpp", "fileLocation": ["relative", "${workspaceFolder}"],
+					"pattern": {
+						"regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+						"file": 1, "line": 2, "column": 3, "severity": 4, "message": 5
+					}
+				},
+				"group": { "kind": "build", "isDefault": true }
+			}
+		]
+	}
+}

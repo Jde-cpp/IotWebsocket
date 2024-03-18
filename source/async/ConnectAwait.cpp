@@ -29,7 +29,7 @@ namespace Jde::Iot
 			}
 		}
 	}
-	α ConnectAwait::Create( str opcServerId )ι->Task{
+	α ConnectAwait::Create( string opcServerId )ι->Task{
 		try{
 			auto pServer = ( co_await OpcServer::Select(opcServerId) ).UP<OpcServer>(); THROW_IF( !pServer, "Could not find opc server:  '{}'", opcServerId );
 			auto pClient = ms<UAClient>( move(*pServer) );
@@ -40,7 +40,7 @@ namespace Jde::Iot
 			var ua = dynamic_cast<const UAException*>( &e );
 			for( auto& h : _requests[opcServerId] )
 				Jde::Resume( ua ? UAException{*ua} : Exception{e.what(), e.Code, e.Level(), e.Stack().front()}, move(h) );
-			_requests.erase( opcServerId );
+			_requests.erase( move(opcServerId) );
 		}
 	}
 	α ConnectAwait::Resume( sp<UAClient> pClient, str target, function<void(HCoroutine&&)> resume )ι->void{

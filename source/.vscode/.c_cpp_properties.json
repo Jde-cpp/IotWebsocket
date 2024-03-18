@@ -7,7 +7,7 @@
             },
             "includePath": [
 								"/usr/include",
-								"/usr/local/lib/clang/16/include",
+								"/usr/include/c++/13",
                 "${REPO_DIR}/llvm-project/libcxx/include/",
                 "${REPO_DIR}/llvm-project/libc/include/",
                 "${workspaceFolder}/**",
@@ -15,19 +15,17 @@
                 "${REPO_DIR}/spdlog/include/",
                 "${REPO_DIR}/json/include",
                 "${JDE_DIR}/Public",
-                "../../Public/jde/log/types/proto",
                 "../../open62541/include",
-                "../../open62541/plugins/include",
-                "../../open62541/build/src_generated",
+                "../../open62541/plugins/include"
             ],
             "defines": [],
             "forcedInclude": [
                 "${workspaceFolder}/pc.h"
             ],
-            "compilerPath": "",
+            "compilerPath": "/usr/bin/g++-13",
             "cStandard": "c17",
-            "cppStandard": "c++20",
-            "intelliSenseMode": "linux-clang-x64",
+            "cppStandard": "c++23",
+            "intelliSenseMode": "linux-gcc-x64",
             "compilerArgs": []
         }
     ],

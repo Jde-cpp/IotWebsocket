@@ -16,11 +16,11 @@ namespace Jde::Iot{
 	}
 	α Clear( void *context )ι->void{}
 	
-	α UA_Log_Stdout_log( void *context, UA_LogLevel uaLevel, UA_LogCategory category, const char* file, const char* function, uint32 line, const char *msg, va_list args )ι->void{
+	α UA_Log_Stdout_log( void *context, UA_LogLevel uaLevel, UA_LogCategory category, const char* file, const char* function, uint32_t line, const char *msg, va_list args )ι->void{
 		var level = (ELogLevel)( (int)uaLevel/100-1 ); //level==UA_LOGLEVEL_DEBUG=200
 		var tagName = Str::FromEnum( Categories, category );
 		var tag = category<Categories.size() ? _tags[category] : AppTag();
-		Logging::Log( Logging::Message{tag->Id, level, format("[{:x}]{}", (uint)context, Format(msg,args)), file, function, line}, tag, true, false );
+		Logging::Log( Logging::Message{tag->Id, level, Jde::format("[{:x}]{}", (uint)context, Iot::Format(msg,args)), file, function, line}, tag, true, false );
 	}
 
 	Logger::Logger( Handle uaHandle )ι:

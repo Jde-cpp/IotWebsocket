@@ -13,7 +13,7 @@ namespace Jde::Iot
 		Ω Resume( sp<UAClient>&& pClient, str target, const UAException&& e )ι->void;
 	private:
 		Ω Resume( sp<UAClient> pClient, str target, function<void(HCoroutine&&)> resume )ι->void;
-		α Create( str id )ι->Task;
+		α Create( string id )ι->Task;
 		string _id;
 		AwaitResult _result;
 	};

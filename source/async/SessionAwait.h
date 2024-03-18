@@ -1,4 +1,6 @@
 ﻿#pragma once
+#ifndef SESSION_AWAIT_H_
+#define SESSION_AWAIT_H_
 
 namespace Jde::Iot{
 	struct UAClient;
@@ -12,3 +14,4 @@ namespace Jde::Iot{
 	};
 	Ξ AwaitSessionActivation( sp<UAClient> p, SRCE )ι->SessionAwait{ return SessionAwait{p, sl}; }
 }
+#endif

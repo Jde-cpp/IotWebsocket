@@ -23,12 +23,4 @@ namespace Jde::Iot{
 	α MonitoredItemsDeleteCallback(UA_Client* ua, void *userdata, RequestId requestId, void *response)ι->void;
 
 	using CreateMonitoredItemsResponsePtr = UAUP<UA_CreateMonitoredItemsResponse, UA_CreateMonitoredItemsResponse_delete>;
-	struct CreateDataChangesResult{
-		CreateDataChangesResult()ι{}
-		CreateDataChangesResult( CreateMonitoredItemsRequest&& request, CreateMonitoredItemsResponsePtr&& result )ι;
-		α	ForEach( std::function<void(const NodeId&, const UA_MonitoredItemCreateResult&)>&& f )ι->void;
-		α	Append( flat_map<NodeId, MonitoredItemCreateResult>&& existingNodes)ι->void;
-		vector<NodeId> Nodes;//synced order with Result;
-		CreateMonitoredItemsResponsePtr Result;
-	};
 }

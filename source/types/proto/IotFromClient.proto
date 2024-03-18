@@ -1,4 +1,4 @@
-//source $JDE_DIR/Framework/common.sh;toBashDir $JDE_DIR JDE_BASH;source=$JDE_BASH/IotWebsocket/source/types/proto
+//source $JDE_DIR/Framework/scripts/common.sh;toBashDir $JDE_DIR JDE_BASH;source=$JDE_BASH/IotWebsocket/source/types/proto
 //cd $source;#$JDE_BASH/Public/stage/release/protoc --cpp_out . IotFromClient.proto
 //protoc --cpp_out . IotFromClient.proto
 

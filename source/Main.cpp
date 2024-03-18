@@ -9,10 +9,6 @@
 namespace Jde{
 	α OSApp::ProductName()ι->sv{ return "IotWebsocket"; }
 }
-namespace Jde::Iot{
-	α Test()ι->void;
-	int Test2();
-}
 
 int main( int argc, char **argv ){
 	using namespace Jde;
@@ -42,14 +38,5 @@ int main( int argc, char **argv ){
 		IApplication::Pause();
 	}
 	IApplication::Cleanup();
-#ifdef _MSC_VER
-	#ifndef _NDEBUG
-    std::this_thread::sleep_for( 5s );
-		//_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG); 
-
-
-//		_CrtDumpMemoryLeaks();
-	#endif
-#endif
 	return EXIT_SUCCESS;
 }

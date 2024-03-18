@@ -13,9 +13,9 @@
 		"server": { "port": 4321, "level": "Information", "diagnosticsLevel": "Information", "tags": [] }
 	},
 	"db":{
-		"driver": "$(JDE_DB_DRIVER)",
+		"driver": "./libJde.MySql.so",
 		"connectionString": "$(Jde_Iot_Connection)",
-		"meta": "meta.json"
+		"meta": "../config/IotWebSocketMeta.json"
 	},
 	"rest":{
 		"port":  6707

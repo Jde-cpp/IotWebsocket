@@ -1,4 +1,6 @@
 ﻿#pragma once
+#ifndef IOT_UA_HELPERS_H
+#define IOT_UA_HELPERS_H
 #include <boost/algorithm/hex.hpp>
 #include <google/protobuf/duration.pb.h>
 #include <google/protobuf/timestamp.pb.h>
@@ -10,7 +12,7 @@ namespace Jde::Iot{
 	Ξ ToUV( sv s )ι->UA_String{ return { s.size(), (UA_Byte*)s.data() }; }
 	//Ξ mum( sv s )ι->UA_String{ return { s.size(), (UA_Byte*)s.data() }; }
 	Ŧ Zero( T& x )ι->void{ ::memset( &x, 0, sizeof(T) ); }
-	constexpr α operator "" _uv( const char* x, uint len )ι->UA_String{ return UA_String{ len, (UA_Byte*)x }; }
+	constexpr α operator "" _uv( const char* x, uint len )ι->UA_String{ return UA_String{ len, static_cast<UA_Byte*>((void*)x) }; } //(UA_Byte*) gcc error
 	Ξ ToJson( UA_UInt64 v )ι->json{ return json{ {"high", v>>32}, {"low", v&0xFFFFFFFF}, {"unsigned",true} }; };
 	Ξ ToJson( UA_Int64 v )ι->json{ return json{ {"high", v>>32}, {"low", v&0xFFFFFFFF}, {"unsigned",false} }; };
 	Ξ ToJson( UA_Guid v )ι->json{ boost::uuids::uuid id; memcpy(&id.data, &v, id.size() ); return json{ boost::uuids::to_string(id) }; }
@@ -60,3 +62,4 @@ namespace Jde::Iot{
 	};
 }
 #undef var
+#endif

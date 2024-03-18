@@ -34,13 +34,13 @@ namespace Jde::Iot{
 		auto pClient = UAClient::TryFind(ua); if(!pClient) return;
 		Value value{ move(*uaValue) };
 		var h = MonitorHandle{ subId, monId };
-		TRACET( _logDataChanges, "[{:x}.{:x}] DataChangesCallback - {}", (uint)ua, h, value.ToJson().dump() );
+		TRACET( _logDataChanges, "[{:x}.{:x}] DataChangesCallback - {}", (uint)ua, (Handle)h, value.ToJson().dump() );
 		if( !pClient->MonitoredNodes.SendDataChange(h, move(value)) )
-			DBGT( _logDataChanges, "[{:x}.{:x}]Could not find node monitored item.", (uint)ua, MonitorHandle{subId, monId} );
+			DBGT( _logDataChanges, "[{:x}.{:x}]Could not find node monitored item.", (uint)ua, (Handle)MonitorHandle{subId, monId} );
 	}
 
 	α DataChangesDeleteCallback( UA_Client* ua, SubscriptionId subId, void* _subContext_, MonitorId monId, void* _monContext_ )->void{
-		TRACE( "[{:x}.{:x}]DataChangesDeleteCallback", (uint)ua, MonitorHandle{subId, monId} );
+		TRACE( "[{:x}.{:x}]DataChangesDeleteCallback", (uint)ua, (Handle)MonitorHandle{subId, monId} );
 	}
 
 	α DatachangeAwait::await_suspend( HCoroutine h )ι->void{
@@ -55,7 +55,7 @@ namespace Jde::Iot{
 		}
 		return AwaitResult{ mu<FromServer::SubscriptionAck>(_client->MonitoredNodes.GetResult(_requestId, sc)) };
 	}
-
+/*
 	CreateDataChangesResult::CreateDataChangesResult( CreateMonitoredItemsRequest&& request, CreateMonitoredItemsResponsePtr&& result )ι:
 		Result{move(result)}{
 		ASSERT(request.itemsToCreateSize==Result->resultsSize);
@@ -80,4 +80,5 @@ namespace Jde::Iot{
 		}
 		Result = move( response );
 	}
+	*/
 }

@@ -13,7 +13,7 @@ namespace Jde::Iot{
 		MonitorHandle( SubscriptionId s, MonitorId m )ι:Key{ (uint64_t) s<<32 | m }{}
 		MonitorHandle( Handle x )ι:Key{ x }{}
 		operator Handle()Ι{return Key;}
-		α SubscriptionId()Ι->SubscriptionId{ return Key>>32; }
+		α SubId()Ι->SubscriptionId{ return Key>>32; }
 		α MonitorId()Ι->MonitorId{ return Key & 0x00000000FFFFFFFF; }
 		α operator<=>( const MonitorHandle& )Ι=default;
 		Handle Key;
@@ -43,7 +43,7 @@ namespace Jde::Iot{
 		α FindNode( const NodeId& node )ι->tuple<MonitorHandle,Subscription*>;
 		α DeleteMonitoring( UA_Client* ua, flat_map<SubscriptionId,flat_set<MonitorId>> requested )ι->Task;
 
-		atomic<uint32> _requestId{};
+		atomic<RequestId> _requestId{};
 		flat_map<MonitorHandle,flat_set<NodeId>> _requests;
 		flat_map<MonitorHandle,tuple<flat_set<NodeId>,sp<IDataChange>>> _calls;
 		flat_map<MonitorHandle,flat_map<NodeId,StatusCode>> _errors;

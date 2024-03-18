@@ -70,7 +70,7 @@ namespace Jde::Iot::Browse{
 	}
 	α Response::ToJson( up<flat_map<NodeId, Value>>&& pSnapshot, flat_map<NodeId, NodeId>&& dataTypes )ε->json{
 		try{
-			json references{ json::array() };
+			json references = json::array();
 	    for(size_t i = 0; i < resultsSize; ++i) {
 	      for(size_t j = 0; j < results[i].referencesSize; ++j) {
 	        UA_ReferenceDescription& ref = results[i].references[j];

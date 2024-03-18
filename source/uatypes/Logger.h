@@ -2,6 +2,6 @@
 
 namespace Jde::Iot{
 	struct Logger : UA_Logger{
-		Logger( Handle context )ι;
+		Logger( Handle context=0 )ι;
 	};
 }

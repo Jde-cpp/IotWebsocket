@@ -76,7 +76,7 @@ namespace Jde::Iot{
 		nodeId = x.Move();
 		namespaceUri = x.namespaceUri;
 		serverIndex = x.serverIndex;
-		memset( &x, 0, sizeof(UA_ExpandedNodeId) );
+		UA_ExpandedNodeId_init( &x );
 	}
 	NodeId::NodeId( Proto::ExpandedNodeId&& x )ι{
 		const auto& proto = x.node();
@@ -105,7 +105,7 @@ namespace Jde::Iot{
 		nodeId = x.Move();
 		namespaceUri=x.namespaceUri;
 		serverIndex=x.serverIndex;
-		memset( &x, 0, sizeof(UA_ExpandedNodeId) );
+		UA_ExpandedNodeId_init( &x );
 		return *this;
 	}
 

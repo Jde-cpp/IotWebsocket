@@ -15,7 +15,7 @@ namespace Jde::Iot{
 
 		flat_map<SubscriptionId,flat_set<MonitorId>> monitoredItems;
 		for( var& [h,_] : _subscriptions )
-			monitoredItems.try_emplace( h.SubscriptionId() ).first->second.emplace( h.MonitorId() );
+			monitoredItems.try_emplace( h.SubId() ).first->second.emplace( h.MonitorId() );
 		_subscriptions.clear();
 		lock.unlock();
 		for( auto& [subscriptionId, monitorIds] : monitoredItems )
@@ -67,8 +67,8 @@ namespace Jde::Iot{
 					_errors.try_emplace( requestId ).first->second.try_emplace( move(*pNode), result.statusCode );
 				}
 				else{
-					var h = MonitorHandle{ requestHandle.SubscriptionId(), result.monitoredItemId };
-					TRACE( "[{:x}.{:x}]Monitoring '{}'", _pClient->Handle(), h, pNode->to_string() );
+					var h = MonitorHandle{ requestHandle.SubId(), result.monitoredItemId };
+					TRACE( "[{:x}.{:x}]Monitoring '{}'", _pClient->Handle(), (Handle)h, pNode->to_string() );
 					_subscriptions.emplace( h, Subscription{move(*pNode), move(result), dataChange} );
 					if( _subscriptions.size()==1 )
 						_pClient->ProcessDataSubscriptions();
@@ -77,7 +77,7 @@ namespace Jde::Iot{
 			_calls.erase( requestId );
 		}
 		else
-			CRITICAL( "Could not find call for subscription='{:x}' index='{:x}'.", requestHandle.SubscriptionId(), requestHandle.MonitorId() );
+			CRITICAL( "Could not find call for subscription='{:x}' index='{:x}'.", requestHandle.SubId(), requestHandle.MonitorId() );
 	}
 	α UAMonitoringNodes::GetResult( Handle requestId, StatusCode sc )ι->FromServer::SubscriptionAck{
 		FromServer::SubscriptionAck y;
@@ -135,7 +135,7 @@ namespace Jde::Iot{
 		flat_map<SubscriptionId,flat_set<MonitorId>> toDelete;
 		for( auto& [h,subscription] : _subscriptions ){
 			if( subscription.ClientCalls.erase(dataChange) && subscription.ClientCalls.empty() )
-				toDelete.try_emplace( h.SubscriptionId() ).first->second.emplace( h.MonitorId() );
+				toDelete.try_emplace( h.SubId() ).first->second.emplace( h.MonitorId() );
 		}
 		if( toDelete.size() )
 			DeleteMonitoring( _pClient->UAPointer(), toDelete );
@@ -149,7 +149,7 @@ namespace Jde::Iot{
 			if( auto [id,pSubscription] = FindNode(node); pSubscription && pSubscription->ClientCalls.erase(dataChange) ){
 				get<0>(successFailures).emplace( move(node) );
 				if( pSubscription->ClientCalls.empty() )
-					toDelete.try_emplace( id.SubscriptionId() ).first->second.emplace( id.MonitorId() );
+					toDelete.try_emplace( id.SubId() ).first->second.emplace( id.MonitorId() );
 			}
 			else{
 				TRACE( "Could not find node '{}' for unsubscription.", node.to_string() );
@@ -173,7 +173,7 @@ namespace Jde::Iot{
 			for( auto& monitoredId : monitoredIds ){
 				const MonitorHandle h{subscriptionId,monitoredId};
 				if( auto p = _subscriptions.find(h); p!=_subscriptions.end() && p->second.ClientCalls.empty() ){
-					TRACE( "[{:x}.{:x}]DeleteMonitoring for:  {}", _pClient->Handle(), h, p->second.Node.to_string() );
+					TRACE( "[{:x}.{:x}]DeleteMonitoring for:  {}", _pClient->Handle(), (Handle)h, p->second.Node.to_string() );
 					_subscriptions.erase( h );
 					toDelete.try_emplace( subscriptionId ).first->second.emplace( monitoredId );
 				}
