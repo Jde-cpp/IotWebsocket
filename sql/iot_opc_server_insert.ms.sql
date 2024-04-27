@@ -1,9 +1,9 @@
-create or alter proc iot_opc_server_insert @name varchar(255),@attributes smallint,@target varchar(255),@description varchar(2047),@is_default bit,@url varchar(2047) AS
+create or alter proc iot_opc_server_insert @name varchar(255),@attributes smallint,@target varchar(255),@description varchar(2047), @certificate_uri varchar(2047), @is_default bit,@url varchar(2047) AS
 begin
     if @is_default=1
         update iot_opc_servers set is_default=0;
-    insert into iot_opc_servers( name,attributes,created,target,description,is_default,url )
-        values( @name, @attributes, getutcdate(), @target, @description, @is_default, @url );
+    insert into iot_opc_servers( name,attributes,created,target,description,certificate_uri,is_default,url )
+        values( @name, @attributes, getutcdate(), @target, @description, @certificate_uri, @is_default, @url );
     select SCOPE_IDENTITY();
 end
 go

@@ -85,7 +85,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;_SILENCE_ALL_MS_EXT_DEPRECATION_WARNINGS;WINVER=0x0A00;_WIN32_WINNT=0x0A00;WIN32_LEAN_AND_MEAN;PROTOBUF_USE_DLLS;PROTOBUF_USE_EXCEPTIONS=0;WINVER=0x0A00;_WIN32_WINNT=0x0A00;WIN32_LEAN_AND_MEAN;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;_SILENCE_ALL_MS_EXT_DEPRECATION_WARNINGS;WINVER=0x0A00;_WIN32_WINNT=0x0A00;WIN32_LEAN_AND_MEAN;PROTOBUF_USE_DLLS;PROTOBUF_USE_EXCEPTIONS=0;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <DisableSpecificWarnings>4068;4251;4275;5104;5105</DisableSpecificWarnings>
@@ -99,8 +99,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>open62541.lib;ws2_32.lib;Iphlpapi.lib;libprotobufd.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir);../../Public/stage/$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>open62541.lib;ws2_32.lib;Iphlpapi.lib;libssl.lib;libcrypto.lib;libprotobufd.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);../../Public/stage/$(Configuration);$(REPO_DIR)\vcpkg\installed\x64-windows\debug\lib;$(REPO_DIR)\open62541\build\bin\Debug;C:\Program Files\OpenSSL-Win64\lib\VC\x64\MDd</AdditionalLibraryDirectories>
       <ShowProgress>NotSet</ShowProgress>
     </Link>
   </ItemDefinitionGroup>
@@ -123,8 +123,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>open62541.lib;ws2_32.lib;Iphlpapi.lib;libprotobufd.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir);../../Public/stage/$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>open62541.lib;ws2_32.lib;Iphlpapi.lib;libssl.lib;libcrypto.lib;libprotobufd.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);../../Public/stage/$(Configuration);$(REPO_DIR)\vcpkg\installed\x64-windows\debug\lib;C:\Program Files\OpenSSL-Win64\lib\VC\x64\MDd</AdditionalLibraryDirectories>
       <ShowProgress>NotSet</ShowProgress>
     </Link>
   </ItemDefinitionGroup>
@@ -150,37 +150,14 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>open62541.lib;ws2_32.lib;Iphlpapi.lib;libprotobuf.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir);../../Public/stage/$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>open62541.lib;ws2_32.lib;Iphlpapi.lib;libssl.lib;libcrypto.lib;libcrypto.lib;libprotobuf.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);../../Public/stage/$(Configuration);$(REPO_DIR)\vcpkg\installed\x64-windows\lib;C:\Program Files\OpenSSL-Win64\lib\VC\x64\MD</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="async\AsyncRequest.cpp" />
-    <ClCompile Include="async\Attributes.cpp" />
-    <ClCompile Include="async\ConnectAwait.cpp" />
-    <ClCompile Include="async\CreateSubscriptions.cpp" />
-    <ClCompile Include="async\DataChanges.cpp" />
-    <ClCompile Include="async\SessionAwait.cpp" />
-    <ClCompile Include="async\SetMonitoringMode.cpp" />
-    <ClCompile Include="async\Write.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Rest.cpp" />
     <ClCompile Include="Socket.cpp" />
-    <ClCompile Include="types\MonitoringNodes.cpp" />
-    <ClCompile Include="types\OpcServer.cpp" />
-    <ClCompile Include="types\proto\IotCommon.pb.cc" />
-    <ClCompile Include="types\proto\IotFromClient.pb.cc" />
-    <ClCompile Include="types\proto\IotFromServer.pb.cc">
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='DebugMem|x64'">TurnOffAllWarnings</WarningLevel>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4068;4244;4251;4275;5104;5105</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='DebugMem|x64'">4068;4244;4251;4275;5104;5105</DisableSpecificWarnings>
-    </ClCompile>
-    <ClCompile Include="uatypes\Browse.cpp" />
-    <ClCompile Include="uatypes\Logger.cpp" />
-    <ClCompile Include="uatypes\Node.cpp" />
-    <ClCompile Include="uatypes\UAClient.cpp" />
-    <ClCompile Include="uatypes\Value.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pc.h">
@@ -212,9 +189,6 @@
     <ClInclude Include="Rest.h" />
     <ClInclude Include="Socket.h" />
     <ClInclude Include="typedefs.h" />
-    <ClInclude Include="types\FromServer.h" />
-    <ClInclude Include="types\MonitoringNodes.h" />
-    <ClInclude Include="types\OpcServer.h" />
     <ClInclude Include="uatypes\Browse.h" />
     <ClInclude Include="uatypes\CreateMonitoredItemRequest.h" />
     <ClInclude Include="uatypes\CreateMonitoredItemsRequest.h" />
@@ -235,6 +209,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\Public\build\msvc.natvis">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DebugMem|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </Natvis>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

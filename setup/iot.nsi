@@ -1,3 +1,4 @@
+;signtool sign /f C:\Users\duffyj\source\repos\jde\Private\certs\jde-cpp.pfx /fd SHA256 Iot.exe
 Outfile "Iot.exe"
 
 InstallDir  $PROGRAMFILES64\jde-cpp
@@ -18,6 +19,14 @@ Section
   File "C:\Program Files\Git\mingw64\bin\zlib1.dll"
 SectionEnd
 Section
+  SetOutPath $INSTDIR\Iot
+  File "C:\Program Files\OpenSSL-Win64\bin\libcrypto-3-x64.dll"
+SectionEnd
+Section
+  SetOutPath $INSTDIR\Iot
+  File "C:\Program Files\OpenSSL-Win64\bin\libssl-3-x64.dll"
+SectionEnd
+Section
   SetShellVarContext all
   SetOutPath $LOCALAPPDATA\jde-cpp\Iot
   File /r C:\Users\duffyj\source\repos\jde\IotWebsocket\config\*.json
@@ -34,6 +43,14 @@ SectionEnd
 Section
   SetOutPath $INSTDIR\AppServer
   File "C:\Program Files\Git\mingw64\bin\zlib1.dll"
+SectionEnd
+Section
+  SetOutPath $INSTDIR\AppServer
+  File "C:\Program Files\OpenSSL-Win64\bin\libcrypto-3-x64.dll"
+SectionEnd
+Section
+  SetOutPath $INSTDIR\AppServer
+  File "C:\Program Files\OpenSSL-Win64\bin\libssl-3-x64.dll"
 SectionEnd
 Section
   SetShellVarContext all
@@ -53,8 +70,6 @@ SectionEnd
 Section
   SetShellVarContext all
   SetOutPath $DESKTOP
-  ;. "$([Environment]::GetFolderPath("CommonDesktopDirectory"))/JdeDBSetup.ps1"
-  ;. "$([Environment]::GetFolderPath("CommonDesktopDirectory"))/JdeUninstall.ps1"
   File /r C:\Users\duffyj\source\repos\jde\IotWebsocket\scripts\*.ps1
 SectionEnd
 Section

@@ -76,6 +76,7 @@
 	{
 		"parent": "$description",
 		"columns": [
+			{ "name": "certificate_uri", "type": "url?" },
 			{ "name": "is_default", "type": "bit" },
 			{ "name": "url", "type": "url" }
 		],

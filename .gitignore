@@ -50,3 +50,5 @@ source/types/proto/FromServer.proto
 source/types/proto/duration.proto
 *.aps
 *.db
+source/types/proto/google/*
+

@@ -1,6 +1,6 @@
-set ApplicationPath="%ProgramFiles%\jde-cpp\Iot\Jde.IotWebSocket.exe"
-cmd /min /C start "" %ApplicationPath% -c
-set ApplicationPath="%ProgramFiles%\jde-cpp\AppServer\Jde.AppServer.exe"
-cmd /min /C start "" %ApplicationPath% -c
+::net start Jde.AppServer
+::net start Jde.IotWebSocket
 cd %ProgramData%\Jde-cpp\IotWeb\
 http-server
+::net stop Jde.AppServer
+::net stop Jde.IotWebSocket

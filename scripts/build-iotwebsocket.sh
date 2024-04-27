@@ -6,7 +6,6 @@ tests=${3:-1}
 echo build-iotwebsocket.sh clean=$clean shouldFetch=$shouldFetch tests=$tests;
 
 scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-#if [ -z $JDE_DIR ]; then JDE_DIR=$scriptDir/jde; fi;
 if [ -z $JDE_BASH ]; then JDE_BASH=$scriptDir/jde; fi;
 if [ -z $REPO_DIR ]; then REPO_DIR=$scriptDir/libraries; fi;
 
@@ -24,62 +23,94 @@ if [ ! windows -a ! -z "$install" ]; then #https://www.open62541.org/doc/open625
 	sudo apt-get install python-sphinx graphviz # for documentation generation
 	sudo apt-get install python-sphinx-rtd-theme # documentation style
 fi;
-echo -------------Placeholder3-------------
+echo ----------------XZ----------------
+# dumpbin /EXPORTS liblzma.dll > liblzma.exports
+# ^\s+\d+\s+\w+\s+\w+ 
+# lib /def:liblzma.exports /out:liblzma.lib
+fetchBuild XZ;
+echo ----------------Ssl----------------
+cd $JDE_BASH;
+fetchBuild Ssl;
+
+echo ----------------Web----------------
+findProtoc;
+cd $JDE_BASH/Public/src/web;
+cd proto;
+file=FromServer;
+if [[ ! -f $file.pb.h  || $shouldFetch -eq 1 ]]; then
+	protoc --cpp_out dllexport_decl=JDE_WEB_EXPORTS:. -I. $file.proto;
+	sed -i -e 's/JDE_WEB_EXPORTS/ΓW/g' $file.pb.h;
+	sed -i '1s/^/\xef\xbb\xbf/' $file.pb.h;
+	sed -i -e 's/PROTOBUF_CONSTINIT ExceptionDefaultTypeInternal/ExceptionDefaultTypeInternal/g' $file.pb.cc;
+fi;
+cd ..;
+build Web;
+echo -------------open62541-------------
 cd $REPO_DIR;
 if [ ! -d open62541 ]; then git clone https://github.com/Jde-cpp/open62541.git; fi;
 cd open62541;
 if [ $shouldFetch -eq 1 ]; then
 	git pull > /dev/null;
-	if [ -f bin/Debug/open62541.lib ]; then rm bin/Debug/open62541.lib; fi;
-	if [ -f bin/Release/open62541.lib ]; then rm bin/Debug/open62541.lib; fi;
+	if [ -f build/.bin/debug/open62541.lib ]; then rm build/.bin/debug/open62541.lib; fi;
+	if [ -f build/.bin/release/open62541.lib ]; then rm build/.bin/release/open62541.lib; fi;
 fi;
 # Use pre-made sln
 # if [ ! -f open62541.sln ]; then
 # 	echo open62541.sln - `pwd`
 # 	moveToDir build;
-# 	CMAKE_CXX_FLAGS="-std=c++20 -wd"4068" -wd"5105" -Zc:__cplusplus -std:c17 -TP";
-# 	cmake -DUA_THREADSAFE=100 -DUA_LOGLEVEL=100 ..;
+# 	CMAKE_CXX_FLAGS="-std=c++20 -wd"4068" -wd"5105" -Zc:__cplusplus -std:c17";# -TP
+# 	cmake -DUA_LOGLEVEL=100 -DUA_ENABLE_ENCRYPTION_OPENSSL=ON ..;#-DUA_THREADSAFE=100
 # fi;
 stage=$JDE_BASH/Public/stage;
 if [[ ! -f $stage/debug/open62541.lib || ! -f $stage/release/open62541.lib ]]; then
 	cd build;
-	#build open62541-plugins 0;
-	#build open62541-object 0;
 	build open62541 0 open62541.lib;
-	#cd $stage/debug; mklink open62541.lib $REPO_BASH/open62541/build/bin/Debug;
-	#cd $stage/release; mklink open62541.lib $REPO_BASH/open62541/build/bin/Release;
 fi;
 echo REPO_BASH=$REPO_BASH
 cd $JDE_BASH;
 fetchDefault IotWebsocket;
 echo -------------------proto-------------------------;
-findProtoc;
-cd $JDE_BASH/IotWebsocket/source/types/proto;
-mklink "duration.proto" PROTOBUF_INCLUDE;
-mklink "timestamp.proto" PROTOBUF_INCLUDE;
-mklink "FromServer.proto" $JDE_BASH/Public/jde/appServer/proto;
+SOURCE_DIR=$JDE_BASH/Public/jde/iot/types/proto;
+cd $SOURCE_DIR;
+moveToDir google;
+moveToDir protobuf;
+mklink "duration.proto" $PROTOBUF_INCLUDE;
+mklink "timestamp.proto" $PROTOBUF_INCLUDE;
+cd ../..;
+mklink "FromServer.proto" $JDE_BASH/Public/src/web/proto;
+mklink "FromServer.pb.h" $JDE_BASH/Public/src/web/proto;
 file=IotFromServer;
 if [[ ! -f $file.pb.h || $shouldFetch -eq 1 ]]; then
-	protoc --cpp_out=. $file.proto;
-	# sed -i -e 's/PROTOBUF_CONSTINIT CustomDefaultTypeInternal/CustomDefaultTypeInternal/g' $file.pb.cc;
-	# sed -i -e 's/PROTOBUF_CONSTINIT QueryResultDefaultTypeInternal/QueryResultDefaultTypeInternal/g' $file.pb.cc;
-	# sed -i -e 's/PROTOBUF_CONSTINIT StatusDefaultTypeInternal/StatusDefaultTypeInternal/g' $file.pb.cc;
-	# sed -i -e 's/PROTOBUF_CONSTINIT ApplicationStringDefaultTypeInternal/ApplicationStringDefaultTypeInternal/g' $file.pb.cc;
-	# sed -i -e 's/PROTOBUF_CONSTINIT ErrorDefaultTypeInternal/ErrorDefaultTypeInternal/g' $file.pb.cc;
+	protoc --cpp_out dllexport_decl=Jde_Iot_EXPORTS:. $file.proto;
+	sed -i -e 's/Jde_Iot_EXPORTS/ΓI/g' $file.pb.h;
+	sed -i '1s/^/\xef\xbb\xbf/' $file.pb.h;
+	sed -i -e 's/PROTOBUF_CONSTINIT NodeValuesDefaultTypeInternal/NodeValuesDefaultTypeInternal/g' $file.pb.cc;
 fi;
 file=IotFromClient;
 if [[ ! -f $file.pb.h  || $shouldFetch -eq 1 ]]; then
-	protoc --cpp_out=. $file.proto;
-	#sed -i -e 's/PROTOBUF_CONSTINIT GraphQLDefaultTypeInternal/GraphQLDefaultTypeInternal/g' $file.pb.cc;
-	#sed -i -e 's/PROTOBUF_CONSTINIT CustomDefaultTypeInternal/CustomDefaultTypeInternal/g' $file.pb.cc;
+	protoc --cpp_out dllexport_decl=Jde_Iot_EXPORTS:. $file.proto;
+	sed -i -e 's/Jde_Iot_EXPORTS/ΓI/g' $file.pb.h;
+	sed -i '1s/^/\xef\xbb\xbf/' $file.pb.h;
+	sed -i -e 's/PROTOBUF_CONSTINIT SubscribeDefaultTypeInternal/SubscribeDefaultTypeInternal/g' $file.pb.cc;
+	sed -i -e 's/PROTOBUF_CONSTINIT UnsubscribeDefaultTypeInternal/UnsubscribeDefaultTypeInternal/g' $file.pb.cc;
 fi;
 file=IotCommon;
 if [[ ! -f $file.pb.h  || $shouldFetch -eq 1 ]]; then
-	protoc --cpp_out=. $file.proto;
-	#sed -i -e 's/PROTOBUF_CONSTINIT GraphQLDefaultTypeInternal/GraphQLDefaultTypeInternal/g' $file.pb.cc;
-	#sed -i -e 's/PROTOBUF_CONSTINIT CustomDefaultTypeInternal/CustomDefaultTypeInternal/g' $file.pb.cc;
+	protoc --cpp_out dllexport_decl=Jde_Iot_EXPORTS:. $file.proto;
+	sed -i -e 's/Jde_Iot_EXPORTS/ΓI/g' $file.pb.h;
+	sed -i '1s/^/\xef\xbb\xbf/' $file.pb.h;
+	sed -i -e 's/PROTOBUF_CONSTINIT ExpandedNodeIdDefaultTypeInternal/ExpandedNodeIdDefaultTypeInternal/g' $file.pb.cc;
 fi;
-cd ../..;
+
+cd $JDE_BASH/Public/src/iot/types/proto;
+mv $SOURCE_DIR/IotFromServer.pb.cc .;
+mklink IotFromServer.pb.h $SOURCE_DIR;
+mv $SOURCE_DIR/IotFromClient.pb.cc .;
+mklink IotFromClient.pb.h $SOURCE_DIR;
+mv $SOURCE_DIR/IotCommon.pb.cc .;
+mklink IotCommon.pb.h $SOURCE_DIR;
+
+cd $JDE_BASH;
 
 build IotWebsocket 0 Jde.IotWebsocket.exe;
 

@@ -1,5 +1,9 @@
 
 
+Write-Host "Removing Services..."
+& "$Env:Programfiles\Jde-cpp\iot\Jde.IotWebSocket.exe"  -uninstall
+& "$Env:Programfiles\Jde-cpp\AppServer\Jde.AppServer.exe"  -uninstall
+
 if ( (Get-OdbcDsn -Name "jde_app" -ErrorAction Ignore) -ne $null){
   Remove-OdbcDsn -Name "jde_app" -Platform "64-bit" -DsnType "System"
 }
@@ -17,8 +21,8 @@ if( Test-Path -Path $Env:ProgramData/jde-cpp ) {
 if( Test-Path -Path "$([Environment]::GetFolderPath("CommonDesktopDirectory"))/JdeIotWeb.bat" ) {
   Remove-Item -LiteralPath "$([Environment]::GetFolderPath("CommonDesktopDirectory"))/JdeIotWeb.bat"
 }
-if( Test-Path -Path "$([Environment]::GetFolderPath("CommonDesktopDirectory"))/JdeDBSetup.ps1" ) {
-  Remove-Item -LiteralPath "$([Environment]::GetFolderPath("CommonDesktopDirectory"))/JdeDBSetup.ps1"
+if( Test-Path -Path "$([Environment]::GetFolderPath("CommonDesktopDirectory"))/JdeSetup.ps1" ) {
+  Remove-Item -LiteralPath "$([Environment]::GetFolderPath("CommonDesktopDirectory"))/JdeSetup.ps1"
 }
 
 

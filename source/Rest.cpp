@@ -2,17 +2,17 @@
 #include <ranges>
 #include "../../Framework/source/db/GraphQL.h"
 #include "../../Framework/source/math/MathUtilities.h"
-#include "async/Write.h"
-#include "uatypes/Node.h"
-#include "uatypes/UAClient.h"
-#include "uatypes/helpers.h"
-
+#include <jde/iot/async/Write.h>
+#include <jde/iot/uatypes/Node.h>
+#include <jde/iot/uatypes/UAClient.h>
+#include <jde/iot/uatypes/helpers.h>
 
 #define var const auto
 namespace Jde::Iot
 {
-	sp<TListener<Session>> _listener{ ms<TListener<Session>>(Settings::Get<PortType>("rest/port").value_or(6707)) };
-	α Rest::DoAccept()ι->void{
+	sp<TListener<Session>> _listener;
+	α Rest::Start()ι->void{
+		_listener = ms<TListener<Session>>( Settings::Get<PortType>("rest/port").value_or(6707) );
 		IApplication::AddShutdown( _listener );
 		_listener->DoAccept();
 	}
@@ -75,10 +75,10 @@ namespace Jde::Iot
 							else
 								THROW( "Node {} not found.", node.ToJson().dump() );
 						}
-						auto results = ( co_await Write::SendRequest(move(values), pClient) ).UP<flat_map<NodeId, UA_WriteResponse>>();
+						auto writeResults = ( co_await Write::SendRequest(move(values), pClient) ).UP<flat_map<NodeId, UA_WriteResponse>>();
 						flat_set<NodeId> successNodes;
 						json array = json::array();
-						for( auto& [nodeId, response] : *results )
+						for( auto& [nodeId, response] : *writeResults )
 						{
 							json j = json::array();
 							bool error{};

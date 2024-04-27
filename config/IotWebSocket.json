@@ -2,8 +2,8 @@
 	"logging":{
 		"tags": {
 			"Trace":[],
-			"Debug":[],
-			"Information":["app", "app.read", "app.monitoring", "app.browse", "app.client", "app.socket_requests", "net", "UASession", "UAServer", "UAUser", "UASecurity", "UAEvent", "app.processingLoop", "app.socket_results","sql", "app.dataChanges", "threads", "UAClient", "UANet", "UASecure"],
+			"Debug":["app.client"],
+			"Information":["app", "app.read", "app.monitoring", "app.browse", "app.socket_requests", "net", "UASession", "UAServer", "UAUser", "UASecurity", "UAEvent", "app.processingLoop", "app.socket_results","sql", "app.dataChanges", "threads", "UAClient", "UANet", "UASecure"],
 			"Warning":["alarm", "ql", "io", "locks", "settings"],
 			"Error":[],
 			"Critical":[]
@@ -13,9 +13,9 @@
 		"server": { "port": 4321, "level": "Information", "diagnosticsLevel": "Information", "tags": [] }
 	},
 	"db":{
-		"driver": "./libJde.MySql.so",
+		"driver_": "./libJde.MySql.so",
 		"connectionString": "$(Jde_Iot_Connection)",
-		"meta": "../config/IotWebSocketMeta.json"
+		"meta": "$(ProgramData)\\Jde-cpp\\iot\\meta.json"
 	},
 	"rest":{
 		"port":  6707
