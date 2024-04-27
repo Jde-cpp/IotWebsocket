@@ -9,9 +9,9 @@ Rest/Websocket Application on top of [open62541.org](https://www.open62541.org/)
 
 ### Steps
 1) Execute iot.exe installation.
-2) Setup databases, from administrator powershell run:
+2) Setup databases, services, from administrator powershell run:
     ```
-    . "$([Environment]::GetFolderPath("CommonDesktopDirectory"))/JdeDBSetup.ps1"
+    . "$([Environment]::GetFolderPath("CommonDesktopDirectory"))/JdeSetup.ps1"
     ```
 3) To uninstall, from administrator powershell run:
     ```
@@ -20,18 +20,23 @@ Rest/Websocket Application on top of [open62541.org](https://www.open62541.org/)
     You will need to manually delete the databases, or uncomment the related lines in JdeUninstall.ps1.
 
 ## Running  
+1) Start Services
+```
+    net start Jde.IotWebSocket
+    net start Jde.AppServer
+```
 1) Click on JdeIotWeb.bat from the desktop.
 2) Browse to http://127.0.0.1:8080.
-3) Setup Opc Server.  Only anonymous, unsecured connections are supported
+3) Setup Opc Server.  Only anonymous connections are supported.
 ![](./doc/OpcServer.png)
    1) Click Settings.
    2) Opc Servers.
    3) Enter Opc Server information.
-   4) Click on "Is Default". (bug)
-   5) Save.
+   4) Save.
 4) Browsing/Reading/Streaming/Writing.
 ![](./doc/Node.png)
    1) Click Opc Servers and browse to a node.
-   2) Click Snapshot to refresh values.
-   3) Click checkbox next to a node to stream values.
-   4) Enter new node value to write.
+      1) Initially you may need to trust the client certificate on OpcServer.
+   3) Click Snapshot to refresh values.
+   4) Click checkbox next to a node to stream values.
+   5) Enter new node value to write.
