@@ -8,8 +8,6 @@
             "includePath": [
 								"/usr/include",
 								"/usr/include/c++/13",
-                "${REPO_DIR}/llvm-project/libcxx/include/",
-                "${REPO_DIR}/llvm-project/libc/include/",
                 "${workspaceFolder}/**",
                 "${BOOST_LIBRARYDIR}/../../",
                 "${REPO_DIR}/spdlog/include/",

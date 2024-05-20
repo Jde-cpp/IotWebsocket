@@ -5,6 +5,17 @@
 			"name": "IotWebsocket"
 		},
 		{
+			"path": "../Public/src/iot"
+		},
+		{
+			"path": "../Public/tests/iot",
+			"name": "tests"
+		},
+		{
+			"path": "../Public/jde",
+			"name": "headers"
+		},
+		{
 			"path": "../MySql/source",
 			"name": "MySql"
 		},
@@ -24,8 +35,7 @@
 			"name": "XZ"
 		},
 		{
-			"path": "../Public/jde",
-			"name": "headers"
+			"path": "../Public/src/crypto"
 		},
 	],
 	"settings": {
@@ -138,7 +148,8 @@
 			"format": "cpp",
 			"version": "cpp"
 		},
-		"C_Cpp.loggingLevel": "Debug"
+		"C_Cpp.loggingLevel": "Debug",
+		"C_Cpp."
 	},
 	"tasks": {
 		"version": "2.0.0",
@@ -147,14 +158,87 @@
 				"label": "build",
 				"type": "shell",
 				"command": "tput reset;./build.sh",
-				"problemMatcher": {"owner": "cpp", "fileLocation": ["relative", "${workspaceFolder}"],
+				"problemMatcher": {"owner": "cpp", "fileLocation": ["relative", "${workspaceFolder:IotWebsocket}"],
 					"pattern": {
 						"regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
 						"file": 1, "line": 2, "column": 3, "severity": 4, "message": 5
 					}
 				},
 				"group": { "kind": "build", "isDefault": true }
+			},
+			{
+				"label": "buildTests",
+				"type": "shell",
+				"command": "tput reset;./build.sh;../../Public/build/so.sh ../../Public/tests/iot asan;",
+				"problemMatcher": {"owner": "cpp", "fileLocation": ["relative", "${workspaceFolder:IotWebsocket}"],
+					"pattern": {
+						"regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+						"file": 1, "line": 2, "column": 3, "severity": 4, "message": 5
+					}
+				},
+				"group": { "kind": "build", "isDefault": false }
 			}
 		]
+	},
+	"launch": {
+		"version": "0.2.0",
+		"configurations": [
+			{
+				"name": "Asan",
+				"type": "cppdbg",
+				"request": "launch",
+				"program": "${workspaceFolder:IotWebsocket}/../../bin/asan/Jde.IotWebsocket",
+				"args": ["-c"],
+				"stopAtEntry": false,
+				"cwd": "${workspaceFolder:IotWebsocket}/../../bin/asan",
+				"environment": [{ "name": "JDE_DB_DRIVER", "value": "libJde.MySql.so" }, { "name": "JDE_LOG_META", "value": "${workspaceFolder:IotWebsocket}/../meta.json" }],
+				"externalConsole": false,
+				"MIMode": "gdb",
+				"setupCommands": [{"description": "Enable pretty-printing for gdb","text": "-enable-pretty-printing",	"ignoreFailures": true }],
+				"sourceFileMap": { "/build/glibc-negH51/glibc-2.27":"$(REPO_DIR)/glibc-2.27" },
+				"preLaunchTask": "build",
+				"visualizerFile": "${env:JDE_DIR}/Public/build/gcc.natvis",
+				"showDisplayString": true
+			},
+			{
+				"name": "Release",
+				"type": "cppdbg",
+				"request": "launch",
+				"program": "${workspaceFolder:IotWebsocket}/../../bin/release/Jde.IotWebsocket",
+				"args": ["-c"],
+				"stopAtEntry": false,
+				"cwd": "${workspaceFolder:IotWebsocket}/../../bin/release",
+				"environment": [],
+				"externalConsole": false,
+				"MIMode": "gdb",
+				"setupCommands": [{"description": "Enable pretty-printing for gdb","text": "-enable-pretty-printing","ignoreFailures": true}],
+				"sourceFileMap": { "/build/glibc-negH51/glibc-2.27":"$(REPO_DIR)/glibc-2.27" },
+				"preLaunchTask": "release",
+				"visualizerFile": "${env:JDE_DIR}/Public/build/gcc.natvis",
+				"showDisplayString": true
+			},
+			{
+				"name": "Tests",
+				"type": "cppdbg",
+				"request": "launch",
+				"program": "${workspaceFolder:tests}/../../../bin/asan/Tests.Iot",
+				"args": ["-c"],
+				"stopAtEntry": false,
+				"cwd": "${workspaceFolder:tests}/../../../bin/asan",
+				"environment": [
+					{ "name": "JDE_DB_DRIVER", "value": "./libJde.MySql.so" }, 
+					{ "name": "JDE_IOT_META", "value": "${env:JDE_DIR}/bin/config/IotWebSocketMeta.json" },
+					{ "name": "JDE_TEST_IOT_CONNECTION", "value": "$(JDE_TEST_IOT_CONNECTION)" }
+				],
+				"externalConsole": false,
+				"MIMode": "gdb",
+				"setupCommands": [{"description": "Enable pretty-printing for gdb","text": "-enable-pretty-printing","ignoreFailures": true}],
+				"sourceFileMap": { "/build/glibc-negH51/glibc-2.27":"$(REPO_DIR)/glibc-2.27" },
+				"preLaunchTask": "buildTests",
+				"visualizerFile": "${env:JDE_DIR}/Public/build/gcc.natvis",
+				"showDisplayString": true
+			}
+		],
+		"compounds": []
 	}
 }

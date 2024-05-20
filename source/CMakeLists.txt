@@ -8,36 +8,31 @@ link_directories( ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} )
 find_package(ZLIB)
 find_package(absl REQUIRED)
 find_package(protobuf REQUIRED)
+find_package(OpenSSL REQUIRED)
 find_package(open62541 REQUIRED)
 set( open62541Dir ${open62541_DIR}/../../.. )
+message( "open62541Dir=${open62541Dir}")
 link_directories( ${open62541Dir}/lib )
 link_directories( ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} )
 
 link_directories( ${fmt_DIR}/../.. )
 link_directories( ${Protobuf_DIR}/../.. )
 
-add_executable( ${CMAKE_PROJECT_NAME} Main.cpp Rest.cpp Socket.cpp
-	async/AsyncRequest.cpp async/Attributes.cpp async/CreateSubscriptions.cpp async/ConnectAwait.cpp async/DataChanges.cpp async/SessionAwait.cpp async/SetMonitoringMode.cpp async/Write.cpp
-	types/MonitoringNodes.cpp	types/OpcServer.cpp
-	uatypes/Browse.cpp uatypes/Logger.cpp uatypes/Node.cpp uatypes/Value.cpp uatypes/UAClient.cpp
-	types/proto/IotCommon.pb.cc types/proto/IotFromClient.pb.cc types/proto/IotFromServer.pb.cc )
+add_executable( ${CMAKE_PROJECT_NAME} Main.cpp Rest.cpp Socket.cpp )
 #######################################################
 include_directories( "../../Public" )
 include_directories( "../../Public/jde/log/types/proto" )
 include_directories( ${open62541Dir}/include )
 
-target_link_libraries( ${CMAKE_PROJECT_NAME} libopen62541.a )
+target_link_libraries(${CMAKE_PROJECT_NAME} OpenSSL::SSL)
+#target_link_libraries( ${CMAKE_PROJECT_NAME} libopen62541.a )
 target_link_libraries( ${CMAKE_PROJECT_NAME} lzma )
 target_link_libraries( ${CMAKE_PROJECT_NAME} ssl )
 target_link_libraries( ${CMAKE_PROJECT_NAME} debug libfmtd.a optimized libfmt.a)
 target_link_libraries( ${CMAKE_PROJECT_NAME} protobuf::libprotobuf )
 target_link_libraries( ${CMAKE_PROJECT_NAME} absl::log_internal_message absl::log_internal_check_op absl::cord)
 target_link_libraries( ${CMAKE_PROJECT_NAME} ZLIB::ZLIB )
-target_link_libraries( ${CMAKE_PROJECT_NAME} Jde )
-target_link_libraries( ${CMAKE_PROJECT_NAME} Jde.Crypto )
-target_link_libraries( ${CMAKE_PROJECT_NAME} Jde.Ssl )
-target_link_libraries( ${CMAKE_PROJECT_NAME} Jde.Web )
-target_link_libraries( ${CMAKE_PROJECT_NAME} Jde.XZ )
+target_link_libraries( ${CMAKE_PROJECT_NAME} Jde Jde.Crypto Jde.Ssl Jde.Web Jde.XZ Jde.Iot )
 
 target_precompile_headers(${CMAKE_PROJECT_NAME}
 	PRIVATE
@@ -55,23 +50,23 @@ target_precompile_headers(${CMAKE_PROJECT_NAME}
 	<open62541/client_highlevel_async.h>
 	<open62541/plugin/log_stdout.h>
 	<open62541/client_subscriptions.h>
-	"TypeDefs.h"
+	<jde/iot/TypeDefs.h>
 	<jde/Log.h>
-	<jde/App.h>
-	<jde/Str.h>
-	"../../Framework/source/DateTime.h"
-	"../../Public/src/web/Exports.h"
-	"../../Public/src/web/proto/FromServer.pb.h"
-	"types/proto/IotFromServer.pb.h"
-	"types/proto/IotFromClient.pb.h"
+	<jde/App.h>	
 	"../../Framework/source/coroutine/Awaitable.h"
-	"async/SessionAwait.h"
-	"types/FromServer.h"
-	"uatypes/UAException.h"
-	"../../Framework/source/coroutine/Alarm.h"
+
+	<jde/coroutine/Task.h>
+	"../../Public/src/web/Exports.h"
+	<jde/iot/Exports.h>
+	<jde/iot/types/proto/IotCommon.pb.h>
+	<jde/iot/types/proto/IotFromServer.pb.h>
+	<jde/iot/types/proto/IotFromClient.pb.h>
+	<jde/iot/types/FromServer.h>
+	<jde/iot/uatypes/UAException.h>
+	<jde/iot/async/SessionAwait.h>
+
+	"../../Framework/source/DateTime.h"
 	"../../Framework/source/db/Database.h"
 	"../../Framework/source/db/GraphQL.h"
-	"../../Framework/source/io/AsioContextThread.h"
-	"../../Framework/source/io/Socket.h"
 	"../../Public/src/web/RestServer.h"
 )

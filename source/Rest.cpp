@@ -2,6 +2,7 @@
 #include <ranges>
 #include "../../Framework/source/db/GraphQL.h"
 #include "../../Framework/source/math/MathUtilities.h"
+#include <jde/iot/UM.h>
 #include <jde/iot/async/Write.h>
 #include <jde/iot/uatypes/Node.h>
 #include <jde/iot/uatypes/UAClient.h>
@@ -36,8 +37,23 @@ namespace Jde::Iot
 	α CoHandleRequest( string target, flat_map<string,string> params, Request req )ι->Task{
 		try{
 			auto opcId = move( params["opc"] );
-			auto pClient = (co_await UAClient::GetClient( move(opcId) )).SP<UAClient>();
-	    if( req.Method() == http::verb::get ){
+			string userId, password;
+			var login{ req.Method() == http::verb::put && target=="/Login" };
+			if( login ){
+				userId = Find( params, "user" );
+				password = Find( params, "password" );
+				if( userId.empty() )
+					co_return Session::Send( http::status::bad_request, "Invalid json: empty user", move(req) );
+			}
+			else if( req.SessionInfoPtr )
+				tie( userId, password ) = Credentials( req.SessionInfoPtr->session_id(), opcId );
+
+			auto pClient = ( co_await UAClient::GetClient(move(opcId), userId, password) ).SP<UAClient>();
+			if( login ){
+				auto sessionId = *( co_await Authenticate(userId, password, opcId) ).UP<SessionPK>();
+				Session::Send( json{{"value", sessionId}}, move(req) );
+			}
+	    else if( req.Method() == http::verb::get ){
 				if( target=="/BrowseObjectsFolder" ){
 					var snapshot = ToIV( Find(params, "snapshot") )=="true";
 					Browse::ObjectsFolder( move(pClient), NodeId{params}, move(req), snapshot );
@@ -51,7 +67,7 @@ namespace Jde::Iot
 					if( nodes.empty() )
 						co_return Session::Send( http::status::bad_request, "Invalid json: empty nodes", move(req) );
 					auto results = ( co_await Read::SendRequest(nodes, pClient) ).UP<flat_map<NodeId, Value>>();
-					if( find_if( *results, []( var& pair )->bool{ return pair.second.hasStatus && pair.second.status==UA_STATUSCODE_BADSESSIONIDINVALID; } )!=results->end() ){
+					if( find_if( *results, []( var& pair )->bool{ return pair.second.hasStatus && pair.second.status==UA_STATUSCODE_BADSESSIONIDINVALID; } )!=results->end() ) {
 						co_await AwaitSessionActivation( pClient );
 						results = ( co_await Read::SendRequest(nodes, pClient) ).UP<flat_map<NodeId, Value>>();
 					}

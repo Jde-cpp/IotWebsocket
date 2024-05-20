@@ -1,4 +1,7 @@
 ﻿#include <iostream>
+#include <jde/Log.h>
+#include <jde/iot/Exports.h>
+#include "../../Public/src/web/Exports.h"
 #include <jde/iot/uatypes/UAClient.h>
 #include "Rest.h"
 #include "Socket.h"
@@ -12,7 +15,6 @@ namespace Jde{
 int main( int argc, char **argv ){
 	using namespace Jde;
 	auto exitCode = EXIT_SUCCESS;
-	sv _ = "main";
 	try{
 		OSApp::Startup( argc, argv, "Jde.IotWebSocket", "IOT Connection" );
 		DB::CreateSchema();
