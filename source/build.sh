@@ -13,6 +13,7 @@ if [ $all -eq 1 ]; then
 	$BUILD ../../XZ/source $type $clean $compiler || exit 1;
 	$BUILD ../../Public/src/crypto $type $clean $compiler || exit 1;
 	$BUILD ../../Public/src/iot $type $clean $compiler || exit 1;
+	$BUILD ../../Public/tests/iot $type $clean $compiler || exit 1;
 fi;
 
 if [ ! -d .obj ];	then

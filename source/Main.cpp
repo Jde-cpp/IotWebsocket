@@ -1,8 +1,11 @@
 ﻿#include <iostream>
 #include <jde/Log.h>
+#include <jde/db/graphQL/GraphQLHook.h>
 #include <jde/iot/Exports.h>
-#include "../../Public/src/web/Exports.h"
 #include <jde/iot/uatypes/UAClient.h>
+#include <jde/iot/IotGraphQL.h>
+#include "../../Public/src/web/Exports.h"
+#include "../../Public/src/web/Exports.h"
 #include "Rest.h"
 #include "Socket.h"
 #include <format>
@@ -25,8 +28,9 @@ int main( int argc, char **argv ){
 		exitCode = e.Code ? (int)e.Code : EXIT_FAILURE;
 	}
 	if( !exitCode){
+		DB::GraphQL::Hook::Add( mu<Iot::IotGraphQL>() );
 		IApplication::AddShutdownFunction( [](){Iot::UAClient::Shutdown();} );
-		Iot::Rest::Start();//todo throw on error... port already in use etc.
+		Iot::Rest::Start();//TODO throw on error... port already in use etc.
 		Iot::Socket::Start();
 		INFOT( AppTag(), "Started IotWebSocket" );
 		IApplication::Pause();

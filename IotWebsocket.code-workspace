@@ -228,7 +228,6 @@
 				"environment": [
 					{ "name": "JDE_DB_DRIVER", "value": "./libJde.MySql.so" }, 
 					{ "name": "JDE_IOT_META", "value": "${env:JDE_DIR}/bin/config/IotWebSocketMeta.json" },
-					{ "name": "JDE_TEST_IOT_CONNECTION", "value": "$(JDE_TEST_IOT_CONNECTION)" }
 				],
 				"externalConsole": false,
 				"MIMode": "gdb",

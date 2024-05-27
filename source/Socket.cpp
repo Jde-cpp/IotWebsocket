@@ -55,7 +55,7 @@ namespace Jde::Iot
 		return dynamic_cast<Socket&>( _server );
 	}
 
-	α SocketSession::Subscribe( OpcId&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->Task
+	α SocketSession::Subscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->Task
 	{
 		try{
 			auto spSocketSession = SharedFromThis();//keep alive
@@ -84,7 +84,7 @@ namespace Jde::Iot
 			WriteException( move(e), requestId );
 		}
 	}
-	α SocketSession::Unsubscribe( OpcId&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->Task{
+	α SocketSession::Unsubscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->Task{
 		try{
 			auto spSocketSession = SharedFromThis();//keep alive
 			auto [userId,password] = Iot::Credentials( SessionId, opcId );
@@ -126,7 +126,7 @@ namespace Jde::Iot
 		*t.add_messages() = move( m );
 		return base::Write( move(t) );
 	}
-	α SocketSession::SendDataChange( const OpcId& opcId, const NodeId& node, const Value& value )ι->Task{
+	α SocketSession::SendDataChange( const OpcNK& opcId, const NodeId& node, const Value& value )ι->Task{
 		return Write( value.ToProto(opcId,node) );
 	}
 }

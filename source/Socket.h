@@ -19,7 +19,7 @@ namespace Jde::Iot{
 		α OnAccept( beast::error_code ec )ι->void override;
 		α WriteCustom( uint32 id, string&& m )ι->Task;
 		α Run()ι->void override;
-		α SendDataChange( const OpcId& opcId, const NodeId& node, const Value& value )ι->Task override;
+		α SendDataChange( const OpcNK& opcId, const NodeId& node, const Value& value )ι->Task override;
 		α to_string()Ι->string override{ return format( "{:x}", Id ); }
 	private:
 		α WriteException( IException&& e, uint32 requestId )ι->Task;
@@ -28,8 +28,8 @@ namespace Jde::Iot{
 		α Write( FromServer::MessageUnion&& m )ι->Task;
 		α Server()ι->Socket&;
 		α SharedFromThis()ι->sp<SocketSession>{ return dynamic_pointer_cast<SocketSession>(shared_from_this()); }
-		α Subscribe( OpcId&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->Task;
-		α Unsubscribe( OpcId&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->Task;
+		α Subscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->Task;
+		α Unsubscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->Task;
 		uint32 SessionId{0};//From rest.
 	};
 

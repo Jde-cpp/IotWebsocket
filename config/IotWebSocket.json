@@ -1,7 +1,7 @@
 {
 	"logging":{
 		"tags": {
-			"Trace":[],
+			"Trace":["app.rest"],
 			"Debug":["app.client"],
 			"Information":["app", "app.read", "app.monitoring", "app.browse", "app.socket_requests", "net", "UASession", "UAServer", "UAUser", "UASecurity", "UAEvent", "app.processingLoop", "app.socket_results","sql", "app.dataChanges", "threads", "UAClient", "UANet", "UASecure"],
 			"Warning":["alarm", "ql", "io", "locks", "settings"],
@@ -15,6 +15,7 @@
 	"db":{
 		"driver_": "./libJde.MySql.so",
 		"connectionString": "$(Jde_Iot_Connection)",
+		"metax": "../config/IotWebSocketMeta.json",
 		"meta": "$(ProgramData)\\Jde-cpp\\iot\\meta.json"
 	},
 	"rest":{

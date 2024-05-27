@@ -2,6 +2,7 @@
 #include <ranges>
 #include "../../Framework/source/db/GraphQL.h"
 #include "../../Framework/source/math/MathUtilities.h"
+#include <jde/io/Json.h>
 #include <jde/iot/UM.h>
 #include <jde/iot/async/Write.h>
 #include <jde/iot/uatypes/Node.h>
@@ -9,8 +10,9 @@
 #include <jde/iot/uatypes/helpers.h>
 
 #define var const auto
-namespace Jde::Iot
-{
+namespace Jde::Iot{
+	static sp<LogTag> _logTag = Logging::Tag( "app.rest" );
+
 	sp<TListener<Session>> _listener;
 	α Rest::Start()ι->void{
 		_listener = ms<TListener<Session>>( Settings::Get<PortType>("rest/port").value_or(6707) );
@@ -60,7 +62,7 @@ namespace Jde::Iot
 				}
 				else if( target=="/Snapshot" || target=="/Write" ){
 					var nodeJson = Find(params, "nodes");
-					json jNodes = json::parse( nodeJson );
+					json jNodes = Json::Parse( nodeJson );
 					flat_set<NodeId> nodes;
 					for( var& node : jNodes )
 						nodes.emplace( node );
@@ -75,7 +77,7 @@ namespace Jde::Iot
 					if( target=="/Snapshot" )
 						SendSnapshots( move(*results), json::array(), move(req) );
 					else{
-						json jValues = json::parse( Find(params, "values") );
+						json jValues = Json::Parse( Find(params, "values") );
 						if( jNodes.size()!=jValues.size() )
 							co_return Session::Send( http::status::bad_request, format("Invalid json: jNodes.size={} values.size={}", jNodes.size(), jValues.size()), move(req) );
 						flat_map<NodeId, Value> values;
@@ -146,6 +148,25 @@ namespace Jde::Iot
 			Session::Send( http::status::internal_server_error, e.what(), move(req) );
 		}
 	}
+	α Login( Request req )ι->Task{
+		try{
+			json body = req.Body();
+			var domain = Json::Get( body, "opc" );
+			var user = Json::Get( body, "user" );
+			var password = Json::Get( body, "password" );
+			var sessionId = *( co_await Authenticate(user, password, domain) ).UP<SessionPK>();
+			Session::Send( json{{"value", sessionId}}, move(req) );
+		}
+		catch( const json::exception& e ){
+			Session::Send( http::status::bad_request, format("Invalid json: {}", e.what()), move(req) );
+		}
+		catch( const UAException& e ){
+			Session::Send( http::status::internal_server_error, e.ClientMessage(), move(req) );
+		}
+		catch( const Exception& e ){
+			Session::Send( http::status::internal_server_error, e.what(), move(req) );
+		}
+	}
 
 	α Session::HandleRequest( string&& target, flat_map<string,string>&& params, Request&& req )ι->void{
 		if( req.Method() == http::verb::get ){
@@ -160,6 +181,10 @@ namespace Jde::Iot
 				}
 				Session::Send( json{{"errorCodes", j}}, move(req) );
 			}
+		}
+		else if( req.Method() == http::verb::post ){
+			if( target=="/Login" )
+				Login( move(req) );
 		}
 		if( req.Session && params.contains("opc") )
 			CoHandleRequest( move(target), move(params), move(req) );
