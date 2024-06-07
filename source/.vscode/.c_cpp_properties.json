@@ -9,7 +9,7 @@
 								"/usr/include",
 								"/usr/include/c++/13",
                 "${workspaceFolder}/**",
-                "${BOOST_LIBRARYDIR}/../../",
+                "${BOOST_ROOT}",
                 "${REPO_DIR}/spdlog/include/",
                 "${REPO_DIR}/json/include",
                 "${JDE_DIR}/Public",

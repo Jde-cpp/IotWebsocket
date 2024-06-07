@@ -17,7 +17,7 @@ namespace Jde{
 
 int main( int argc, char **argv ){
 	using namespace Jde;
-	auto exitCode = EXIT_SUCCESS;
+	optional<int> exitCode;
 	try{
 		OSApp::Startup( argc, argv, "Jde.IotWebSocket", "IOT Connection" );
 		DB::CreateSchema();
@@ -27,14 +27,15 @@ int main( int argc, char **argv ){
 		std::cout << (e.Level()==ELogLevel::Trace ? "Exiting:  " : "Exiting on error:  ") <<  '(' << std::hex << e.Code << ')' << e.what() << std::endl;
 		exitCode = e.Code ? (int)e.Code : EXIT_FAILURE;
 	}
-	if( !exitCode){
-		DB::GraphQL::Hook::Add( mu<Iot::IotGraphQL>() );
+	if( !exitCode ){
 		IApplication::AddShutdownFunction( [](){Iot::UAClient::Shutdown();} );
 		Iot::Rest::Start();//TODO throw on error... port already in use etc.
 		Iot::Socket::Start();
+		DB::GraphQL::Hook::Add( mu<Iot::IotGraphQL>() );
 		INFOT( AppTag(), "Started IotWebSocket" );
-		IApplication::Pause();
+		exitCode = IApplication::Pause();
 	}
+	IApplication::Shutdown( exitCode.value_or(EXIT_FAILURE) );
 	IApplication::Cleanup();
-	return EXIT_SUCCESS;
+	return exitCode.value_or( EXIT_FAILURE );
 }
