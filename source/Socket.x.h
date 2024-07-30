@@ -1,18 +1,21 @@
 ﻿#pragma once
-#include "../../Public/src/web/WebSocket.h"
+#include <jde/web/socket/IWebSocketSession.h>
+#include <jde/web/socket/WebSocketServer.h>
 #include "../../Framework/source/collections/UnorderedSet.h"
 //#include "types/MonitoringNodes.h"
 #include <jde/iot/uatypes/Node.h>
 #include <jde/iot/uatypes/UAClient.h>
 
 namespace Jde::Iot{
+	using Web::Socket::TWebSocketSession;
+	using Web::Socket::IWebSocketServer;
 	namespace beast = boost::beast;
 	using tcp = boost::asio::ip::tcp;
 	struct Socket; struct Value;
 
-	struct SocketSession final : WebSocket::TSession<FromServer::Transmission,FromClient::Transmission>, IDataChange{
-		typedef WebSocket::TSession<FromServer::Transmission,FromClient::Transmission> base;
-		SocketSession( WebSocket::WebListener& server, IO::Sockets::SessionPK id, tcp::socket&& socket )ε;
+	struct SocketSession final : TWebSocketSession<FromServer::Transmission,FromClient::Transmission>, IDataChange{
+		typedef TWebSocketSession<FromServer::Transmission,FromClient::Transmission> base;
+		SocketSession( IWebSocketServer& server, IO::Sockets::SessionPK id, tcp::socket&& socket )ε;
 		~SocketSession();
 		α OnDisconnect( CodeException&& )ι->void override{ UAClient::Unsubscribe( dynamic_pointer_cast<IDataChange>(shared_from_this())); }
 		α OnRead( FromClient::Transmission transmission )ι->void override;
@@ -25,7 +28,7 @@ namespace Jde::Iot{
 		α WriteException( IException&& e, uint32 requestId )ι->Task;
 		α WriteException( string msg, uint32 requestId=0 )ι->Task;
 		α Write( IException&& e, uint32 requestId )ι->Task{ return WriteException( e.What(), requestId ); }
-		α Write( FromServer::MessageUnion&& m )ι->Task;
+		α Write( FromServer::Message&& m )ι->Task;
 		α Server()ι->Socket&;
 		α SharedFromThis()ι->sp<SocketSession>{ return dynamic_pointer_cast<SocketSession>(shared_from_this()); }
 		α Subscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->Task;
@@ -33,9 +36,8 @@ namespace Jde::Iot{
 		uint32 SessionId{0};//From rest.
 	};
 
-	struct Socket final : WebSocket::TListener<FromServer::Transmission,SocketSession>
-	{
-		using base=WebSocket::TListener<FromServer::Transmission,SocketSession>;
+	struct Socket final : Web::Socket::TWebSocketServer<FromServer::Transmission,SocketSession>{
+		using base=Web::Socket::TWebSocketServer<FromServer::Transmission,SocketSession>;
 		Socket( PortType port )ι;
 		Ω Start()ι->void;
 	};

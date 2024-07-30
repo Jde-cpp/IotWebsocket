@@ -8,16 +8,18 @@
 #include <jde/iot/uatypes/Node.h>
 #include <jde/iot/uatypes/UAClient.h>
 #include <jde/iot/uatypes/helpers.h>
+//#include <jde/web/rest/RestException.h>
 
 #define var const auto
 namespace Jde::Iot{
+	using namespace Jde::Web::Rest;
 	static sp<LogTag> _logTag = Logging::Tag( "app.rest" );
 
-	sp<TListener<Session>> _listener;
+	sp<RestServer<Session>> _server;
 	α Rest::Start()ι->void{
-		_listener = ms<TListener<Session>>( Settings::Get<PortType>("rest/port").value_or(6707) );
-		IApplication::AddShutdown( _listener );
-		_listener->DoAccept();
+		_server = ms<RestServer<Session>>( Settings::Get<PortType>("rest/port").value_or(6707) );
+		IApplication::AddShutdown( _server );
+		_server->DoAccept();
 	}
 
 	struct SessionInfoAwait final : IAwaitCache
@@ -120,7 +122,7 @@ namespace Jde::Iot{
 							catch( UAException& e ){
 								if( !e.IsBadSession() )
 									e.Throw();
-							}	
+							}
 							if( !updatedResults ){
 								co_await AwaitSessionActivation( pClient );
 								updatedResults = ( co_await Read::SendRequest(move(successNodes), move(pClient)) ).UP<flat_map<NodeId, Value>>();

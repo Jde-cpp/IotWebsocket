@@ -2,6 +2,9 @@
 #include <boost/beast.hpp>
 #include <boost/beast/websocket/stream.hpp>
 #include <boost/asio.hpp>
+#include <boost/asio/strand.hpp>
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/unordered/concurrent_flat_map.hpp>
@@ -13,25 +16,21 @@
 #include <open62541/client_highlevel_async.h>
 #include <open62541/client_subscriptions.h>
 #include <open62541/plugin/log_stdout.h>
-#include <jde/iot/typedefs.h>
+#include <jde/iot/TypeDefs.h>
 #include <jde/Exports.h>
-#include <jde/Log.h>
+#include <jde/log/Log.h>
 #include <jde/App.h>
 #include <jde/Str.h>
 #include <jde/crypto/OpenSsl.h>
 #include "../../Framework/source/DateTime.h"
-#include "../../Public/src/web/Exports.h"
-#include "../../Public/src/web/proto/FromServer.pb.h"
 #include "../../Framework/source/coroutine/Alarm.h"
 #include "../../Framework/source/db/GraphQL.h"
 #include "../../Framework/source/db/Database.h"
 #include "../../Framework/source/io/AsioContextThread.h"
-#include "../../Framework/source/io/Socket.h"
-#include "../../Public/src/web/RestServer.h"
 
 #include <jde/iot/async/SessionAwait.h>
 DISABLE_WARNINGS
-#include <jde/iot/types/proto/FromServer.pb.h>
+//#include <jde/iot/types/proto/FromServer.pb.h>
 #include <jde/iot/types/proto/IotCommon.pb.h>
 #include <jde/iot/types/proto/IotFromClient.pb.h>
 #include <jde/iot/types/proto/IotFromServer.pb.h>

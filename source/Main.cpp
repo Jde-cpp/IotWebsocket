@@ -1,13 +1,10 @@
 ﻿#include <iostream>
-#include <jde/Log.h>
+#include <jde/log/Log.h>
 #include <jde/db/graphQL/GraphQLHook.h>
 #include <jde/iot/Exports.h>
 #include <jde/iot/uatypes/UAClient.h>
 #include <jde/iot/IotGraphQL.h>
-#include "../../Public/src/web/Exports.h"
-#include "../../Public/src/web/Exports.h"
-#include "Rest.h"
-#include "Socket.h"
+#include "Server.h"
 #include <format>
 
 #define var const auto
@@ -29,11 +26,16 @@ int main( int argc, char **argv ){
 	}
 	if( !exitCode ){
 		IApplication::AddShutdownFunction( [](){Iot::UAClient::Shutdown();} );
-		Iot::Rest::Start();//TODO throw on error... port already in use etc.
-		Iot::Socket::Start();
 		DB::GraphQL::Hook::Add( mu<Iot::IotGraphQL>() );
-		INFOT( AppTag(), "Started IotWebSocket" );
-		exitCode = IApplication::Pause();
+		try{
+			Iot::StartWebServer();
+			INFOT( AppTag(), "---Started IotWebSocket---" );
+			exitCode = IApplication::Pause();
+		}
+		catch( const IException& e ){
+			Critical( ToLogTags(AppTag()->Id), "Exiting on error:  {}"sv, e.what() );
+			exitCode = e.Code ? (int)e.Code : EXIT_FAILURE;
+		}
 	}
 	IApplication::Shutdown( exitCode.value_or(EXIT_FAILURE) );
 	IApplication::Cleanup();

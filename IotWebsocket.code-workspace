@@ -12,6 +12,14 @@
 			"name": "tests"
 		},
 		{
+			"path": "../Public/src/app/client",
+			"name": "appClient"
+		},
+		{
+			"path": "../Public/src/web/client",
+			"name": "webClient"
+		},
+		{
 			"path": "../Public/jde",
 			"name": "headers"
 		},
@@ -24,7 +32,8 @@
 			"name": "Ssl"
 		},
 		{
-			"path": "../Public/src/web"
+			"path": "../Public/src/web/server",
+			"name": "webServer"
 		},
 		{
 			"path": "../Framework/source",
@@ -167,6 +176,13 @@
 				"group": { "kind": "build", "isDefault": true }
 			},
 			{
+				"label": "compile",
+				"type": "shell",
+				"command": "tput reset;fileWorkspaceFolder=${fileWorkspaceFolder};absoluteFile=`realpath ${workspaceFolder}/${relativeFile}`;relativeFile=${absoluteFile#\"$fileWorkspaceFolder/\"}; cd ${fileWorkspaceFolder}/.obj/asan;make $relativeFile.o;",
+				"problemMatcher": { "base": "$gcc", "fileLocation": ["absolute"] },
+				"group": { "kind": "build", "isDefault": false }
+			},
+			{
 				"label": "buildRelease",
 				"type": "shell",
 				"command": "tput reset;./build.sh release 1",
@@ -188,6 +204,13 @@
 						"file": 1, "line": 2, "column": 3, "severity": 4, "message": 5
 					}
 				},
+				"group": { "kind": "build", "isDefault": false }
+			},
+			{
+				"label": "buildProject",
+				"type": "shell",
+				"command": "tput reset;fileWorkspaceFolder=${fileWorkspaceFolder}; cd ${fileWorkspaceFolder}/.obj/asan;make -j;",
+				"problemMatcher": { "base": "$gcc", "fileLocation": ["absolute"] },
 				"group": { "kind": "build", "isDefault": false }
 			}
 		]
@@ -238,7 +261,7 @@
 				"stopAtEntry": false,
 				"cwd": "${workspaceFolder:tests}/../../../bin/asan",
 				"environment": [
-					{ "name": "JDE_DB_DRIVER", "value": "./libJde.MySql.so" }, 
+					{ "name": "JDE_DB_DRIVER", "value": "./libJde.MySql.so" },
 					{ "name": "JDE_IOT_META", "value": "${env:JDE_DIR}/bin/config/IotWebSocketMeta.json" },
 				],
 				"externalConsole": false,

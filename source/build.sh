@@ -8,10 +8,13 @@ BUILD=../../Public/build/so.sh;
 if [ $all -eq 1 ]; then
 	$BUILD ../../Framework/source $type $clean $compiler || exit 1;
 	$BUILD ../../MySql/source $type $clean $compiler || exit 1;
-	$BUILD ../../Ssl/source $type $clean $compiler || exit 1;
-	$BUILD ../../Public/src/web $type $clean $compiler || exit 1;
-	$BUILD ../../XZ/source $type $clean $compiler || exit 1;
+#	$BUILD ../../Ssl/source $type $clean $compiler || exit 1;
+#	$BUILD ../../XZ/source $type $clean $compiler || exit 1;
 	$BUILD ../../Public/src/crypto $type $clean $compiler || exit 1;
+	$BUILD ../../Public/src/web/client $type $clean $compiler || exit 1;
+	$BUILD ../../Public/src/web/server $type $clean $compiler || exit 1;
+	$BUILD ../../Public/src/app/shared $type $clean $compiler || exit 1;
+	$BUILD ../../Public/src/app/client $type $clean $compiler || exit 1;
 	$BUILD ../../Public/src/iot $type $clean $compiler || exit 1;
 	$BUILD ../../Public/tests/iot $type $clean $compiler || exit 1;
 fi;

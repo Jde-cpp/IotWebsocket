@@ -1,0 +1,18 @@
+﻿#pragma once
+#include <jde/web/rest/RestServer.h>
+#include <jde/web/rest/IRestSession.h>
+
+namespace Jde::Iot
+{
+	namespace Rest{
+		α Start()ι->void;
+	}
+	using namespace Jde::Web::Rest;
+	struct Session : IRestSession, std::enable_shared_from_this<Session>{
+		Session( tcp::socket&& socket ): IRestSession{move(socket)}{}
+		virtual ~Session(){}
+		α HandleRequest( string&& target, flat_map<string,string>&& params, Request&& req )ι->void override;
+		α MakeShared()ι->sp<IRestSession> override{ return shared_from_this(); }
+		Ω AddShutdown()ι->void;
+	};
+}
