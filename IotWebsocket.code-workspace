@@ -16,6 +16,10 @@
 			"name": "appClient"
 		},
 		{
+			"path": "../Public/src/app/shared",
+			"name": "appShared"
+		},
+		{
 			"path": "../Public/src/web/client",
 			"name": "webClient"
 		},
@@ -158,7 +162,6 @@
 			"version": "cpp"
 		},
 		"C_Cpp.loggingLevel": "Debug",
-		"C_Cpp."
 	},
 	"tasks": {
 		"version": "2.0.0",

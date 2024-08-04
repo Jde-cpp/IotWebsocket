@@ -1,10 +1,14 @@
 {
 	"logging":{
+		"defaultLevel": "Information",
 		"tags": {
-			"Trace":["app.rest"],
-			"Debug":["app.client"],
-			"Information":["app", "app.read", "app.monitoring", "app.browse", "app.socket_requests", "net", "UASession", "UAServer", "UAUser", "UASecurity", "UAEvent", "app.processingLoop", "app.socket_results","sql", "app.dataChanges", "threads", "UAClient", "UANet", "UASecure"],
-			"Warning":["alarm", "ql", "io", "locks", "settings"],
+			"Trace":[
+				"http.client.write", "http.client.read", "http.server.write", "http.server.read", "socket.client.write", "socket.client.read", "socket.server.write", "socket.server.read"],
+			"Debug":["settings", "app"],
+			"Information":[
+				"iot.read", "iot.monitoring", "iot.browse", "app.processingLoop", "iot.monitoring.pedantic"
+			],
+			"Warning":[],
 			"Error":[],
 			"Critical":[]
 		},
@@ -17,6 +21,9 @@
 		"connectionString": "$(Jde_Iot_Connection)",
 		"meta": "../config/IotWebSocketMeta.json",
 		"metax": "$(ProgramData)\\Jde-cpp\\iot\\meta.json"
+	},
+	"credentials":{
+		"name": "IotServer"
 	},
 	"http":{
 		"address": null,
@@ -43,6 +50,7 @@
 	},
 	"workers":{
 		"drive":{ "threads":  1 },
-		"Alarm":{ "threads":  1 }
+		"Alarm":{ "threads":  1 },
+		"executor": 1
 	}
 }

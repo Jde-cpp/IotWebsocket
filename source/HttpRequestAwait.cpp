@@ -177,7 +177,7 @@ namespace Jde::Iot{
 			else if( _request.Target().size() ){
 				_request.LogRead();
 				RestException<http::status::not_found> e{ SRCE_CUR, move(_request), "Unknown target '{}'", _request.Target() };
-				ResumeEx( RestException<http::status::not_found>(move(e)) );
+				ResumeExp( RestException<http::status::not_found>(move(e)) );
 			}
 		}
 	}

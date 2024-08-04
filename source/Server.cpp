@@ -7,29 +7,12 @@ namespace Jde{
 	concurrent_flat_map<uint,sp<Iot::ServerSocketSession>> _sessions;
 
 	α Iot::StartWebServer()ε->void{
-		up<IException> pException;
-		_serverThread = std::jthread{ [&pException]{
-			try{
-				Web::Server::Start( mu<RequestHandler>(), mu<ApplicationServer>() ); //blocking
-			}
-			catch( IException& e ){
-				pException = e.Move();
-			}
-		} };
-		while( !Web::Server::HasStarted() && !pException )
-			std::this_thread::sleep_for( 100ms );
-		if( pException )
-		  pException->Throw();
-		else
-			IApplication::AddShutdownFunction( [](){Iot::StopWebServer();} );
+		Web::Server::Start( mu<RequestHandler>(), mu<ApplicationServer>() );
+		Process::AddShutdownFunction( [](bool terminate){Iot::StopWebServer();} );//TODO move to Web::Server
 	}
 
 	α Iot::StopWebServer()ι->void{
 		Web::Server::Stop();
-		if( _serverThread && _serverThread->joinable() ){
-			_serverThread->join();
-			_serverThread = {};
-		}
 	}
 namespace Iot{
 	α Server::RemoveSession( uint socketSessionId )ι->void{
