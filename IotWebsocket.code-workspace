@@ -50,6 +50,9 @@
 		{
 			"path": "../Public/src/crypto"
 		},
+		{
+			"path": "../open62541"
+		}
 	],
 	"settings": {
 		"window.title": "Socket",
@@ -159,7 +162,9 @@
 			"numeric": "cpp",
 			"fromserver.pb.h": "c",
 			"format": "cpp",
-			"version": "cpp"
+			"version": "cpp",
+			"stacktrace": "cpp",
+			"expected": "cpp"
 		},
 		"C_Cpp.loggingLevel": "Debug",
 	},

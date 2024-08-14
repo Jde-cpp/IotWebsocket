@@ -10,9 +10,8 @@ namespace Jde::Iot{
 		return MessageTrans( move(m), 0 );
 	}
 
-	α FromServer::CompleteTrans( FromServer::ERequestIdType type, RequestId requestId )ι->FromServer::Transmission{
+	α FromServer::CompleteTrans( RequestId requestId )ι->FromServer::Transmission{
 		FromServer::Message m;
-		m.set_request_id_type( type );
 		return MessageTrans( move(m), requestId );
 	}
 	α FromServer::ExceptionTrans( const IException& e, optional<RequestId> requestId )ι->FromServer::Transmission{

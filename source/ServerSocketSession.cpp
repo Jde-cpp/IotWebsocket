@@ -28,10 +28,11 @@ namespace Jde::Iot{
 	}
 
 	α ServerSocketSession::SetSessionId( SessionPK sessionId, RequestId requestId )->Sessions::UpsertAwait::Task{
+		LogRead( 𐢜("sessionId: '{:x}'", sessionId), requestId );
 		try{
 			co_await Sessions::UpsertAwait( 𐢜("{:x}", sessionId), _userEndpoint.address().to_string(), true );
 			base::SetSessionId( sessionId );
-			Write( FromServer::CompleteTrans(FromServer::ERequestIdType::SessionId, requestId) );
+			Write( FromServer::CompleteTrans(requestId) );
 		}
 		catch( IException& e ){
 			WriteException( move(e), requestId );

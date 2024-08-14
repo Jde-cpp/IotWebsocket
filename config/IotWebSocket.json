@@ -2,9 +2,9 @@
 	"logging":{
 		"defaultLevel": "Information",
 		"tags": {
-			"Trace":[
+			"Trace":[ "app", "browse",
 				"http.client.write", "http.client.read", "http.server.write", "http.server.read", "socket.client.write", "socket.client.read", "socket.server.write", "socket.server.read"],
-			"Debug":["settings", "app"],
+			"Debug":["settings"],
 			"Information":[
 				"iot.read", "iot.monitoring", "iot.browse", "app.processingLoop", "iot.monitoring.pedantic"
 			],
