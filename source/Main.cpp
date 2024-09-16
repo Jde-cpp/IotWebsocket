@@ -30,8 +30,8 @@ int main( int argc, char **argv ){
 		Process::AddShutdownFunction( [](bool terminate){Iot::UAClient::Shutdown(terminate);} );
 		DB::GraphQL::Hook::Add( mu<Iot::IotGraphQL>() );
 		try{
-			App::Client::Connect();
 			Iot::StartWebServer();
+			App::Client::Connect(); //needs to be after webserver to get certs on initial startup.
 			Information( ELogTags::App, "---Started IotWebSocket---" );
 			exitCode = IApplication::Pause();
 		}

@@ -71,7 +71,7 @@
 		],
 		"naturalKey":["target"]
 	},
-	"$scripts": ["sql/iot_opc_server_insert.sql"],
+	"$scripts": ["iot_opc_server_insert.sql"],
 	"iotOpcServers":
 	{
 		"parent": "$description",

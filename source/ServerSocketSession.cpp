@@ -18,8 +18,8 @@ namespace Jde::Iot{
 		base::OnClose();
 	}
 
-	α ServerSocketSession::SendAck( uint id )ι->void{
-		LogWrite( 𐢜("Ack id: {:x}", id), 0 );
+	α ServerSocketSession::SendAck( uint32 id )ι->void{
+		LogWrite( Ƒ("Ack id: {:x}", id), 0 );
 		Write( FromServer::AckTrans(id) );
 	}
 
@@ -28,9 +28,9 @@ namespace Jde::Iot{
 	}
 
 	α ServerSocketSession::SetSessionId( SessionPK sessionId, RequestId requestId )->Sessions::UpsertAwait::Task{
-		LogRead( 𐢜("sessionId: '{:x}'", sessionId), requestId );
+		LogRead( Ƒ("sessionId: '{:x}'", sessionId), requestId );
 		try{
-			co_await Sessions::UpsertAwait( 𐢜("{:x}", sessionId), _userEndpoint.address().to_string(), true );
+			co_await Sessions::UpsertAwait( Ƒ("{:x}", sessionId), _userEndpoint.address().to_string(), true );
 			base::SetSessionId( sessionId );
 			Write( FromServer::CompleteTrans(requestId) );
 		}
@@ -43,7 +43,7 @@ namespace Jde::Iot{
 		try{
 			auto self = SharedFromThis(); //keep alive
 			auto [loginName,password] = Credentials( base::SessionId(), opcId );
-			LogRead( 𐢜("Subscribe: opcId: '{}', user: '{}', nodeCount: {}", opcId, loginName, nodes.size()), requestId );
+			LogRead( Ƒ("Subscribe: opcId: '{}', user: '{}', nodeCount: {}", opcId, loginName, nodes.size()), requestId );
 
 			auto client = ( co_await UAClient::GetClient(move(opcId), loginName, password) ).SP<UAClient>();
 			( co_await Iot::CreateSubscription(client) ).CheckError();
@@ -70,7 +70,7 @@ namespace Jde::Iot{
 		try{
 			auto self = SharedFromThis();//keep alive
 			auto [loginName,password] = Iot::Credentials( SessionId(), opcId );
-			LogRead( 𐢜("Unsubscribe: opcId: '{}', user: '{}', nodeCount: {}", opcId, loginName, nodes.size()), requestId );
+			LogRead( Ƒ("Unsubscribe: opcId: '{}', user: '{}', nodeCount: {}", opcId, loginName, nodes.size()), requestId );
 			auto pClient = ( co_await UAClient::GetClient(move(opcId), loginName, password) ).SP<UAClient>();
 			auto [successes,failures] = pClient->MonitoredNodes.Unsubscribe( move(nodes), self );
 			Write( FromServer::UnsubscribeTrans(requestId, move(successes), move(failures)) );
@@ -103,7 +103,7 @@ namespace Jde::Iot{
 				Unsubscribe( move(*u.mutable_opc_id()), NodeId::ToNodes(move(*u.mutable_nodes())), requestId );
 				break;}
 			default:
-				LogRead( 𐢜("Unknown message type '{}'", underlying(m.Value_case())), requestId, ELogLevel::Critical );
+				LogRead( Ƒ("Unknown message type '{}'", underlying(m.Value_case())), requestId, ELogLevel::Critical );
 			}
 		}
 	}

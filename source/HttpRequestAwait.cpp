@@ -47,7 +47,7 @@ namespace Jde::Iot{
 	α HttpRequestAwait::Browse()ι->Browse::ObjectsFolderAwait::Task{
 		try{
 			var snapshot = ToIV( _request["snapshot"] )=="true";
-			_request.LogRead( 𐢜("BrowseObjectsFolder snapshot: {}", snapshot) );
+			_request.LogRead( Ƒ("BrowseObjectsFolder snapshot: {}", snapshot) );
 			auto j = co_await Browse::ObjectsFolderAwait( NodeId{_request.Params()}, snapshot, move(_client) );
 			Resume( {move(j), move(_request)} );
 		}
@@ -154,17 +154,16 @@ namespace Jde::Iot{
 			var domain = Json::Get( body, "opc" );
 			var user = Json::Get( body, "user" );
 			var password = Json::Get( body, "password" );
-			_request.LogRead( 𐢜("Login - opc: {}, user: {}", domain, user) );
+			_request.LogRead( Ƒ("Login - opc: {}, user: {}", domain, user) );
 			var session = co_await AuthenticateAwait{ user, password, domain, endpoint, false };
-			Resume( {json{{"sessionId", 𐢜("{:x}", session.session_id())}}, move(_request)} );
+			Resume( {json{{"sessionId", Ƒ("{:x}", session.session_id())}}, move(_request)} );
 		}
 		catch( IException& e ){
 			ResumeExp( RestException<http::status::unauthorized>(move(e), move(_request)) );
 		}
 	}
 
-	α HttpRequestAwait::await_suspend( base::Handle h )ε->void{
-		base::await_suspend(h);
+	α HttpRequestAwait::Suspend()ι->void{
 		up<IException> pException;
  		if( _request.IsPost("/Login") )
 			Login( _request.UserEndpoint.address().to_string() );

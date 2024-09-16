@@ -10,7 +10,7 @@ namespace Jde::Iot{
 		using base = IHttpRequestAwait;
 		HttpRequestAwait( HttpRequest&& req, SRCE )ι;
 		α await_ready()ι->bool override;
-		α await_suspend( base::Handle h )ε->void;
+		α Suspend()ι->void override;
 		α await_resume()ε->HttpTaskResult override;
 	private:
 		α Login( str endpoint )ι->AuthenticateAwait::Task;

@@ -13,7 +13,7 @@ namespace Jde::Iot{
 		ServerSocketSession( sp<RestStream> stream, beast::flat_buffer&& buffer, TRequestType&& request, tcp::endpoint&& userEndpoint, uint32 connectionIndex )ι;
 		α OnRead( FromClient::Transmission&& transmission )ι->void override;
 		α SendDataChange( const Jde::Iot::OpcNK& opcNK, const Jde::Iot::NodeId& node, const Jde::Iot::Value& value )ι->void override;
-		α to_string()Ι->string override{ return 𐢜( "{:x}", Id() ); }
+		α to_string()Ι->string override{ return Ƒ( "{:x}", Id() ); }
 	private:
 		α OnClose()ι->void;
 		//α OnConnect( SessionPK sessionId, RequestId requestId )ι->Web::UpsertAwait::Task;
@@ -26,7 +26,7 @@ namespace Jde::Iot{
 		α WriteException( IException&& e )ι->void override{ WriteException( move(e), 0 ); }
 
 		α GraphQL( string&& query, uint requestId )ι->Task;
-		α SendAck( uint id )ι->void override;
+		α SendAck( uint32 id )ι->void override;
 	};
 }
 

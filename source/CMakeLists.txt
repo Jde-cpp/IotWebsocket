@@ -1,47 +1,69 @@
-cmake_minimum_required(VERSION 3.16)
-project(Jde.IotWebsocket)
-set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../../Public/build )
+cmake_minimum_required(VERSION 3.20)
+set( CMAKE_MODULE_PATH $ENV{JDE_DIR}/Public/build )
 include(common)
-
+findBoost()
+if( ${VCPKG} )
+	SET( CMAKE_TOOLCHAIN_FILE $ENV{REPO_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake  CACHE STRING "Vcpkg toolchain file" )
+endif()
+project(Jde.IotWebsocket)
+include( compiler )
 #######################################################
-link_directories( ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} )
-find_package(ZLIB)
-find_package(absl REQUIRED)
-find_package(protobuf REQUIRED)
-find_package(OpenSSL REQUIRED)
-find_package(open62541 REQUIRED)
-set( open62541Dir ${open62541_DIR}/../../.. )
-link_directories( ${open62541Dir}/lib )
-link_directories( ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} )
-
-link_directories( ${fmt_DIR}/../.. )
-link_directories( ${Protobuf_DIR}/../.. )
+find_package( OpenSsl REQUIRED )
+find_package( protobuf REQUIRED )
+if( MSVC )
+	include_directories( ${OPENSSL_INCLUDE_DIR} )
+	set( installDir $ENV{REPO_DIR}/installed/$(ConfigurationName) )
+	include_directories( ${installDir}/include )
+	link_directories( ${installDir}/lib )
+	link_directories( $ENV{JDE_DIR}/Framework/source/.build/.bin )
+	link_directories( $ENV{JDE_DIR}/Public/src/web/server/.build/.bin )
+	link_directories( $ENV{JDE_DIR}/Public/src/iot/.build/.bin )
+	link_directories( $ENV{JDE_DIR}/Public/src/app/shared/.build/.bin )
+	link_directories( $ENV{JDE_DIR}/Public/src/web/client/.build/.bin )
+	link_directories( $ENV{JDE_DIR}/Public/src/crypto/.build/.bin )
+	link_directories( $ENV{JDE_DIR}/Public/src/app/client/.build/.bin )
+	file(GLOB resources *.rc *.rc )
+else()
+	set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../../Public/build )
+	link_directories( ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} )
+	find_package(ZLIB)
+	find_package(absl REQUIRED)
+	find_package(open62541 REQUIRED)
+	set( open62541Dir ${open62541_DIR}/../../.. )
+	link_directories( ${open62541Dir}/lib )
+	link_directories( ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} )
+	link_directories( ${fmt_DIR}/../.. )
+	link_directories( ${Protobuf_DIR}/../.. )
+endif()
 
 add_executable( ${CMAKE_PROJECT_NAME} )
 
-file(GLOB src_files *.cpp types/proto/*.cpp )
-file(GLOB hdr_files  *.h )
+file(GLOB sources *.cpp types/proto/*.cpp )
+file(GLOB headers *.h )
 
-target_sources( "${CMAKE_PROJECT_NAME}"
-    PRIVATE
-        "${src_files}"
-        "${hdr_files}")
+target_sources( ${CMAKE_PROJECT_NAME} PRIVATE ${sources} ${resources} ${headers} )
 
 #######################################################
-include_directories( "../../Public" )
-include_directories( "../../Public/jde/log/types/proto" )
-include_directories( ${open62541Dir}/include )
+if( MSVC )
+	target_link_libraries( ${CMAKE_PROJECT_NAME} fmt::fmt )
+	target_link_libraries( ${CMAKE_PROJECT_NAME} open62541.lib )
+	set_target_properties( ${CMAKE_PROJECT_NAME} PROPERTIES
+		VS_DEBUGGER_COMMAND_ARGUMENTS "-c"
+		VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_SOURCE_DIR} )
+else()
+	include_directories( "../../Public" )
+	include_directories( "../../Public/jde/log/types/proto" )
+	include_directories( ${open62541Dir}/include )
+	target_link_libraries( ${CMAKE_PROJECT_NAME} lzma )
+	target_link_libraries( ${CMAKE_PROJECT_NAME} ssl )
+	target_link_libraries( ${CMAKE_PROJECT_NAME} debug libfmtd.a optimized libfmt.a)
+	target_link_libraries( ${CMAKE_PROJECT_NAME} absl::log_internal_message absl::log_internal_check_op absl::cord)
+	target_link_libraries( ${CMAKE_PROJECT_NAME} ZLIB::ZLIB )
+	target_link_libraries( ${CMAKE_PROJECT_NAME} Jde Jde.App.Shared Jde.App.Client Jde.Crypto Jde.Web.Client Jde.Web.Server Jde.Iot )
+endif()
 include_directories( $ENV{JDE_DIR}/Public/jde/app/shared/proto )
-
 target_link_libraries(${CMAKE_PROJECT_NAME} OpenSSL::SSL)
-#target_link_libraries( ${CMAKE_PROJECT_NAME} libopen62541.a )
-target_link_libraries( ${CMAKE_PROJECT_NAME} lzma )
-target_link_libraries( ${CMAKE_PROJECT_NAME} ssl )
-target_link_libraries( ${CMAKE_PROJECT_NAME} debug libfmtd.a optimized libfmt.a)
 target_link_libraries( ${CMAKE_PROJECT_NAME} protobuf::libprotobuf )
-target_link_libraries( ${CMAKE_PROJECT_NAME} absl::log_internal_message absl::log_internal_check_op absl::cord)
-target_link_libraries( ${CMAKE_PROJECT_NAME} ZLIB::ZLIB )
-target_link_libraries( ${CMAKE_PROJECT_NAME} Jde Jde.App.Shared Jde.App.Client Jde.Crypto Jde.Web.Client Jde.Web.Server Jde.Iot )
 
 target_precompile_headers(${CMAKE_PROJECT_NAME}
 	PRIVATE
@@ -63,20 +85,21 @@ target_precompile_headers(${CMAKE_PROJECT_NAME}
 	<open62541/client_highlevel_async.h>
 	<open62541/plugin/log_stdout.h>
 	<open62541/client_subscriptions.h>
+
 	<jde/iot/TypeDefs.h>
 	<jde/log/Log.h>
 	<jde/App.h>
 	"../../Framework/source/coroutine/Awaitable.h"
-	"../../Framework/source/io/AsioContextThread.h"
+	<jde/thread/Execution.h>
 	<jde/coroutine/Task.h>
 	<jde/web/server/exports.h>
 	<jde/iot/Exports.h>
+	<jde/app/shared/exports.h>
 	<jde/app/shared/proto/App.FromClient.pb.h>
 	<jde/app/shared/proto/App.FromServer.pb.h>
 	<jde/iot/types/proto/Iot.Common.pb.h>
 	<jde/iot/types/proto/Iot.FromServer.pb.h>
 	<jde/iot/types/proto/Iot.FromClient.pb.h>
-#	<jde/iot/types/FromServer.h>
 	<jde/iot/uatypes/UAException.h>
 	<jde/iot/async/SessionAwait.h>
 

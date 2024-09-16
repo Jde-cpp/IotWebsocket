@@ -20,7 +20,8 @@
 		"driver_": "./libJde.MySql.so",
 		"connectionString": "$(Jde_Iot_Connection)",
 		"meta": "../config/IotWebSocketMeta.json",
-		"metax": "$(ProgramData)\\Jde-cpp\\iot\\meta.json"
+		"metax": "$(ProgramData)\\Jde-cpp\\iot\\meta.json",
+		"scriptDir": "$(JDE_DIR)/IotWebsocket/sql"
 	},
 	"credentials":{
 		"name": "IotServer"

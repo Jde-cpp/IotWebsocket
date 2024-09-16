@@ -8,7 +8,7 @@ namespace Jde{
 
 	α Iot::StartWebServer()ε->void{
 		Web::Server::Start( mu<RequestHandler>(), mu<ApplicationServer>() );
-		Process::AddShutdownFunction( [](bool terminate){Iot::StopWebServer();} );//TODO move to Web::Server
+		Process::AddShutdownFunction( [](bool /*terminate*/ ){Iot::StopWebServer();} );//TODO move to Web::Server
 	}
 
 	α Iot::StopWebServer()ι->void{
