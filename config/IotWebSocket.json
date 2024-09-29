@@ -3,7 +3,9 @@
 		"defaultLevel": "Information",
 		"tags": {
 			"Trace":[ "app", "browse",
-				"http.client.write", "http.client.read", "http.server.write", "http.server.read", "socket.client.write", "socket.client.read", "socket.server.write", "socket.server.read"],
+				"http.client.write", "http.client.read", "http.server.write", "http.server.read", "socket.client.write", "socket.client.read", "socket.server.write", "socket.server.read",
+				"uaNet", "uaSecure", "uaSession", "uaServer", "uaClient", "uaUser", "uaSecurity", "uaEvent", "uaPubSub", "uaDiscovery"
+			],
 			"Debug":["settings"],
 			"Information":[
 				"iot.read", "iot.monitoring", "iot.browse", "app.processingLoop", "iot.monitoring.pedantic"
@@ -13,15 +15,15 @@
 			"Critical":[]
 		},
 		"console":{},
-		"file":{ "path": "$(ProgramData)\\Jde-cpp\\iot\\logs", "md": false },
-		"server": { "port": 4321, "level": "Information", "diagnosticsLevel": "Information", "tags": [] }
+		"file":{ "path": "$(ProgramData)/Jde-cpp/iot/logs", "md": false },
+		"server": { "port": 1967, "level": "Information", "diagnosticsLevel": "Information", "tags": [] }
 	},
 	"db":{
 		"driver_": "./libJde.MySql.so",
 		"connectionString": "$(Jde_Iot_Connection)",
 		"meta": "../config/IotWebSocketMeta.json",
-		"metax": "$(ProgramData)\\Jde-cpp\\iot\\meta.json",
-		"scriptDir": "$(JDE_DIR)/IotWebsocket/sql"
+		"metax": "$(ProgramData)/Jde-cpp/iot/meta.json",
+		"scriptDir": "$(ProgramData)/Jde-cpp/iot/sql"
 	},
 	"credentials":{
 		"name": "IotServer"

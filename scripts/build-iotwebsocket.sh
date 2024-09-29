@@ -67,8 +67,12 @@ else
 fi;
 buildCMake open62541;
 cd $REPO_DIR/open62541/.build;
-cmake.exe -DBUILD_TYPE=debug -DCMAKE_INSTALL_PREFIX=$CMAKE_INSTALL_PREFIX/asan -P cmake_install.cmake;
-cmake.exe -DBUILD_TYPE=release -DCMAKE_INSTALL_PREFIX=$CMAKE_INSTALL_PREFIX/release -P cmake_install.cmake;
+if windows; then
+	cmake.exe -DBUILD_TYPE=debug -DCMAKE_INSTALL_PREFIX=$CMAKE_INSTALL_PREFIX/debug -P cmake_install.cmake;
+else
+	cmake.exe -DBUILD_TYPE=debug -DCMAKE_INSTALL_PREFIX=$CMAKE_INSTALL_PREFIX/asan -P cmake_install.cmake;
+fi;
+cmake.exe -DBUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=$CMAKE_INSTALL_PREFIX/RelWithDebInfo -P cmake_install.cmake;
 
 echo ----------------iot----------------
 cd $JDE_BASH/Public/src/iot;
@@ -88,48 +92,9 @@ cd $JDE_BASH;
 fetchDefault main IotWebsocket 0;
 buildCMake Jde.IotWebsocket 0 Jde.IotWebsocket.exe;
 
-exit 0;
-# echo -------------------proto-------------------------;
-# SOURCE_DIR=$JDE_BASH/Public/jde/iot/types/proto;
-# cd $SOURCE_DIR;
-# moveToDir google;
-# moveToDir protobuf;
-# mklink "duration.proto" $PROTOBUF_INCLUDE;
-# mklink "timestamp.proto" $PROTOBUF_INCLUDE;
-# cd ../..;
-# mklink "FromServer.proto" $JDE_BASH/Public/src/web/proto;
-# mklink "FromServer.pb.h" $JDE_BASH/Public/src/web/proto;
-# file=IotFromServer;
-# if [[ ! -f $file.pb.h || $shouldFetch -eq 1 ]]; then
-# 	protoc --cpp_out dllexport_decl=Jde_Iot_EXPORTS:. $file.proto;
-# 	sed -i -e 's/Jde_Iot_EXPORTS/ΓI/g' $file.pb.h;
-# 	sed -i '1s/^/\xef\xbb\xbf/' $file.pb.h;
-# 	sed -i -e 's/PROTOBUF_CONSTINIT NodeValuesDefaultTypeInternal/NodeValuesDefaultTypeInternal/g' $file.pb.cc;
-# fi;
-# file=IotFromClient;
-# if [[ ! -f $file.pb.h  || $shouldFetch -eq 1 ]]; then
-# 	protoc --cpp_out dllexport_decl=Jde_Iot_EXPORTS:. $file.proto;
-# 	sed -i -e 's/Jde_Iot_EXPORTS/ΓI/g' $file.pb.h;
-# 	sed -i '1s/^/\xef\xbb\xbf/' $file.pb.h;
-# 	sed -i -e 's/PROTOBUF_CONSTINIT SubscribeDefaultTypeInternal/SubscribeDefaultTypeInternal/g' $file.pb.cc;
-# 	sed -i -e 's/PROTOBUF_CONSTINIT UnsubscribeDefaultTypeInternal/UnsubscribeDefaultTypeInternal/g' $file.pb.cc;
-# fi;
-# file=IotCommon;
-# if [[ ! -f $file.pb.h  || $shouldFetch -eq 1 ]]; then
-# 	protoc --cpp_out dllexport_decl=Jde_Iot_EXPORTS:. $file.proto;
-# 	sed -i -e 's/Jde_Iot_EXPORTS/ΓI/g' $file.pb.h;
-# 	sed -i '1s/^/\xef\xbb\xbf/' $file.pb.h;
-# 	sed -i -e 's/PROTOBUF_CONSTINIT ExpandedNodeIdDefaultTypeInternal/ExpandedNodeIdDefaultTypeInternal/g' $file.pb.cc;
-# fi;
-
-# cd $JDE_BASH/Public/src/iot/types/proto;
-# mv $SOURCE_DIR/IotFromServer.pb.cc .;
-# mklink IotFromServer.pb.h $SOURCE_DIR;
-# mv $SOURCE_DIR/IotFromClient.pb.cc .;
-# mklink IotFromClient.pb.h $SOURCE_DIR;
-# mv $SOURCE_DIR/IotCommon.pb.cc .;
-# mklink IotCommon.pb.h $SOURCE_DIR;
-
-
 cd $JDE_BASH;moveToDir web;
-fetch IotSite;
+fetch main IotSite;
+./scripts/setup.sh
+
+exit 0;
+

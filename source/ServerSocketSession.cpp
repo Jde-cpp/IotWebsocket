@@ -2,7 +2,7 @@
 #include <jde/iot/UM.h>
 #include <jde/iot/async/CreateSubscriptions.h>
 #include <jde/iot/async/DataChanges.h>
-#include "Server.h"
+#include "WebServer.h"
 #include "types/proto/Iot.FromServer.h"
 
 #define var const auto

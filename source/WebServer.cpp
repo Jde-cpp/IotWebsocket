@@ -1,4 +1,5 @@
-#include "Server.h"
+#include "WebServer.h"
+#include <jde/web/server/Server.h>
 #include "ServerSocketSession.h"
 #include "ApplicationServer.h"
 

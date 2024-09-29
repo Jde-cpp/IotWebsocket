@@ -5,7 +5,7 @@
 #include <jde/iot/Exports.h>
 #include <jde/iot/uatypes/UAClient.h>
 #include <jde/iot/IotGraphQL.h>
-#include "Server.h"
+#include "WebServer.h"
 #include <format>
 
 #define var const auto
