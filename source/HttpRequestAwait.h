@@ -1,9 +1,9 @@
 #pragma once
 #include <jde/web/server/IHttpRequestAwait.h>
-#include <jde/iot/UM.h>
-#include <jde/iot/uatypes/Browse.h>
+#include <jde/opc/UM.h>
+#include <jde/opc/uatypes/Browse.h>
 
-namespace Jde::Iot{
+namespace Jde::Opc{
 	struct NodeId; struct Value;
 	using namespace Jde::Web::Server;
 	struct HttpRequestAwait final: IHttpRequestAwait{

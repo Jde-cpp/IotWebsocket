@@ -1,9 +1,9 @@
 #include "Iot.FromServer.h"
-#include <jde/iot/uatypes/Node.h>
+#include <jde/opc/uatypes/Node.h>
 
-#define var const auto
+#define let const auto
 
-namespace Jde::Iot{
+namespace Jde::Opc{
 	α FromServer::AckTrans( uint socketSessionId )ι->FromServer::Transmission{
 		FromServer::Message m;
 		m.set_ack( socketSessionId );
@@ -43,8 +43,8 @@ namespace Jde::Iot{
 		auto& m = *t.add_messages();
 		m.set_request_id( id );
 		auto ack = m.mutable_unsubscribe_ack();
-		for_each( move(successes), [&ack](var& n){*ack->add_successes() = n.ToProto();} );
-		for_each( move(failures), [&ack](var& n){*ack->add_failures() = n.ToProto();} );
+		for_each( move(successes), [&ack](let& n){*ack->add_successes() = n.ToProto();} );
+		for_each( move(failures), [&ack](let& n){*ack->add_failures() = n.ToProto();} );
 		return t;
 	}
 }

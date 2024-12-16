@@ -1,13 +1,13 @@
 #include "ServerSocketSession.h"
-#include <jde/iot/UM.h>
-#include <jde/iot/async/CreateSubscriptions.h>
-#include <jde/iot/async/DataChanges.h>
+#include <jde/opc/UM.h>
+#include <jde/opc/async/CreateSubscriptions.h>
+#include <jde/opc/async/DataChanges.h>
 #include "Server.h"
 #include "types/proto/Iot.FromServer.h"
 
-#define var const auto
+#define let const auto
 
-namespace Jde::Iot{
+namespace Jde::Opc{
 	ServerSocketSession::ServerSocketSession( sp<RestStream> stream, beast::flat_buffer&& buffer, TRequestType&& request, tcp::endpoint&& userEndpoint, uint32 connectionIndex )ι:
 		base{ move(stream), move(buffer), move(request), move(userEndpoint), connectionIndex }
 	{}
@@ -23,7 +23,7 @@ namespace Jde::Iot{
 		Write( FromServer::AckTrans(id) );
 	}
 
-	α ServerSocketSession::SendDataChange( const Jde::Iot::OpcNK& opcNK, const Jde::Iot::NodeId& node, const Jde::Iot::Value& value )ι->void{
+	α ServerSocketSession::SendDataChange( const Jde::Opc::OpcNK& opcNK, const Jde::Opc::NodeId& node, const Jde::Opc::Value& value )ι->void{
 		return Write( MessageTrans(value.ToProto(opcNK,node), 0) );
 	}
 
@@ -46,7 +46,7 @@ namespace Jde::Iot{
 			LogRead( 𐢜("Subscribe: opcId: '{}', user: '{}', nodeCount: {}", opcId, loginName, nodes.size()), requestId );
 
 			auto client = ( co_await UAClient::GetClient(move(opcId), loginName, password) ).SP<UAClient>();
-			( co_await Iot::CreateSubscription(client) ).CheckError();
+			( co_await Opc::CreateSubscription(client) ).CheckError();
 			up<FromServer::SubscriptionAck> ack;
 			try{
 				ack = ( co_await DataChangesSubscribe(nodes, self, client) ).UP<FromServer::SubscriptionAck>();
@@ -69,7 +69,7 @@ namespace Jde::Iot{
 	α ServerSocketSession::Unsubscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->Task{
 		try{
 			auto self = SharedFromThis();//keep alive
-			auto [loginName,password] = Iot::Credentials( SessionId(), opcId );
+			auto [loginName,password] = Opc::Credentials( SessionId(), opcId );
 			LogRead( 𐢜("Unsubscribe: opcId: '{}', user: '{}', nodeCount: {}", opcId, loginName, nodes.size()), requestId );
 			auto pClient = ( co_await UAClient::GetClient(move(opcId), loginName, password) ).SP<UAClient>();
 			auto [successes,failures] = pClient->MonitoredNodes.Unsubscribe( move(nodes), self );
@@ -88,7 +88,7 @@ namespace Jde::Iot{
 	α ServerSocketSession::OnRead( FromClient::Transmission&& transmission )ι->void{
 		for( auto i=0; i<transmission.messages_size(); ++i ){
 			auto& m = *transmission.mutable_messages( i );
-			var requestId = m.request_id();
+			let requestId = m.request_id();
 			switch( m.Value_case() ){
 			using enum FromClient::Message::ValueCase;
 			case kSessionId:

@@ -4,14 +4,14 @@
 
 namespace Jde{
 	optional<std::jthread> _serverThread;
-	concurrent_flat_map<uint,sp<Iot::ServerSocketSession>> _sessions;
+	concurrent_flat_map<uint,sp<Opc::ServerSocketSession>> _sessions;
 
-	α Iot::StartWebServer()ε->void{
+	α Opc::StartWebServer()ε->void{
 		Web::Server::Start( mu<RequestHandler>(), mu<ApplicationServer>() );
-		Process::AddShutdownFunction( [](bool terminate){Iot::StopWebServer();} );//TODO move to Web::Server
+		Process::AddShutdownFunction( [](bool terminate){Opc::StopWebServer();} );//TODO move to Web::Server
 	}
 
-	α Iot::StopWebServer()ι->void{
+	α Opc::StopWebServer()ι->void{
 		Web::Server::Stop();
 	}
 namespace Iot{

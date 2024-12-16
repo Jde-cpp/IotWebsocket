@@ -1,6 +1,6 @@
 #pragma once
-namespace Jde::Iot{ struct NodeId; }
-namespace Jde::Iot::FromServer{
+namespace Jde::Opc{ struct NodeId; }
+namespace Jde::Opc::FromServer{
 	α AckTrans( uint socketSessionId )ι->FromServer::Transmission;
 	α CompleteTrans( RequestId requestId )ι->FromServer::Transmission;
 	α SubscribeAckTrans( up<FromServer::SubscriptionAck>&& ack, RequestId requestId )ι->FromServer::Transmission;

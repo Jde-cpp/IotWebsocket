@@ -5,38 +5,31 @@
 			"name": "IotWebsocket"
 		},
 		{
-			"path": "../Public/src/iot"
+			"path": "../Public/libs/opc/src",
+			"name": "common"
 		},
 		{
-			"path": "../Public/tests/iot",
+			"path": "../Public/libs/opc/tests",
 			"name": "tests"
 		},
 		{
-			"path": "../Public/src/app/client",
+			"path": "../Public/libs/app/client",
 			"name": "appClient"
 		},
 		{
-			"path": "../Public/src/app/shared",
+			"path": "../Public/libs/app/shared",
 			"name": "appShared"
 		},
 		{
-			"path": "../Public/src/web/client",
+			"path": "../Public/libs/web/client",
 			"name": "webClient"
 		},
 		{
-			"path": "../Public/jde",
+			"path": "../Public/include/jde",
 			"name": "headers"
 		},
 		{
-			"path": "../MySql/source",
-			"name": "MySql"
-		},
-		{
-			"path": "../Ssl/source",
-			"name": "Ssl"
-		},
-		{
-			"path": "../Public/src/web/server",
+			"path": "../Public/libs/web/server",
 			"name": "webServer"
 		},
 		{
@@ -44,19 +37,34 @@
 			"name": "Framework"
 		},
 		{
-			"path": "../XZ/source",
-			"name": "XZ"
-		},
-		{
-			"path": "../Public/src/crypto"
+			"path": "../Public/libs/crypto"
 		},
 		{
 			"path": "../open62541"
 		}
 	],
 	"settings": {
-		"window.title": "Socket",
+		"window.title": "OpcClient",
+		"C_Cpp.default.includePath": [
+			"${env:REPO_DIR}/install/g++-13/asan/boost/include/",
+			"${env:REPO_DIR}/install/g++-13/asan/fmt/include/",
+			"${env:REPO_DIR}/install/g++-13/asan/GTest/include/",
+			"${env:REPO_DIR}/install/g++-13/asan/absl/include",
+			"${env:REPO_DIR}/install/g++-13/asan/protobuf/include/",
+			"${env:REPO_DIR}/install/g++-13/asan/spdlog/include/",
+			"${env:REPO_DIR}/install/g++-13/asan/open62541/include",
+			"${env:REPO_DIR}/json/include",
+			"${env:REPO_DIR}/mysql-connector-cpp/include/mysqlx",
+			"${env:JDE_DIR}/Public/include"
+		],
+		"C_Cpp.default.forcedInclude": ["${workspaceFolder}/pc.h", "${env:JDE_DIR}/Public/include/jde/framework.h"],
+		"C_Cpp.default.compilerPath": "/usr/bin/g++-13",
+		"C_Cpp.default.cStandard": "c17",
+		"C_Cpp.default.cppStandard": "c++23",
+		"C_Cpp.default.intelliSenseMode": "linux-gcc-x64",
+		"C_Cpp.default.defines": [],
 		"files.associations": {
+			"*.dbclient-js": "javascript",
 			"*.sqlm": "sql",
 			"vector": "cpp",
 			"system_error": "cpp",
@@ -164,9 +172,9 @@
 			"format": "cpp",
 			"version": "cpp",
 			"stacktrace": "cpp",
-			"expected": "cpp"
+			"expected": "cpp",
+			"*.inc": "cpp"
 		},
-		"C_Cpp.loggingLevel": "Debug",
 	},
 	"tasks": {
 		"version": "2.0.0",

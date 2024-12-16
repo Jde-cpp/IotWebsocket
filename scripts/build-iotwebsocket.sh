@@ -1,19 +1,20 @@
 #!/bin/bash
-clean=${1:-0};
-shouldFetch=${2:-1};
-tests=${3:-1}
+branch=${1:-master}
+clean=${2:-0};
+shouldFetch=${3:-1};
+tests=${4:-1}
 
-echo build-iotwebsocket.sh clean=$clean shouldFetch=$shouldFetch tests=$tests;
-
+[[ "$branch" = master ]] && branch2=main || branch2="$branch"
+echo build-iotwebsocket.sh branch: $branch2 clean: $clean shouldFetch: $shouldFetch tests: $tests;
 scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 if [ -z $JDE_BASH ]; then JDE_BASH=$scriptDir/jde; fi;
 if [ -z $REPO_DIR ]; then REPO_DIR=$scriptDir/libraries; fi;
 
 if [ ! -d $JDE_BASH ]; then mkdir jde; fi;
-if [ ! -d $JDE_BASH/Framework ]; then cd $JDE_BASH; git clone https://github.com/Jde-cpp/Framework.git; cd ..; fi;
+if [ ! -d $JDE_BASH/Framework ]; then cd $JDE_BASH; git clone -b $branch --single-branch https://github.com/Jde-cpp/Framework.git; cd ..; fi;
 if ! source $JDE_BASH/Framework/scripts/common-error.sh; then exit 1; fi;
 source $JDE_BASH/Framework/scripts/source-build.sh;
-$JDE_BASH/Framework/scripts/framework-build.sh $clean $shouldFetch $tests;
+$JDE_BASH/Framework/scripts/framework-build.sh $branch $clean $shouldFetch $tests;
 
 if [ ! windows -a ! -z "$install" ]; then #https://www.open62541.org/doc/open62541-1.3.pdf
 	sudo apt-get install git build-essential gcc pkg-config cmake python
@@ -23,14 +24,24 @@ if [ ! windows -a ! -z "$install" ]; then #https://www.open62541.org/doc/open625
 	sudo apt-get install python-sphinx graphviz # for documentation generation
 	sudo apt-get install python-sphinx-rtd-theme # documentation style
 fi;
-echo ----------------XZ----------------
-# dumpbin /EXPORTS liblzma.dll > liblzma.exports
-# ^\s+\d+\s+\w+\s+\w+ 
-# lib /def:liblzma.exports /out:liblzma.lib
-fetchBuild XZ;
-echo ----------------Ssl----------------
-cd $JDE_BASH;
-fetchBuild Ssl;
+
+echo -------------Crypto------------
+cd $JDE_BASH/Public/src/crypto;
+	buildCMake Jde.Crypto;
+
+echo -------------Web.Client------------
+cd $JDE_BASH/Public/src/web/client;
+	buildCMake Jde.Web.Client;
+
+echo -------------App.Shared------------
+cd $JDE_BASH/Public/src/app/shared;
+	buildCMake Jde.App.Shared;
+
+echo -------------App.Client------------
+cd $JDE_BASH/Public/src/app/client;
+	buildCMake Jde.App.Client;
+
+exit 0;
 
 echo ----------------Web----------------
 findProtoc;

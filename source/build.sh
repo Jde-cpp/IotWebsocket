@@ -4,21 +4,22 @@ clean=${2:-0}
 all=${3:-1}
 compiler=${4:-g++-13}
 export CXX=$compiler;
-BUILD=../../Public/build/so.sh;
+BUILD=$JDE_DIR/Public/build/so.sh;
+pushd `pwd` > /dev/null;
 if [ $all -eq 1 ]; then
 	$BUILD ../../Framework/source $type $clean $compiler || exit 1;
-	$BUILD ../../MySql/source $type $clean $compiler || exit 1;
-#	$BUILD ../../Ssl/source $type $clean $compiler || exit 1;
-#	$BUILD ../../XZ/source $type $clean $compiler || exit 1;
-	$BUILD ../../Public/src/crypto $type $clean $compiler || exit 1;
-	$BUILD ../../Public/src/web/client $type $clean $compiler || exit 1;
-	$BUILD ../../Public/src/web/server $type $clean $compiler || exit 1;
-	$BUILD ../../Public/src/app/shared $type $clean $compiler || exit 1;
-	$BUILD ../../Public/src/app/client $type $clean $compiler || exit 1;
-	$BUILD ../../Public/src/iot $type $clean $compiler || exit 1;
-	$BUILD ../../Public/tests/iot $type $clean $compiler || exit 1;
+	cd ../../Public/libs;
+	$BUILD crypto/src $type $clean $compiler || exit 1;
+	$BUILD db $type $clean $compiler || exit 1;
+	$BUILD db/drivers/mysql $type $clean $compiler || exit 1;
+	$BUILD web/client $type $clean $compiler || exit 1;
+	$BUILD web/server $type $clean $compiler || exit 1;
+	$BUILD app/shared $type $clean $compiler || exit 1;
+	$BUILD app/client $type $clean $compiler || exit 1;
+	$BUILD opc/src $type $clean $compiler || exit 1;
+	$BUILD opc/tests $type $clean $compiler || exit 1;
 fi;
-
+popd  > /dev/null;
 if [ ! -d .obj ];	then
 	mkdir .obj;
 	clean=1;

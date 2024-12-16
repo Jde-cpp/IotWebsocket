@@ -2,13 +2,13 @@
 #include <jde/log/Log.h>
 #include <jde/app/client/AppClient.h>
 #include <jde/db/graphQL/GraphQLHook.h>
-#include <jde/iot/Exports.h>
-#include <jde/iot/uatypes/UAClient.h>
-#include <jde/iot/IotGraphQL.h>
+#include <jde/opc/Exports.h>
+#include <jde/opc/uatypes/UAClient.h>
+#include <jde/opc/IotGraphQL.h>
 #include "Server.h"
 #include <format>
 
-#define var const auto
+#define let const auto
 namespace Jde{
 	α OSApp::ProductName()ι->sv{ return "IotWebsocket"; }
 }
@@ -17,7 +17,7 @@ int main( int argc, char **argv ){
 	using namespace Jde;
 	optional<int> exitCode;
 	try{
-		TagParser( Iot::LogTagParser );
+		TagParser( Opc::LogTagParser );
 		OSApp::Startup( argc, argv, "Jde.IotWebSocket", "IOT Connection" );
 		DB::CreateSchema();
 		DB::SetQLDataSource( DB::DataSourcePtr() );
@@ -27,11 +27,11 @@ int main( int argc, char **argv ){
 		exitCode = e.Code ? (int)e.Code : EXIT_FAILURE;
 	}
 	if( !exitCode ){
-		Process::AddShutdownFunction( [](bool terminate){Iot::UAClient::Shutdown(terminate);} );
-		DB::GraphQL::Hook::Add( mu<Iot::IotGraphQL>() );
+		Process::AddShutdownFunction( [](bool terminate){Opc::UAClient::Shutdown(terminate);} );
+		DB::GraphQL::Hook::Add( mu<Opc::IotGraphQL>() );
 		try{
 			App::Client::Connect();
-			Iot::StartWebServer();
+			Opc::StartWebServer();
 			Information( ELogTags::App, "---Started IotWebSocket---" );
 			exitCode = IApplication::Pause();
 		}

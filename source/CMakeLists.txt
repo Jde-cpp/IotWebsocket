@@ -63,22 +63,22 @@ target_precompile_headers(${CMAKE_PROJECT_NAME}
 	<open62541/client_highlevel_async.h>
 	<open62541/plugin/log_stdout.h>
 	<open62541/client_subscriptions.h>
-	<jde/iot/TypeDefs.h>
+	<jde/opc/usings.h>
 	<jde/log/Log.h>
 	<jde/App.h>
 	"../../Framework/source/coroutine/Awaitable.h"
 	"../../Framework/source/io/AsioContextThread.h"
 	<jde/coroutine/Task.h>
 	<jde/web/server/exports.h>
-	<jde/iot/Exports.h>
+	<jde/opc/exports.h>
 	<jde/app/shared/proto/App.FromClient.pb.h>
 	<jde/app/shared/proto/App.FromServer.pb.h>
-	<jde/iot/types/proto/Iot.Common.pb.h>
-	<jde/iot/types/proto/Iot.FromServer.pb.h>
-	<jde/iot/types/proto/Iot.FromClient.pb.h>
-#	<jde/iot/types/FromServer.h>
-	<jde/iot/uatypes/UAException.h>
-	<jde/iot/async/SessionAwait.h>
+	<jde/opc/types/proto/Iot.Common.pb.h>
+	<jde/opc/types/proto/Iot.FromServer.pb.h>
+	<jde/opc/types/proto/Iot.FromClient.pb.h>
+#	<jde/opc/types/FromServer.h>
+	<jde/opc/uatypes/UAException.h>
+	<jde/opc/async/SessionAwait.h>
 
 	"../../Framework/source/DateTime.h"
 	"../../Framework/source/db/Database.h"

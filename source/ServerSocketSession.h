@@ -1,10 +1,10 @@
 #pragma once
 #include <jde/web/server/Sessions.h>
 #include <jde/web/client/usings.h>
-#include <jde/iot/types/MonitoringNodes.h>
+#include <jde/opc/types/MonitoringNodes.h>
 #include <jde/web/server/IWebsocketSession.h>
 
-namespace Jde::Iot{
+namespace Jde::Opc{
 	using namespace Jde::Web::Server;
 	using namespace Jde::Web::Client;
 	struct NodeId;
@@ -12,7 +12,7 @@ namespace Jde::Iot{
 		using base = TWebsocketSession<FromServer::Transmission,FromClient::Transmission>;
 		ServerSocketSession( sp<RestStream> stream, beast::flat_buffer&& buffer, TRequestType&& request, tcp::endpoint&& userEndpoint, uint32 connectionIndex )ι;
 		α OnRead( FromClient::Transmission&& transmission )ι->void override;
-		α SendDataChange( const Jde::Iot::OpcNK& opcNK, const Jde::Iot::NodeId& node, const Jde::Iot::Value& value )ι->void override;
+		α SendDataChange( const Jde::Opc::OpcNK& opcNK, const Jde::Opc::NodeId& node, const Jde::Opc::Value& value )ι->void override;
 		α to_string()Ι->string override{ return 𐢜( "{:x}", Id() ); }
 	private:
 		α OnClose()ι->void;

@@ -1,7 +1,7 @@
 #include "ApplicationServer.h"
 #include <jde/app/client/await/SocketAwait.h>
 
-namespace Jde::Iot{
+namespace Jde::Opc{
 	α ApplicationServer::GraphQL( string&& q, UserPK userPK, SL sl )ι->up<TAwait<json>>{
 		return mu<App::Client::GraphQLAwait>( move(q), userPK, sl );
 	}

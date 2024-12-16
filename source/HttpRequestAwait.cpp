@@ -1,12 +1,12 @@
 #include "HttpRequestAwait.h"
-#include <jde/iot/UM.h>
-#include <jde/iot/async/Write.h>
-#include <jde/iot/uatypes/Node.h>
-#include <jde/iot/uatypes/UAClient.h>
-#include <jde/iot/uatypes/Value.h>
-#define var const auto
+#include <jde/opc/UM.h>
+#include <jde/opc/async/Write.h>
+#include <jde/opc/uatypes/Node.h>
+#include <jde/opc/uatypes/UAClient.h>
+#include <jde/opc/uatypes/Value.h>
+#define let const auto
 
-namespace Jde::Iot{
+namespace Jde::Opc{
 	constexpr ELogTags _tags{ ELogTags::HttpServerRead };
 	HttpRequestAwait::HttpRequestAwait( HttpRequest&& req, SL sl )ι:
 		base{ move(req), sl }
@@ -19,8 +19,8 @@ namespace Jde::Iot{
 			string scsString = _request["scs"];
 			auto strings = Str::Split( scsString );
 			json j = json::array();
-			for( var s : strings ){
-				var sc = To<StatusCode>( s );
+			for( let s : strings ){
+				let sc = To<StatusCode>( s );
 				j.push_back( {{"sc", sc},{"message", UAException::Message(sc)}} );
 			}
 			_readyResult = mu<json>( json{{"errorCodes", j}} );//are brackets right?
@@ -28,10 +28,10 @@ namespace Jde::Iot{
 		return _readyResult!=nullptr;
 	}
 	α HttpRequestAwait::ParseNodes()ε->tuple<flat_set<NodeId>,json>{
-		var& nodeJson = _request["nodes"];
+		let& nodeJson = _request["nodes"];
 		json jNodes = Json::Parse( nodeJson );
 		flat_set<NodeId> nodes;
-		for( var& node : jNodes )
+		for( let& node : jNodes )
 			nodes.emplace( node );
 		if( nodes.empty() )
 			throw RestException<http::status::bad_request>{ SRCE_CUR, move(_request), "empty nodes" };
@@ -39,14 +39,14 @@ namespace Jde::Iot{
 	}
 
 	α HttpRequestAwait::ResumeSnapshots( flat_map<NodeId, Value>&& results, json&& j )ι->void{
-		for( var& [nodeId, value] : results )
+		for( let& [nodeId, value] : results )
 			j.push_back( json{{"node", nodeId.ToJson()}, {"value", value.ToJson()}} );
 		Resume( {json{{"snapshots", j}}, move(_request)} );
 	}
 
 	α HttpRequestAwait::Browse()ι->Browse::ObjectsFolderAwait::Task{
 		try{
-			var snapshot = ToIV( _request["snapshot"] )=="true";
+			let snapshot = ToIV( _request["snapshot"] )=="true";
 			_request.LogRead( 𐢜("BrowseObjectsFolder snapshot: {}", snapshot) );
 			auto j = co_await Browse::ObjectsFolderAwait( NodeId{_request.Params()}, snapshot, move(_client) );
 			Resume( {move(j), move(_request)} );
@@ -58,9 +58,9 @@ namespace Jde::Iot{
 
 	α HttpRequestAwait::SnapshotWrite()ι->Jde::Task{
 		try{
-			var [nodes, jNodes] = ParseNodes();
+			let [nodes, jNodes] = ParseNodes();
 			auto results = ( co_await Read::SendRequest(nodes, _client) ).UP<flat_map<NodeId, Value>>();
-			if( find_if( *results, []( var& pair )->bool{ return pair.second.hasStatus && pair.second.status==UA_STATUSCODE_BADSESSIONIDINVALID; } )!=results->end() ) {
+			if( find_if( *results, []( let& pair )->bool{ return pair.second.hasStatus && pair.second.status==UA_STATUSCODE_BADSESSIONIDINVALID; } )!=results->end() ) {
 				co_await AwaitSessionActivation( _client );
 				results = ( co_await Read::SendRequest(nodes, _client) ).UP<flat_map<NodeId, Value>>();
 			}
@@ -123,7 +123,7 @@ namespace Jde::Iot{
 
 	α HttpRequestAwait::CoHandleRequest()ι->Jde::Task{
 		auto opcId = move( _request["opc"] );
-		var& target = _request.Target();
+		let& target = _request.Target();
 		string userId, password;
 		if( _request.SessionId() )
 			tie( userId, password ) = Credentials( _request.SessionId(), opcId );
@@ -151,11 +151,11 @@ namespace Jde::Iot{
 	α HttpRequestAwait::Login( str endpoint )ι->AuthenticateAwait::Task{
 		try{
 			json body = _request.Body();
-			var domain = Json::Get( body, "opc" );
-			var user = Json::Get( body, "user" );
-			var password = Json::Get( body, "password" );
+			let domain = Json::Get( body, "opc" );
+			let user = Json::Get( body, "user" );
+			let password = Json::Get( body, "password" );
 			_request.LogRead( 𐢜("Login - opc: {}, user: {}", domain, user) );
-			var session = co_await AuthenticateAwait{ user, password, domain, endpoint, false };
+			let session = co_await AuthenticateAwait{ user, password, domain, endpoint, false };
 			Resume( {json{{"sessionId", 𐢜("{:x}", session.session_id())}}, move(_request)} );
 		}
 		catch( IException& e ){
