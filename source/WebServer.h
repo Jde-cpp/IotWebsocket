@@ -1,6 +1,7 @@
 #pragma once
-#include <jde/web/server/Flex.h>
+#include <jde/web/server/IRequestHandler.h>
 #include "HttpRequestAwait.h"
+#include <jde/web/server/IApplicationServer.h>
 
 namespace Jde::Opc{
 	α StartWebServer()ε->void;

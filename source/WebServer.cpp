@@ -1,4 +1,5 @@
-#include "Server.h"
+#include "WebServer.h"
+#include <jde/web/server/Server.h>
 #include "ServerSocketSession.h"
 #include "ApplicationServer.h"
 
@@ -8,7 +9,7 @@ namespace Jde{
 
 	α Opc::StartWebServer()ε->void{
 		Web::Server::Start( mu<RequestHandler>(), mu<ApplicationServer>() );
-		Process::AddShutdownFunction( [](bool terminate){Opc::StopWebServer();} );//TODO move to Web::Server
+		Process::AddShutdownFunction( [](bool /*terminate*/ ){Iot::StopWebServer();} );//TODO move to Web::Server
 	}
 
 	α Opc::StopWebServer()ι->void{

@@ -3,8 +3,8 @@
 
 #define let const auto
 
-namespace Jde::Opc{
-	α FromServer::AckTrans( uint socketSessionId )ι->FromServer::Transmission{
+namespace Jde::Iot{
+	α FromServer::AckTrans( uint32 socketSessionId )ι->FromServer::Transmission{
 		FromServer::Message m;
 		m.set_ack( socketSessionId );
 		return MessageTrans( move(m), 0 );

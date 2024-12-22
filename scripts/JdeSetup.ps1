@@ -17,6 +17,6 @@ if ( (Get-OdbcDsn -Name "jde_iot" -ErrorAction Ignore) -eq $null){
 }
 Write-Host "Registering Services..."
 & "$Env:Programfiles\Jde-cpp\iot\Jde.IotWebSocket.exe"  -install
-& "$Env:Programfiles\Jde-cpp\AppServer\Jde.AppServer.exe"  -install
+& "$Env:Programfiles\Jde-cpp\AppServer\Jde.App.Server.exe"  -install
 
 Read-Host -Prompt "Press Enter to exit"

@@ -1,8 +1,10 @@
-
-
 Write-Host "Removing Services..."
-& "$Env:Programfiles\Jde-cpp\iot\Jde.IotWebSocket.exe"  -uninstall
-& "$Env:Programfiles\Jde-cpp\AppServer\Jde.AppServer.exe"  -uninstall
+if( Test-Path -Path $Env:Programfiles\Jde-cpp\iot\Jde.IotWebSocket.exe ) {
+	& "$Env:Programfiles\Jde-cpp\iot\Jde.IotWebSocket.exe"  -uninstall
+}
+if( Test-Path -Path $Env:Programfiles\Jde-cpp\AppServer\Jde.App.Server.exe ) {
+	& "$Env:Programfiles\Jde-cpp\AppServer\Jde.App.Server.exe"  -uninstall
+}
 
 if ( (Get-OdbcDsn -Name "jde_app" -ErrorAction Ignore) -ne $null){
   Remove-OdbcDsn -Name "jde_app" -Platform "64-bit" -DsnType "System"

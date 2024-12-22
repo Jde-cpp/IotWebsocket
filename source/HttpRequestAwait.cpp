@@ -46,8 +46,8 @@ namespace Jde::Opc{
 
 	α HttpRequestAwait::Browse()ι->Browse::ObjectsFolderAwait::Task{
 		try{
-			let snapshot = ToIV( _request["snapshot"] )=="true";
-			_request.LogRead( 𐢜("BrowseObjectsFolder snapshot: {}", snapshot) );
+			var snapshot = ToIV( _request["snapshot"] )=="true";
+			_request.LogRead( Ƒ("BrowseObjectsFolder snapshot: {}", snapshot) );
 			auto j = co_await Browse::ObjectsFolderAwait( NodeId{_request.Params()}, snapshot, move(_client) );
 			Resume( {move(j), move(_request)} );
 		}
@@ -163,8 +163,7 @@ namespace Jde::Opc{
 		}
 	}
 
-	α HttpRequestAwait::await_suspend( base::Handle h )ε->void{
-		base::await_suspend(h);
+	α HttpRequestAwait::Suspend()ι->void{
 		up<IException> pException;
  		if( _request.IsPost("/Login") )
 			Login( _request.UserEndpoint.address().to_string() );

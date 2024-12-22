@@ -12,11 +12,19 @@ Section
 SectionEnd
 Section
   SetOutPath $INSTDIR\Iot
-  File /r C:\Users\duffyj\source\repos\jde\IotWebsocket\source\.bin\release\*.*
+  File /r C:\Users\duffyj\source\repos\jde\IotWebsocket\source\.build\.bin\RelWithDebInfo\*.exe
 SectionEnd
 Section
   SetOutPath $INSTDIR\Iot
-  File "C:\Program Files\Git\mingw64\bin\zlib1.dll"
+  File /r C:\Users\duffyj\source\repos\jde\IotWebsocket\source\.build\.bin\RelWithDebInfo\*.dll
+SectionEnd
+Section
+  SetOutPath $INSTDIR\Iot
+  File /r C:\Users\duffyj\source\repos\jde\installed\RelWithDebInfo\bin\*.dll
+SectionEnd
+Section
+  SetOutPath $INSTDIR\Iot
+  File "C:\Users\duffyj\source\repos\libraries\vcpkg\installed\x64-windows\bin\zlib1.dll"
 SectionEnd
 Section
   SetOutPath $INSTDIR\Iot
@@ -38,11 +46,19 @@ Section
 SectionEnd
 Section
   SetOutPath $INSTDIR\AppServer
-  File /r C:\Users\duffyj\source\repos\jde\AppServer\source\.bin\release\*.*
+  File /r C:\Users\duffyj\source\repos\jde\AppServer\.build\.bin\RelWithDebInfo\*.exe
 SectionEnd
 Section
   SetOutPath $INSTDIR\AppServer
-  File "C:\Program Files\Git\mingw64\bin\zlib1.dll"
+  File /r C:\Users\duffyj\source\repos\jde\AppServer\.build\.bin\RelWithDebInfo\*.dll
+SectionEnd
+Section
+  SetOutPath $INSTDIR\AppServer
+  File /r C:\Users\duffyj\source\repos\jde\installed\RelWithDebInfo\bin\*.dll
+SectionEnd
+Section
+  SetOutPath $INSTDIR\AppServer
+  File "C:\Users\duffyj\source\repos\libraries\vcpkg\installed\x64-windows\bin\zlib1.dll"
 SectionEnd
 Section
   SetOutPath $INSTDIR\AppServer
@@ -72,17 +88,12 @@ Section
   SetOutPath $DESKTOP
   File /r C:\Users\duffyj\source\repos\jde\IotWebsocket\scripts\*.ps1
 SectionEnd
-Section
-  SetShellVarContext all
-  SetOutPath $DESKTOP
-  File /r C:\Users\duffyj\source\repos\jde\IotWebsocket\scripts\JdeIotWeb.bat
-SectionEnd
-; Section "Visual Studio Runtime"
-;   SetOutPath "$INSTDIR"
-;   File "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Redist\MSVC\14.38.33130\vc_redist.x64.exe"
-;   ExecWait "$INSTDIR\vcredist_x86.exe"
-;   Delete "$INSTDIR\vcredist_x86.exe"
-; SectionEnd
+;Section "Visual Studio Runtime"
+;  SetOutPath "$INSTDIR"
+;  File "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Redist\MSVC\14.40.33807\vc_redist.x64.exe"
+;  ExecWait "$INSTDIR\vcredist_x64.exe"
+;  Delete "$INSTDIR\vcredist_x64.exe"
+;SectionEnd
 ;Section "Uninstall"
   ;xDelete $INSTDIR\Iot\*.*
   ;xDelete $INSTDIR\AppServer\*.*
