@@ -2,8 +2,10 @@
 #include <jde/opc/UM.h>
 #include <jde/opc/async/CreateSubscriptions.h>
 #include <jde/opc/async/DataChanges.h>
-#include "Server.h"
-#include "types/proto/Iot.FromServer.h"
+#include <jde/opc/async/SessionAwait.h>
+#include "WebServer.h"
+#include "types/proto/Opc.FromServer.h"
+#include <jde/opc/uatypes/UAException.h>
 
 #define let const auto
 
@@ -39,13 +41,22 @@ namespace Jde::Opc{
 		}
 	}
 
-	α ServerSocketSession::Subscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->Task{
+	α ServerSocketSession::Subscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->ConnectAwait::Task{
 		try{
 			auto self = SharedFromThis(); //keep alive
 			auto [loginName,password] = Credentials( base::SessionId(), opcId );
 			LogRead( Ƒ("Subscribe: opcId: '{}', user: '{}', nodeCount: {}", opcId, loginName, nodes.size()), requestId );
 
-			auto client = ( co_await UAClient::GetClient(move(opcId), loginName, password) ).SP<UAClient>();
+			auto client = co_await UAClient::GetClient( move(opcId), loginName, password );
+			CreateSubscription( client, move(nodes), requestId );
+		}
+		catch( IException& e ){
+			WriteException( move(e), requestId );
+		}
+	}
+	α ServerSocketSession::CreateSubscription( sp<UAClient> client, flat_set<NodeId>&& nodes, uint32 requestId )ι->Task{
+		try{
+			auto self = SharedFromThis(); //keep alive
 			( co_await Opc::CreateSubscription(client) ).CheckError();
 			up<FromServer::SubscriptionAck> ack;
 			try{
@@ -66,12 +77,12 @@ namespace Jde::Opc{
 		}
 	}
 
-	α ServerSocketSession::Unsubscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->Task{
+	α ServerSocketSession::Unsubscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->ConnectAwait::Task{
 		try{
 			auto self = SharedFromThis();//keep alive
-			auto [loginName,password] = Iot::Credentials( SessionId(), opcId );
+			auto [loginName,password] = Opc::Credentials( SessionId(), opcId );
 			LogRead( Ƒ("Unsubscribe: opcId: '{}', user: '{}', nodeCount: {}", opcId, loginName, nodes.size()), requestId );
-			auto pClient = ( co_await UAClient::GetClient(move(opcId), loginName, password) ).SP<UAClient>();
+			auto pClient = co_await UAClient::GetClient( move(opcId), loginName, password );
 			auto [successes,failures] = pClient->MonitoredNodes.Unsubscribe( move(nodes), self );
 			Write( FromServer::UnsubscribeTrans(requestId, move(successes), move(failures)) );
 		}
@@ -79,8 +90,17 @@ namespace Jde::Opc{
 			WriteException( move(e), requestId );
 		}
 	}
+	α ServerSocketSession::WriteSubscription( jvalue&& j, Jde::RequestId requestId )ι->void{
+		ASSERT_DESC( false, "Not Implemented" );
+	}
+	α ServerSocketSession::WriteSubscriptionAck( vector<QL::SubscriptionId>&& subscriptionIds, Jde::RequestId requestId )ι->void{
+		ASSERT_DESC( false, "Not Implemented" );
+	}
+	α ServerSocketSession::WriteComplete( Jde::RequestId requestId )ι->void{
+		ASSERT_DESC( false, "Not Implemented" );
+	}
 
-	α ServerSocketSession::WriteException( IException&& e, RequestId requestId )ι->void{
+	α ServerSocketSession::WriteException( IException&& e, Jde::RequestId requestId )ι->void{
 		LogWriteException( e, requestId );
 		Write( FromServer::ExceptionTrans(move(e), requestId) );
 	}

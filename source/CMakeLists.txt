@@ -1,5 +1,12 @@
 cmake_minimum_required(VERSION 3.20)
-set( CMAKE_MODULE_PATH $ENV{JDE_DIR}/Public/build )
+#set( CMAKE_MODULE_PATH $ENV{JDE_DIR}/Public/build )
+#message(STATUS "ACMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
+list(APPEND CMAKE_MODULE_PATH $ENV{JDE_DIR}/Public/build )
+#message(STATUS "BCMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
+#message(STATUS "ACMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
+#list( APPEND CMAKE_PREFIX_PATH $ENV{CMAKE_PREFIX_PATH} )
+#message(STATUS "BCMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
+
 include(common)
 findBoost()
 if( ${VCPKG} )
@@ -8,9 +15,9 @@ endif()
 project(Jde.IotWebsocket)
 include( compiler )
 #######################################################
-find_package( OpenSsl REQUIRED )
 find_package( protobuf REQUIRED )
 if( MSVC )
+	find_package( OpenSsl REQUIRED )
 	include_directories( ${OPENSSL_INCLUDE_DIR} )
 	set( installDir $ENV{REPO_DIR}/installed/$(ConfigurationName) )
 	include_directories( ${installDir}/include )
@@ -24,16 +31,22 @@ if( MSVC )
 	link_directories( $ENV{JDE_DIR}/Public/src/app/client/.build/.bin )
 	file(GLOB resources *.rc *.rc )
 else()
-	set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../../Public/build )
+	#message( a )
+	#message(STATUS "CCMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
+	#set( CMAKE_MODULE_PATH /usr/share/cmake-3.22/Modules )
+	#message(STATUS "DCMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
+	find_package( OpenSSL REQUIRED )
+	#message( b )
 	link_directories( ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} )
+	link_directories( ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY} )
 	find_package(ZLIB)
 	find_package(absl REQUIRED)
 	find_package(open62541 REQUIRED)
 	set( open62541Dir ${open62541_DIR}/../../.. )
 	link_directories( ${open62541Dir}/lib )
-	link_directories( ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} )
 	link_directories( ${fmt_DIR}/../.. )
 	link_directories( ${Protobuf_DIR}/../.. )
+	link_directories( $ENV{REPO_DIR}/install/g++-13/asan/jsonnet/lib/ )
 endif()
 
 add_executable( ${CMAKE_PROJECT_NAME} )
@@ -44,6 +57,8 @@ file(GLOB headers *.h )
 target_sources( ${CMAKE_PROJECT_NAME} PRIVATE ${sources} ${resources} ${headers} )
 
 #######################################################
+include_directories( $ENV{JDE_DIR}/Public/include/jde/web/client/proto )
+target_link_libraries(${CMAKE_PROJECT_NAME} OpenSSL::SSL)
 if( MSVC )
 	target_link_libraries( ${CMAKE_PROJECT_NAME} fmt::fmt )
 	target_link_libraries( ${CMAKE_PROJECT_NAME} open62541.lib )
@@ -56,14 +71,22 @@ else()
 	include_directories( ${open62541Dir}/include )
 	target_link_libraries( ${CMAKE_PROJECT_NAME} lzma )
 	target_link_libraries( ${CMAKE_PROJECT_NAME} ssl )
+	target_link_libraries( ${CMAKE_PROJECT_NAME} libcrypto.a )
 	target_link_libraries( ${CMAKE_PROJECT_NAME} debug libfmtd.a optimized libfmt.a)
-	target_link_libraries( ${CMAKE_PROJECT_NAME} absl::log_internal_message absl::log_internal_check_op absl::cord)
+	target_link_libraries( ${CMAKE_PROJECT_NAME} absl::log_internal_message absl::log_internal_check_op absl::cord )
 	target_link_libraries( ${CMAKE_PROJECT_NAME} ZLIB::ZLIB )
-	target_link_libraries( ${CMAKE_PROJECT_NAME} Jde Jde.App.Shared Jde.App.Client Jde.Crypto Jde.Web.Client Jde.Web.Server Jde.Iot )
+	target_link_libraries( ${CMAKE_PROJECT_NAME} Boost::json )
+	target_link_libraries( ${CMAKE_PROJECT_NAME} jsonnet++ )
+	target_link_libraries( ${CMAKE_PROJECT_NAME} Jde Jde.DB libJde.App.ServerLib.a )
+	if(	${USE_SHARED_LIBS} )
+		target_link_libraries( ${CMAKE_PROJECT_NAME} Jde.Access Jde.App.Shared Jde.QL Jde.Web.Server Jde.Web.Client )
+	else()
+		target_link_libraries( ${CMAKE_PROJECT_NAME} libJde.Opc.a libJde.App.Client.a libJde.Access.a libJde.App.Shared.a libJde.Web.Server.a libJde.Crypto.a libJde.QL.a libJde.Web.Client.a )
+	endif()
 endif()
-include_directories( $ENV{JDE_DIR}/Public/jde/app/shared/proto )
-target_link_libraries(${CMAKE_PROJECT_NAME} OpenSSL::SSL)
+include_directories( $ENV{JDE_DIR}/Public/include/jde/app/shared/proto )
 target_link_libraries( ${CMAKE_PROJECT_NAME} protobuf::libprotobuf )
+target_link_libraries( ${CMAKE_PROJECT_NAME} libopen62541.a )
 
 target_precompile_headers(${CMAKE_PROJECT_NAME}
 	PRIVATE
@@ -85,24 +108,18 @@ target_precompile_headers(${CMAKE_PROJECT_NAME}
 	<open62541/client_highlevel_async.h>
 	<open62541/plugin/log_stdout.h>
 	<open62541/client_subscriptions.h>
+	<jde/framework.h>
 	<jde/opc/usings.h>
-	<jde/log/Log.h>
-	<jde/App.h>
-	"../../Framework/source/coroutine/Awaitable.h"
-	<jde/thread/Execution.h>
-	<jde/coroutine/Task.h>
-	<jde/web/server/exports.h>
-	<jde/opc/exports.h>
+	<jde/web/client/exports.h>
+	<jde/web/client/proto/Web.FromServer.pb.h>
+	<jde/app/shared/exports.h>
+	<jde/app/shared/proto/App.FromClient.pb.h>
 	<jde/app/shared/proto/App.FromClient.pb.h>
 	<jde/app/shared/proto/App.FromServer.pb.h>
-	<jde/opc/types/proto/Iot.Common.pb.h>
-	<jde/opc/types/proto/Iot.FromServer.pb.h>
-	<jde/opc/types/proto/Iot.FromClient.pb.h>
-#	<jde/opc/types/FromServer.h>
-	<jde/opc/uatypes/UAException.h>
-	<jde/opc/async/SessionAwait.h>
-
-	"../../Framework/source/DateTime.h"
-	"../../Framework/source/db/Database.h"
-	"../../Framework/source/db/GraphQL.h"
+	<jde/app/shared/exports.h>
+	<jde/app/shared/proto/Common.pb.h>
+	<jde/opc/exports.h>
+	<jde/opc/types/proto/Opc.Common.pb.h>
+	<jde/opc/types/proto/Opc.FromServer.pb.h>
+	<jde/opc/types/proto/Opc.FromClient.pb.h>
 )

@@ -9,18 +9,19 @@ namespace Jde{
 
 	α Opc::StartWebServer()ε->void{
 		Web::Server::Start( mu<RequestHandler>(), mu<ApplicationServer>() );
-		Process::AddShutdownFunction( [](bool /*terminate*/ ){Iot::StopWebServer();} );//TODO move to Web::Server
+		Process::AddShutdownFunction( [](bool /*terminate*/ ){Opc::StopWebServer();} );//TODO move to Web::Server
 	}
 
 	α Opc::StopWebServer()ι->void{
 		Web::Server::Stop();
 	}
-namespace Iot{
+namespace Opc{
 	α Server::RemoveSession( uint socketSessionId )ι->void{
 		_sessions.erase( socketSessionId );
 	}
 
 	α RequestHandler::RunWebsocketSession( sp<RestStream>&& stream, beast::flat_buffer&& buffer, TRequestType req, tcp::endpoint userEndpoint, uint32 connectionIndex )ι->void{
+		ServerSocketSession x{ move(stream), move(buffer), move(req), move(userEndpoint), connectionIndex };
 		auto pSession = ms<ServerSocketSession>( move(stream), move(buffer), move(req), move(userEndpoint), connectionIndex );
 		_sessions.emplace( pSession->Id(), pSession );
 		pSession->Run();

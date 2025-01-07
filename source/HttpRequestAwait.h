@@ -2,6 +2,7 @@
 #include <jde/web/server/IHttpRequestAwait.h>
 #include <jde/opc/UM.h>
 #include <jde/opc/uatypes/Browse.h>
+#include <jde/opc/async/ConnectAwait.h>
 
 namespace Jde::Opc{
 	struct NodeId; struct Value;
@@ -14,10 +15,10 @@ namespace Jde::Opc{
 		α await_resume()ε->HttpTaskResult override;
 	private:
 		α Login( str endpoint )ι->AuthenticateAwait::Task;
-		α CoHandleRequest()ι->Jde::Task;
+		α CoHandleRequest()ι->ConnectAwait::Task;
 		α Browse()ι->Browse::ObjectsFolderAwait::Task;
-		α ParseNodes()ε->tuple<flat_set<NodeId>,json>;
-		α ResumeSnapshots( flat_map<NodeId, Value>&& results, json&& j )ι->void;
+		α ParseNodes()ε->tuple<flat_set<NodeId>,jarray>;
+		α ResumeSnapshots( flat_map<NodeId, Value>&& results, jarray&& j )ι->void;
 		α SnapshotWrite()ι->Jde::Task;
 		sp<UAClient> _client;
 	};

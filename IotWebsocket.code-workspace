@@ -25,6 +25,14 @@
 			"name": "webClient"
 		},
 		{
+			"path": "../Public/libs/ql",
+			"name": "ql"
+		},
+		{
+			"path": "../Public/libs/access/src",
+			"name": "access"
+		},
+		{
 			"path": "../Public/include/jde",
 			"name": "headers"
 		},
@@ -38,6 +46,14 @@
 		},
 		{
 			"path": "../Public/libs/crypto"
+		},
+		{
+			"path": "../Public/libs/db/src",
+			"name": "db"
+		},
+		{
+			"path": "../Public/libs/db/src/drivers/mysql",
+			"name": "mysql"
 		},
 		{
 			"path": "../open62541"
@@ -55,7 +71,8 @@
 			"${env:REPO_DIR}/install/g++-13/asan/open62541/include",
 			"${env:REPO_DIR}/json/include",
 			"${env:REPO_DIR}/mysql-connector-cpp/include/mysqlx",
-			"${env:JDE_DIR}/Public/include"
+			"${env:JDE_DIR}/Public/include",
+			"${env:JDE_DIR}/Public/include/jde/app/shared/proto"
 		],
 		"C_Cpp.default.forcedInclude": ["${workspaceFolder}/pc.h", "${env:JDE_DIR}/Public/include/jde/framework.h"],
 		"C_Cpp.default.compilerPath": "/usr/bin/g++-13",
@@ -272,13 +289,14 @@
 				"name": "Tests",
 				"type": "cppdbg",
 				"request": "launch",
-				"program": "${workspaceFolder:tests}/../../../bin/asan/Tests.Iot",
+				"program": "${env:JDE_DIR}/bin/asan/Jde.Opc.Tests",
 				"args": ["-c"],
 				"stopAtEntry": false,
-				"cwd": "${workspaceFolder:tests}/../../../bin/asan",
+				"cwd": "${env:JDE_DIR}/bin/asan",
 				"environment": [
-					{ "name": "JDE_DB_DRIVER", "value": "./libJde.MySql.so" },
-					{ "name": "JDE_IOT_META", "value": "${env:JDE_DIR}/bin/config/IotWebSocketMeta.json" },
+					{"name":"LD_LIBRARY_PATH","value":"/home/duffyj/code/jde/bin/asan"},
+					{"name":"JDE_CONNECTION","value":"mysqlx://${env:JDE_MYSQL_CREDS}@127.0.0.1:33060/test_opc?ssl-mode=disabled"},
+					{"name": "xxxJDE_DB_DRIVER", "value": "./libJde.MySql.so" }
 				],
 				"externalConsole": false,
 				"MIMode": "gdb",

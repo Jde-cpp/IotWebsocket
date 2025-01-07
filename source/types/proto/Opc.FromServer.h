@@ -1,5 +1,6 @@
 #pragma once
 namespace Jde::Opc{ struct NodeId; }
+
 namespace Jde::Opc::FromServer{
 	α AckTrans( uint socketSessionId )ι->FromServer::Transmission;
 	α CompleteTrans( RequestId requestId )ι->FromServer::Transmission;

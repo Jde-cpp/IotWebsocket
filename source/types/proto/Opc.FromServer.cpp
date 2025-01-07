@@ -1,9 +1,9 @@
-#include "Iot.FromServer.h"
+#include "Opc.FromServer.h"
 #include <jde/opc/uatypes/Node.h>
 
 #define let const auto
 
-namespace Jde::Iot{
+namespace Jde::Opc{
 	α FromServer::AckTrans( uint32 socketSessionId )ι->FromServer::Transmission{
 		FromServer::Message m;
 		m.set_ack( socketSessionId );

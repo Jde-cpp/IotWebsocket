@@ -1,8 +1,11 @@
 #pragma once
 #include <jde/web/server/IApplicationServer.h>
+#include <jde/framework/coroutine/Await.h>
+#include <jde/web/server/Sessions.h>
+
 namespace Jde::Opc{
 	struct ApplicationServer final : Web::Server::IApplicationServer{
-		α GraphQL( string&& q, UserPK userPK, SL sl )ι->up<TAwait<json>> override;
-		α SessionInfoAwait( SessionPK sessionPK, SL sl )ι->up<TAwait<App::Proto::FromServer::SessionInfo>> override;
+		α GraphQL( string&& q, UserPK userPK, SL sl )ι->up<TAwait<jvalue>> override;
+		α SessionInfoAwait( SessionPK sessionPK, SL sl )ι->up<TAwait<Web::FromServer::SessionInfo>> override;
 	};
 }
