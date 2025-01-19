@@ -4,9 +4,10 @@ local common = import 'common-meta.libsonnet';
 	tables:{
 		servers:{
 			columns: {
+				server_id: common.pkSequenced,
 				is_default: common.types.bit+{i:101},
-				certificate_uri: common.types.uri+{nullable:true, length:2048,i:102},
-				url: common.types.uri+{nullable:true, length:2048, i:103}
+				certificate_uri: common.types.varchar+{nullable:true, length:2048,i:102},
+				url: common.types.varchar+{nullable:true, length:2048, i:103}
 			}+common.targetColumns,
 			customInsertProc:true,
 			naturalKeys: common.targetNKs

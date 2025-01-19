@@ -90,7 +90,7 @@ namespace Jde::Opc{
 			WriteException( move(e), requestId );
 		}
 	}
-	α ServerSocketSession::WriteSubscription( jvalue&& j, Jde::RequestId requestId )ι->void{
+	α ServerSocketSession::WriteSubscription( const jvalue& j, Jde::RequestId requestId )ι->void{
 		ASSERT_DESC( false, "Not Implemented" );
 	}
 	α ServerSocketSession::WriteSubscriptionAck( vector<QL::SubscriptionId>&& subscriptionIds, Jde::RequestId requestId )ι->void{
@@ -100,7 +100,7 @@ namespace Jde::Opc{
 		ASSERT_DESC( false, "Not Implemented" );
 	}
 
-	α ServerSocketSession::WriteException( IException&& e, Jde::RequestId requestId )ι->void{
+	α ServerSocketSession::WriteException( exception&& e, Jde::RequestId requestId )ι->void{
 		LogWriteException( e, requestId );
 		Write( FromServer::ExceptionTrans(move(e), requestId) );
 	}

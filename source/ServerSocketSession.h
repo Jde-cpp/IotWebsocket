@@ -26,11 +26,10 @@ namespace Jde::Opc{
 		α Subscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->ConnectAwait::Task;
 		α Unsubscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->ConnectAwait::Task;
 
-		α WriteSubscription( jvalue&& j, Jde::RequestId requestId )ι->void override;
+		α WriteSubscription( const jvalue& j, Jde::RequestId requestId )ι->void override;
 		α WriteSubscriptionAck( vector<QL::SubscriptionId>&& subscriptionIds, Jde::RequestId requestId )ι->void override;
 		α WriteComplete( Jde::RequestId requestId )ι->void override;
-		α WriteException( IException&& e, Jde::RequestId requestId )ι->void override;
-
+		α WriteException( exception&& e, Jde::RequestId requestId )ι->void override;
 		α WriteException( IException&& e )ι->void{ WriteException( move(e), 0 ); }
 
 		α GraphQL( string&& query, uint requestId )ι->Task;

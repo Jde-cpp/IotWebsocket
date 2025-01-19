@@ -230,7 +230,7 @@
 			{
 				"label": "buildTests",
 				"type": "shell",
-				"command": "tput reset;./build.sh;../../Public/build/so.sh ../../Public/tests/iot asan;",
+				"command": "tput reset;./build.sh;",
 				"problemMatcher": {"owner": "cpp", "fileLocation": ["relative", "${workspaceFolder:IotWebsocket}"],
 					"pattern": {
 						"regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
@@ -259,7 +259,9 @@
 				"args": ["-c"],
 				"stopAtEntry": false,
 				"cwd": "${workspaceFolder:IotWebsocket}/../../bin/asan",
-				"environment": [{ "name": "JDE_DB_DRIVER", "value": "libJde.MySql.so" }, { "name": "JDE_LOG_META", "value": "${workspaceFolder:IotWebsocket}/../meta.json" }],
+				"environment": [
+					{"name":"LD_LIBRARY_PATH","value":"/home/duffyj/code/jde/bin/asan"},
+					{"name":"JDE_CONNECTION","value":"mysqlx://${env:JDE_MYSQL_CREDS}@127.0.0.1:33060/jde?ssl-mode=disabled"}],
 				"externalConsole": false,
 				"MIMode": "gdb",
 				"setupCommands": [{"description": "Enable pretty-printing for gdb","text": "-enable-pretty-printing",	"ignoreFailures": true }],
@@ -296,7 +298,6 @@
 				"environment": [
 					{"name":"LD_LIBRARY_PATH","value":"/home/duffyj/code/jde/bin/asan"},
 					{"name":"JDE_CONNECTION","value":"mysqlx://${env:JDE_MYSQL_CREDS}@127.0.0.1:33060/test_opc?ssl-mode=disabled"},
-					{"name": "xxxJDE_DB_DRIVER", "value": "./libJde.MySql.so" }
 				],
 				"externalConsole": false,
 				"MIMode": "gdb",

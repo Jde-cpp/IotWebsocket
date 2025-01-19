@@ -14,15 +14,16 @@ namespace Jde::Opc{
 		FromServer::Message m;
 		return MessageTrans( move(m), requestId );
 	}
-	α FromServer::ExceptionTrans( const IException& e, optional<RequestId> requestId )ι->FromServer::Transmission{
+	α FromServer::ExceptionTrans( const exception& e, optional<RequestId> requestId )ι->FromServer::Transmission{
 		FromServer::Transmission t;
 		auto& m = *t.add_messages();
 		if( requestId )
 			m.set_request_id( *requestId );
 
 		auto& proto = *m.mutable_exception();
-		proto.set_what( e.what() );
-		proto.set_code( e.Code );
+		proto.set_what( string{e.what()} );
+		if( auto p = dynamic_cast<const IException*>(&e) )
+			proto.set_code( p->Code );
 		return t;
 	}
 	α FromServer::MessageTrans( FromServer::Message&& m, RequestId requestId )ι->FromServer::Transmission{

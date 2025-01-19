@@ -181,7 +181,7 @@ namespace Jde::Opc{
 	}
 
 	α HttpRequestAwait::await_resume()ε->HttpTaskResult{
-		if( auto e = Promise() ? Promise()->MoveError() : nullptr; e ){
+		if( auto e = Promise() ? Promise()->MoveExp() : nullptr; e ){
 			auto pRest = dynamic_cast<IRestException*>( e.get() );
 			if( pRest )
 				pRest->Throw();
