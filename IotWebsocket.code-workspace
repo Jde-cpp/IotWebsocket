@@ -295,6 +295,7 @@
 				"args": ["-c"],
 				"stopAtEntry": false,
 				"cwd": "${env:JDE_DIR}/bin/asan",
+				"additionalSOLibSearchPath": "/lib64",
 				"environment": [
 					{"name":"LD_LIBRARY_PATH","value":"/home/duffyj/code/jde/bin/asan"},
 					{"name":"JDE_CONNECTION","value":"mysqlx://${env:JDE_MYSQL_CREDS}@127.0.0.1:33060/test_opc?ssl-mode=disabled"},
