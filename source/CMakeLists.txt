@@ -22,11 +22,8 @@ add_subdirectory( ${libDir}/app/client app/client )
 set( opcCommonDir ${libDir}/opc )
 add_subdirectory( ${opcCommonDir}/src opc/shared )
 
-
-project( Jde.Opc.Client )
-
 include( $ENV{JDE_DIR}/Public/build/dependencies.cmake )
-set( targetName Jde.Opc.Client )
+set( targetName Jde.Opc.Gateway )
 project( ${targetName} )
 
 message( ${JSONNET_DIR}/lib )
@@ -45,7 +42,6 @@ if( buildTests OR CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR )
 	add_test( NAME OpcTests COMMAND $<TARGET_FILE:Jde.Opc.Tests> )
 endif()
 
-
 target_link_libraries( ${targetName} OpenSSL::SSL )
 if( WIN32 )
 	set_target_properties( ${targetName} PROPERTIES
@@ -54,10 +50,11 @@ if( WIN32 )
 else()
 endif()
 include_directories( ${open62541Dir}include )
+target_link_libraries( ${targetName} Jde Jde.Access Jde.App.Shared Jde.App.Client Jde.Web.Server Jde.Opc )
 target_link_libraries( ${targetName} open62541 )
 target_link_libraries( ${targetName} Boost::json )
 target_link_libraries( ${targetName} jsonnet )
-target_link_libraries( ${targetName} Jde Jde.Access Jde.App.Shared Jde.App.Client Jde.Web.Server Jde.Opc )
+target_link_libraries( ${targetName} stdc++exp )#for stacktrace
 
 target_precompile_headers(${targetName}
 	PRIVATE

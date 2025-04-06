@@ -1,67 +1,7 @@
 {
-	"folders": [
-		{
-			"path": "source",
-			"name": "IotWebsocket"
-		},
-		{
-			"path": "../Public/libs/opc/src",
-			"name": "common"
-		},
-		{
-			"path": "../Public/libs/opc/tests",
-			"name": "tests"
-		},
-		{
-			"path": "../Public/libs/app/client",
-			"name": "appClient"
-		},
-		{
-			"path": "../Public/libs/app/shared",
-			"name": "appShared"
-		},
-		{
-			"path": "../Public/libs/web/client",
-			"name": "webClient"
-		},
-		{
-			"path": "../Public/libs/ql",
-			"name": "ql"
-		},
-		{
-			"path": "../Public/libs/access/src",
-			"name": "access"
-		},
-		{
-			"path": "../Public/include/jde",
-			"name": "headers"
-		},
-		{
-			"path": "../Public/libs/web/server",
-			"name": "webServer"
-		},
-		{
-			"path": "../Framework/source",
-			"name": "Framework"
-		},
-		{
-			"path": "../Public/libs/crypto"
-		},
-		{
-			"path": "../Public/libs/db/src",
-			"name": "db"
-		},
-		{
-			"path": "../Public/libs/db/src/drivers/mysql",
-			"name": "mysql"
-		},
-		{
-			"path": "../open62541"
-		}
-	],
 	"settings": {
-		"name": "OpcClient",
 		"window.title": "OpcClient",
+		"name": "OpcClient",
 		"sourceDir": "${env:JDE_DIR}/IotWebsocket/source",
 		"buildRoot": "/mnt/ram/jde",
 		"buildTarget": "Debug",
@@ -150,8 +90,7 @@
 				"cwd": "${config:buildDir}",
 				"additionalSOLibSearchPath": "/lib64",
 				"environment": [
-					{"name":"xxLD_LIBRARY_PATH","value":"/home/duffyj/code/jde/bin/asan"},
-					{"name":"JDE_CONNECTION","value":"mysqlx://root:abcdef@127.0.0.1:33060/test_opc?ssl-mode=disabled"},
+					{"name":"JDE_CONNECTION","value":"mysqlx://${env:JDE_MYSQL_CREDS}@127.0.0.1:33060/jde?ssl-mode=disabled"}
 				],
 				"externalConsole": false,
 				"MIMode": "gdb",
@@ -163,5 +102,65 @@
 			}
 		],
 		"compounds": []
-	}
+	},
+	"folders": [
+		{
+			"path": "source",
+			"name": "IotWebsocket"
+		},
+		{
+			"path": "../Public/libs/opc/src",
+			"name": "common"
+		},
+		{
+			"path": "../Public/libs/opc/tests",
+			"name": "tests"
+		},
+		{
+			"path": "../Public/libs/app/client",
+			"name": "appClient"
+		},
+		{
+			"path": "../Public/libs/app/shared",
+			"name": "appShared"
+		},
+		{
+			"path": "../Public/libs/web/client",
+			"name": "webClient"
+		},
+		{
+			"path": "../Public/libs/ql",
+			"name": "ql"
+		},
+		{
+			"path": "../Public/libs/access/src",
+			"name": "access"
+		},
+		{
+			"path": "../Public/include/jde",
+			"name": "headers"
+		},
+		{
+			"path": "../Public/libs/web/server",
+			"name": "webServer"
+		},
+		{
+			"path": "../Framework/source",
+			"name": "Framework"
+		},
+		{
+			"path": "../Public/libs/crypto"
+		},
+		{
+			"path": "../Public/libs/db/src",
+			"name": "db"
+		},
+		{
+			"path": "../Public/libs/db/src/drivers/mysql",
+			"name": "mysql"
+		},
+		{
+			"path": "../open62541"
+		}
+	]
 }
