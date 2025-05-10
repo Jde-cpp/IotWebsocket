@@ -29,11 +29,11 @@ namespace Jde::Opc{
 		return Write( MessageTrans(value.ToProto(opcNK,node), 0) );
 	}
 
-	α ServerSocketSession::SetSessionId( SessionPK sessionId, RequestId requestId )->Sessions::UpsertAwait::Task{
-		LogRead( Ƒ("sessionId: '{:x}'", sessionId), requestId );
+	α ServerSocketSession::SetSessionId( str strSessionId, RequestId requestId )->Sessions::UpsertAwait::Task{
+		LogRead( Ƒ("sessionId: '{}'", strSessionId), requestId );
 		try{
-			co_await Sessions::UpsertAwait( Ƒ("{:x}", sessionId), _userEndpoint.address().to_string(), true );
-			base::SetSessionId( sessionId );
+			let sessionInfo = co_await Sessions::UpsertAwait( strSessionId, _userEndpoint.address().to_string(), true );
+			base::SetSessionId( sessionInfo->SessionId );
 			Write( FromServer::CompleteTrans(requestId) );
 		}
 		catch( IException& e ){
@@ -41,20 +41,21 @@ namespace Jde::Opc{
 		}
 	}
 
-	α ServerSocketSession::Subscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->ConnectAwait::Task{
+	α ServerSocketSession::Subscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->void{
 		try{
 			auto self = SharedFromThis(); //keep alive
 			auto [loginName,password] = Credentials( base::SessionId(), opcId );
-			LogRead( Ƒ("Subscribe: opcId: '{}', user: '{}', nodeCount: {}", opcId, loginName, nodes.size()), requestId );
-
-			auto client = co_await UAClient::GetClient( move(opcId), loginName, password );
-			CreateSubscription( client, move(nodes), requestId );
+			LogRead( Ƒ("({:x})Subscribe: opcId: '{}', user: '{}', nodeCount: {}", base::SessionId(), opcId, loginName, nodes.size()), requestId );
+			if( auto client = UAClient::Find( move(opcId), loginName, password); client )
+				CreateSubscription( client, move(nodes), requestId );
+			else
+				WriteException( Ƒ("Client not found: opcId: '{}'", opcId), requestId );
 		}
 		catch( IException& e ){
 			WriteException( move(e), requestId );
 		}
 	}
-	α ServerSocketSession::CreateSubscription( sp<UAClient> client, flat_set<NodeId>&& nodes, uint32 requestId )ι->Task{
+	α ServerSocketSession::CreateSubscription( sp<UAClient> client, flat_set<NodeId> nodes, uint32 requestId )ι->Task{
 		try{
 			auto self = SharedFromThis(); //keep alive
 			( co_await Opc::CreateSubscription(client) ).CheckError();
@@ -77,14 +78,17 @@ namespace Jde::Opc{
 		}
 	}
 
-	α ServerSocketSession::Unsubscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->ConnectAwait::Task{
+	α ServerSocketSession::Unsubscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->void{
 		try{
 			auto self = SharedFromThis();//keep alive
 			auto [loginName,password] = Opc::Credentials( SessionId(), opcId );
 			LogRead( Ƒ("Unsubscribe: opcId: '{}', user: '{}', nodeCount: {}", opcId, loginName, nodes.size()), requestId );
-			auto pClient = co_await UAClient::GetClient( move(opcId), loginName, password );
-			auto [successes,failures] = pClient->MonitoredNodes.Unsubscribe( move(nodes), self );
-			Write( FromServer::UnsubscribeTrans(requestId, move(successes), move(failures)) );
+			if( auto pClient = UAClient::Find( move(opcId), loginName, password); pClient ){
+				auto [successes,failures] = pClient->MonitoredNodes.Unsubscribe( move(nodes), self );
+				Write( FromServer::UnsubscribeTrans(requestId, move(successes), move(failures)) );
+			}
+			else
+				WriteException( Ƒ("Client not found: opcId: '{}'", opcId), requestId );
 		}
 		catch( IException& e ){
 			WriteException( move(e), requestId );
@@ -104,11 +108,24 @@ namespace Jde::Opc{
 		LogWriteException( e, requestId );
 		Write( FromServer::ExceptionTrans(move(e), requestId) );
 	}
+	α ServerSocketSession::WriteException( string&& e, Jde::RequestId requestId )ι->void{
+		LogWriteException( move(e), requestId );
+		Write( FromServer::ExceptionTrans( Exception(move(e)), requestId ) );
+	}
 
 	α ServerSocketSession::OnRead( FromClient::Transmission&& transmission )ι->void{
 		for( auto i=0; i<transmission.messages_size(); ++i ){
 			auto& m = *transmission.mutable_messages( i );
 			let requestId = m.request_id();
+
+			FromClient::Message msg;
+			uint32 requestId2 = 0;
+			string sessionId = "c6a22e5c";
+			msg.set_request_id( requestId2 );
+			msg.set_session_id( sessionId );
+			let result = Jde::Proto::ToString( msg );
+			let bytes = result.data();
+
 			switch( m.Value_case() ){
 			using enum FromClient::Message::ValueCase;
 			case kSessionId:
@@ -124,6 +141,7 @@ namespace Jde::Opc{
 				break;}
 			default:
 				LogRead( Ƒ("Unknown message type '{}'", underlying(m.Value_case())), requestId, ELogLevel::Critical );
+				WriteException( Exception("({})Message not implemented."), requestId );
 			}
 		}
 	}

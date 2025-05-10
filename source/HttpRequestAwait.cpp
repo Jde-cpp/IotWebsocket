@@ -1,4 +1,6 @@
 #include "HttpRequestAwait.h"
+#include <jde/app/client/appClient.h>
+#include <jde/ql/IQL.h>
 #include <jde/opc/UM.h>
 #include <jde/opc/async/Write.h>
 #include <jde/opc/async/SessionAwait.h>
@@ -30,8 +32,8 @@ namespace Jde::Opc{
 		return _readyResult!=nullptr;
 	}
 	α HttpRequestAwait::ParseNodes()ε->tuple<flat_set<NodeId>,jarray>{
-		let& nodeJson = _request["nodes"];
-		auto jNodes = Json::AsArray( Json::Parse(nodeJson) );
+		auto& nodeJson = _request["nodes"];
+		auto jNodes = Json::AsArray( Json::ParseValue(move(nodeJson)) );
 		flat_set<NodeId> nodes;
 		for( let& node : jNodes )
 			nodes.emplace( Json::AsObject(node) );
@@ -66,10 +68,10 @@ namespace Jde::Opc{
 				co_await AwaitSessionActivation( _client );
 				results = ( co_await Read::SendRequest(nodes, _client) ).UP<flat_map<NodeId, Value>>();
 			}
-			if( _request.Target()=="/Snapshot" )
+			if( _request.Target()=="/snapshot" )
 				ResumeSnapshots( move(*results), jarray{} );
 			else{ //target=="/Write"
-				jarray jValues = Json::AsArray( Json::Parse(_request["values"]) );
+				jarray jValues = Json::AsArray( Json::ParseValue(move(_request["values"])) );
 				if( jNodes.size()!=jValues.size() )
 					throw RestException<http::status::bad_request>{ SRCE_CUR, move(_request), "Invalid json: nodes.size={} values.size={}", nodes.size(), jValues.size() };
 				flat_map<NodeId, Value> values;
@@ -132,9 +134,9 @@ namespace Jde::Opc{
 		try{
 			_client = co_await UAClient::GetClient( move(opcId), userId, password );
 			if( _request.IsGet() ){
-				if( target=="/BrowseObjectsFolder" )
+				if( target=="/browseObjectsFolder" )
 					Browse();
-				else if( target=="/Snapshot" || target=="/Write" )
+				else if( target=="/snapshot" || target=="/write" )
 					SnapshotWrite();
 				else
 					throw RestException<http::status::not_found>{ SRCE_CUR, move(_request), "Unknown target '{}'", _request.Target() };
@@ -153,22 +155,43 @@ namespace Jde::Opc{
 	α HttpRequestAwait::Login( str endpoint )ι->AuthenticateAwait::Task{
 		try{
 			let body = _request.Body();
-			let domain = Json::AsString( body, "opc" );
-			let user = Json::AsString( body, "user" );
+			let domain = Json::FindString( body, "opc" );
+			if( !domain )
+				throw RestException<http::status::bad_request>{ SRCE_CUR, move(_request), "opc server not specified" };
+			let user = Json::FindString( body, "user" );
+			if( !user )
+				throw RestException<http::status::bad_request>{ SRCE_CUR, move(_request), "user not specified" };
 			let password = Json::AsString( body, "password" );
-			_request.LogRead( Ƒ("Login - opc: {}, user: {}", domain, user) );
-			let session = co_await AuthenticateAwait{ move(user), move(password), move(domain), endpoint, false };
-			Resume( {jobject{{"sessionId", Ƒ("{:x}", session.session_id())}}, move(_request)} );
+			_request.LogRead( Ƒ("Login - opc: {}, user: {}", *domain, *user) );
+			let sessionInfo = co_await AuthenticateAwait{ move(*user), move(password), move(*domain), endpoint, false };
+			_request.SessionInfo->SessionId = sessionInfo.session_id();
+			_request.SessionInfo->IsInitialRequest = true;
+			Resume( move(_request) );
+		}
+		catch( RestException<http::status::bad_request>& e ){
+			ResumeExp( move(e) );
 		}
 		catch( IException& e ){
 			ResumeExp( RestException<http::status::unauthorized>(move(e), move(_request)) );
 		}
 	}
+	α HttpRequestAwait::Logout()ι->TAwait<jvalue>::Task{
+		Opc::Logout( _request.SessionId() );
+		Sessions::Remove( _request.SessionId() );
+		try{
+			co_await *(App::Client::QLServer()->Query(Ƒ( "purgeSession(id:\"{:x}\")", _request.SessionId() ), App::Client::AppServiceUserPK()) );
+			Resume( move(_request) );
+		}
+		catch( IException& e )
+		{}
+	}
 
 	α HttpRequestAwait::Suspend()ι->void{
 		up<IException> pException;
- 		if( _request.IsPost("/Login") )
+ 		if( _request.IsPost("/login") )
 			Login( _request.UserEndpoint.address().to_string() );
+		else if( _request.IsPost("/logout") )
+			Logout();
 		else{
 			if( _request.Contains("opc") )
 				CoHandleRequest();

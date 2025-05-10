@@ -1,5 +1,6 @@
 #pragma once
 #include <jde/web/server/IHttpRequestAwait.h>
+#include <jde/web/server/Sessions.h>
 #include <jde/opc/UM.h>
 #include <jde/opc/uatypes/Browse.h>
 #include <jde/opc/async/ConnectAwait.h>
@@ -15,6 +16,7 @@ namespace Jde::Opc{
 		α await_resume()ε->HttpTaskResult override;
 	private:
 		α Login( str endpoint )ι->AuthenticateAwait::Task;
+		α Logout()ι->TAwait<jvalue>::Task;
 		α CoHandleRequest()ι->ConnectAwait::Task;
 		α Browse()ι->Browse::ObjectsFolderAwait::Task;
 		α ParseNodes()ε->tuple<flat_set<NodeId>,jarray>;

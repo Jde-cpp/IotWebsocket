@@ -6,13 +6,14 @@
 #include <jde/app/client/appClient.h>
 #include <jde/app/client/AppClientSocketSession.h>
 #include <jde/opc/exports.h>
+#include <jde/opc/opc.h>
 #include <jde/opc/OpcQLHook.h>
 #include <jde/opc/uatypes/UAClient.h>
 #include "WebServer.h"
 
 #define let const auto
 namespace Jde{
-	α OSApp::ProductName()ι->sv{ return "IotWebsocket"; }
+	α OSApp::ProductName()ι->sv{ return "OpcGateway"; }
 	Ω startUp( int argc, char **argv )ι->Access::ConfigureAwait::Task;
 	optional<int> _exitCode;
 }
@@ -28,10 +29,20 @@ namespace Jde{
 α Jde::startUp( int argc, char **argv )ι->Access::ConfigureAwait::Task{
 	try{
 		TagParser( Opc::LogTagParser );
-		OSApp::Startup( argc, argv, "Jde.OpcWebSocket", "IOT Connection" );
+		OSApp::Startup( argc, argv, "Jde.OpcGateway", "IOT Connection" );
 		auto authorize = App::Client::RemoteAcl();
 		auto schema = DB::GetAppSchema( "opc", authorize );
 		QL::Configure( {schema} );
+		Opc::Configure( schema );
+		if( auto sync = Settings::FindBool("/dbServers/sync").value_or(true); sync )
+			DB::SyncSchema( *schema, QL::Local() );
+
+		Crypto::CryptoSettings settings{ "http/ssl" };
+		if( !fs::exists(settings.PrivateKeyPath) ){
+			settings.CreateDirectories();
+			Crypto::CreateKeyCertificate( settings );
+		}
+
 		App::Client::Connect();
 		Execution::Run();
 		while( App::Client::AppClientSocketSession::Instance()==nullptr || App::Client::QLServer()==nullptr )
@@ -41,7 +52,7 @@ namespace Jde{
 		Process::AddShutdownFunction( [](bool terminate){Opc::UAClient::Shutdown(terminate);} );
 		QL::Hook::Add( mu<Opc::OpcQLHook>() );
 		Opc::StartWebServer();
-		Information( ELogTags::App, "---Started IotWebSocket---" );
+		Information( ELogTags::App, "---Started {}---", OSApp::ProductName() );
 	}
 	catch( const IException& e ){
 		Critical( ELogTags::App, "Exiting on error:  {}"sv, e.what() );

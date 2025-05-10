@@ -1,10 +1,8 @@
 #pragma once
 #include <jde/web/server/Sessions.h>
 #include <jde/web/client/usings.h>
-#include <jde/opc/async/ConnectAwait.h>
 #include <jde/opc/types/MonitoringNodes.h>
 #include <jde/web/server/IWebsocketSession.h>
-
 
 namespace Jde::Opc{
 	using namespace Jde::Web::Server;
@@ -18,17 +16,18 @@ namespace Jde::Opc{
 		α to_string()Ι->string override{ return Ƒ( "{:x}", Id() ); }
 
 	private:
-		α CreateSubscription( sp<UAClient> client, flat_set<NodeId>&& nodes, uint32 requestId )ι->Task;
+		α CreateSubscription( sp<UAClient> client, flat_set<NodeId> nodes, uint32 requestId )ι->Task;
 		α OnClose()ι->void;
 		α ProcessTransmission( FromClient::Transmission&& transmission )ι->void;
-		α SetSessionId( SessionPK sessionId, RequestId requestId )->Sessions::UpsertAwait::Task;
+		α SetSessionId( str sessionId, RequestId requestId )->Sessions::UpsertAwait::Task;
 		α SharedFromThis()ι->sp<ServerSocketSession>{ return std::dynamic_pointer_cast<ServerSocketSession>(shared_from_this()); }
-		α Subscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->ConnectAwait::Task;
-		α Unsubscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->ConnectAwait::Task;
+		α Subscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->void;
+		α Unsubscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->void;
 
 		α WriteSubscription( const jvalue& j, Jde::RequestId requestId )ι->void override;
 		α WriteSubscriptionAck( vector<QL::SubscriptionId>&& subscriptionIds, Jde::RequestId requestId )ι->void override;
 		α WriteComplete( Jde::RequestId requestId )ι->void override;
+		α WriteException( string&& e, Jde::RequestId requestId )ι->void override;
 		α WriteException( exception&& e, Jde::RequestId requestId )ι->void override;
 		α WriteException( IException&& e )ι->void{ WriteException( move(e), 0 ); }
 

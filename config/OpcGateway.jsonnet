@@ -2,26 +2,27 @@
 	logging:{
 		defaultLevel: "Information",
 		tags: {
-			Trace:[ "app", "browse",
+			trace:[ "app", "browse", "ql",
 				"http.client.write", "http.client.read", "http.server.write", "http.server.read", "socket.client.write", "socket.client.read", "socket.server.write", "socket.server.read",
 				"uaNet", "uaSecure", "uaSession", "uaServer", "uaClient", "uaUser", "uaSecurity", "uaEvent", "uaPubSub", "uaDiscovery"
 			],
-			Debug:["settings"],
-			Information:[
+			debug:["settings"],
+			information:[
 				"iot.read", "iot.monitoring", "iot.browse", "app.processingLoop", "iot.monitoring.pedantic"
 			],
-			Warning:[],
-			Error:[],
-			Critical:[]
+			warning:[],
+			"error":[],
+			critical:[]
 		},
 		sinks:{
 			console:{}
 		}
 	},
 	dbServers: {
-		scriptPath: "$(JDE_DIR)/IotWebsocket/config/sql/mysql/opcClient",
+			scriptPaths: ["$(JDE_DIR)/IotWebsocket/config/sql/mysql"],
+		sync:: false,
 		localhost:{
-			driver: "$(JDE_DIR)/bin/asan/libJde.MySql.so",
+			driver: "$(JDE_BUILD_DIR)/$(JDE_BUILD_TYPE)/libs/db/drivers/mysql/libJde.DB.MySql.so",
 			connectionString: "$(JDE_CONNECTION)",
 			catalogs: {
 				_appCatalog:{
@@ -33,11 +34,11 @@
 						},
 					},
 				},
-				jde_opc_test: {
+				jde: {
 					schemas:{
 						jde:{ //for sqlserver, test with schema, debug with default schema ie dbo.
 							opc:{
-								meta: "$(JDE_DIR)/IotWebsocket/config/IotWebSocketMeta.jsonnet",
+								meta: "$(JDE_DIR)/IotWebsocket/config/opcGateway-meta.jsonnet",
 								prefix: "opc_"  //test with null prefix, debug with prefix
 							}
 						}
@@ -47,8 +48,8 @@
 		}
 	},
 	credentials:{
-		name: "IotServer",
-		target:: "IotServer"
+		name: "OpcGateway",
+		target:: "OpcGateway"
 	},
 	http:{
 		address: null,
@@ -75,7 +76,7 @@
 	},
 	workers:{
 		drive:{ "threads":  1 },
-		Alarm:{ "threads":  1 },
+		alarm:{ "threads":  1 },
 		executor: 1
 	}
 }
