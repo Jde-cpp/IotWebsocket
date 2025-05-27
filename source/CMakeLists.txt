@@ -1,18 +1,36 @@
 cmake_minimum_required( VERSION ${MIN_REQ_CMAKE_VERSION} )
-list( APPEND CMAKE_MODULE_PATH $ENV{JDE_DIR}/Public/build )
+#list( APPEND CMAKE_MODULE_PATH $ENV{JDE_BASH}/Public/build )
 
-include( $ENV{JDE_DIR}/Public/build/functions.cmake )
+include( $ENV{JDE_BASH}/Public/build/functions.cmake )
+message( "Jde.Opc.Client" )
 project( Jde.Opc.Client VERSION ${JDE_VERSION} LANGUAGES CXX )
 include( ../../Public/build/dependencies.cmake )
+
+if( WIN32 )
+	message( OPENSSL_CRYPTO_LIBRARY_DIR: ${OPENSSL_CRYPTO_LIBRARY_DIR} )
+	link_directories( ${OPENSSL_CRYPTO_LIBRARY_DIR} )
+else()
+	find_package( OpenSSL REQUIRED )
+endif()
+
 find_package( open62541 REQUIRED )
 set( open62541Dir ${open62541_DIR}/../../.. )
 cmake_path( ABSOLUTE_PATH open62541Dir NORMALIZE OUTPUT_VARIABLE open62541Dir )
+if( WIN32 )
+	add_definitions( -DZLIB_USE_STATIC_LIBS -D )
+	set( ZLIB_ROOT ${LIB_ROOT}/zlib )
+endif()
+find_package( ZLIB REQUIRED )
 
-add_subdirectory( $ENV{JDE_DIR}/Framework/source ../../libs/framework )
-set( libDir $ENV{JDE_DIR}/Public/libs )
+add_subdirectory( $ENV{JDE_BASH}/Framework/source ../../libs/framework )
+set( libDir $ENV{JDE_BASH}/Public/libs )
 add_subdirectory( ${libDir}/crypto/src ../../libs/crypto/lib )
 add_subdirectory( ${libDir}/db/src ../../libs/db/lib )
-add_subdirectory( ${libDir}/db/drivers/mysql ../../libs/db/drivers/mysql )
+if( WIN32 )
+	add_subdirectory( ${libDir}/db/drivers/odbc ../../libs/db/drivers/odbc )
+else()
+	add_subdirectory( ${libDir}/db/drivers/mysql ../../libs/db/drivers/mysql )
+endif()
 add_subdirectory( ${libDir}/ql ../../libs/ql )
 add_subdirectory( ${libDir}/access/src ../../libs/access/lib )
 add_subdirectory( ${libDir}/web/client ../../libs/web/client )
@@ -22,7 +40,7 @@ add_subdirectory( ${libDir}/app/client ../../libs/app/client )
 set( opcCommonDir ${libDir}/opc )
 add_subdirectory( ${opcCommonDir}/src ../../libs/opc/lib )
 
-include( $ENV{JDE_DIR}/Public/build/dependencies.cmake )
+include( $ENV{JDE_BASH}/Public/build/dependencies.cmake )
 set( targetName Jde.Opc.Gateway )
 project( ${targetName} )
 
@@ -32,22 +50,29 @@ link_directories( ${open62541Dir}/lib )
 add_definitions( -DUA_ENABLE_ENCRYPTION )
 
 add_executable( ${targetName} )
+compileOptions( ${targetName} )
 file( GLOB sources *.cpp types/proto/*.cpp )
 file( GLOB headers *.h )
+if( WIN32)
+	list( APPEND sources IotWebsocket.rc )
+	set_target_properties( ${targetName} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<CONFIG>" )
+endif()
 target_sources( ${targetName} PRIVATE ${sources} ${resources} ${headers} )
 
-target_link_libraries( ${targetName} OpenSSL::SSL )
+
 if( WIN32 )
-	set_target_properties( ${targetName} PROPERTIES
-		VS_DEBUGGER_COMMAND_ARGUMENTS "-c"
-		VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_SOURCE_DIR} )
+	target_link_libraries( ${targetName} ZLIB::ZLIB )
+	target_link_libraries( ${targetName} libssl libcrypto )
+	target_link_libraries( ${targetName} Iphlpapi.lib )
 else()
+	target_link_libraries( ${targetName} OpenSSL::SSL )
+	target_link_libraries( ${targetName} stdc++exp )#for stacktrace
 endif()
 include_directories( ${open62541Dir}include )
 target_link_libraries( ${targetName} Jde Jde.Access Jde.App.Shared Jde.App.Client Jde.Web.Server Jde.Opc )
 target_link_libraries( ${targetName} open62541 )
 target_link_libraries( ${targetName} Boost::json )
-target_link_libraries( ${targetName} stdc++exp )#for stacktrace
+
 
 target_precompile_headers(${targetName}
 	PRIVATE
@@ -85,4 +110,18 @@ target_precompile_headers(${targetName}
 	<jde/opc/types/proto/Opc.FromClient.pb.h>
 )
 
-add_custom_command( TARGET ${targetName} POST_BUILD COMMAND ${CMAKE_COMMAND} -E create_symlink "$ENV{JDE_DIR}/Public/libs/db/config/common-meta.libsonnet" "${CMAKE_CURRENT_SOURCE_DIR}/../config/common-meta.libsonnet" COMMENT "mklink common-meta.libsonnet" )
+add_custom_command( TARGET ${targetName} POST_BUILD COMMAND ${CMAKE_COMMAND} -E create_symlink "$ENV{JDE_BASH}/Public/libs/db/config/common-meta.libsonnet" "${CMAKE_CURRENT_SOURCE_DIR}/../config/common-meta.libsonnet" COMMENT "mklink common-meta.libsonnet" )
+if( WIN32 )
+	set_target_properties( ${targetName} PROPERTIES VS_DEBUGGER_COMMAND_ARGUMENTS "-c -tests -settings=${CMAKE_CURRENT_SOURCE_DIR}/../config/OpcGateway.jsonnet" )
+
+	set( buildLibDir ${CMAKE_BINARY_DIR}/../../libs )
+	cmake_path( ABSOLUTE_PATH buildLibDir NORMALIZE OUTPUT_VARIABLE buildLibDir )
+	add_custom_command( TARGET ${targetName} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${buildLibDir}/framework/$<CONFIG>/Jde.dll" $<TARGET_FILE_DIR:${targetName}> )
+	add_custom_command( TARGET ${targetName} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${buildLibDir}/framework/$<CONFIG>/Jde.pdb" $<TARGET_FILE_DIR:${targetName}> )
+	add_custom_command( TARGET ${targetName} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${buildLibDir}/db/lib/$<CONFIG>/Jde.DB.dll" $<TARGET_FILE_DIR:${targetName}> )
+	add_custom_command( TARGET ${targetName} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${buildLibDir}/db/lib/$<CONFIG>/Jde.DB.pdb" $<TARGET_FILE_DIR:${targetName}> )
+	add_custom_command( TARGET ${targetName} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${buildLibDir}/db/drivers/odbc/$<CONFIG>/Jde.DB.Odbc.dll" $<TARGET_FILE_DIR:${targetName}> )
+	add_custom_command( TARGET ${targetName} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${buildLibDir}/db/drivers/odbc/$<CONFIG>/Jde.DB.Odbc.pdb" $<TARGET_FILE_DIR:${targetName}> )
+	add_custom_command( TARGET ${targetName} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${LIB_DIR}/fmt/bin/fmtd.dll" $<TARGET_FILE_DIR:${targetName}> )
+	add_custom_command( TARGET ${targetName} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${LIB_DIR}/zlib/bin/zlibd.dll" $<TARGET_FILE_DIR:${targetName}> )
+endif()

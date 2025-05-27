@@ -1,3 +1,4 @@
+local args = import 'args.libsonnet';
 {
 	logging:{
 		defaultLevel: "Information",
@@ -15,36 +16,17 @@
 			critical:[]
 		},
 		sinks:{
-			console:{}
+			console:{},
+			file:{ path: args.logDir, md: false }
 		}
 	},
 	dbServers: {
-			scriptPaths: ["$(JDE_DIR)/IotWebsocket/config/sql/mysql"],
-		sync:: false,
+		scriptPaths: ["$(JDE_DIR)/IotWebsocket/config/sql/"+args.sqlType],
+		sync: true,
 		localhost:{
-			driver: "$(JDE_BUILD_DIR)/$(JDE_BUILD_TYPE)/libs/db/drivers/mysql/libJde.DB.MySql.so",
-			connectionString: "$(JDE_CONNECTION)",
-			catalogs: {
-				_appCatalog:{
-					schemas:{
-						_appSchema:{
-							access:{
-								meta: "$(JDE_DIR)/Public/libs/access/config/access-meta.jsonnet"
-							}
-						},
-					},
-				},
-				jde: {
-					schemas:{
-						jde:{ //for sqlserver, test with schema, debug with default schema ie dbo.
-							opc:{
-								meta: "$(JDE_DIR)/IotWebsocket/config/opcGateway-meta.jsonnet",
-								prefix: "opc_"  //test with null prefix, debug with prefix
-							}
-						}
-					}
-				}
-			}
+			driver: args.dbDriver,
+			connectionString: args.dbConnectionString,
+			catalogs: args.catalogs
 		}
 	},
 	credentials:{
