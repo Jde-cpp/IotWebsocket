@@ -21,7 +21,8 @@ namespace Jde{
 α main( int argc, char **argv )->int{
 	using namespace Jde;
 	startUp( argc, argv );
-	_exitCode = IApplication::Pause();
+	if( !_exitCode )
+		_exitCode = IApplication::Pause();
 	Process::Shutdown( _exitCode.value_or(EXIT_FAILURE) );
 	return _exitCode.value_or( EXIT_FAILURE );
 }
@@ -56,6 +57,10 @@ namespace Jde{
 		Information( ELogTags::App, "---Started {}---", OSApp::ProductName() );
 	}
 	catch( const IException& e ){
+		if( e.Level()==ELogLevel::Trace )
+			std::cout << e.what() << std::endl;
+		else
+			std::cerr << e.what() << std::endl;
 		Critical( ELogTags::App, "Exiting on error:  {}", e.what() );
 		_exitCode = e.Code ? (int)e.Code : EXIT_FAILURE;
 	}

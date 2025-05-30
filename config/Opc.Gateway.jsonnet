@@ -21,7 +21,7 @@ local args = import 'args.libsonnet';
 		}
 	},
 	dbServers: {
-		scriptPaths: ["$(JDE_DIR)/IotWebsocket/config/sql/"+args.sqlType],
+		scriptPaths: args.scriptPaths,
 		sync: true,
 		localhost:{
 			driver: args.dbDriver,
