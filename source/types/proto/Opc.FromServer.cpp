@@ -1,9 +1,9 @@
-#include "Iot.FromServer.h"
-#include <jde/iot/uatypes/Node.h>
+#include "Opc.FromServer.h"
+#include <jde/opc/uatypes/Node.h>
 
-#define var const auto
+#define let const auto
 
-namespace Jde::Iot{
+namespace Jde::Opc{
 	α FromServer::AckTrans( uint32 socketSessionId )ι->FromServer::Transmission{
 		FromServer::Message m;
 		m.set_ack( socketSessionId );
@@ -14,15 +14,16 @@ namespace Jde::Iot{
 		FromServer::Message m;
 		return MessageTrans( move(m), requestId );
 	}
-	α FromServer::ExceptionTrans( const IException& e, optional<RequestId> requestId )ι->FromServer::Transmission{
+	α FromServer::ExceptionTrans( const exception& e, optional<RequestId> requestId )ι->FromServer::Transmission{
 		FromServer::Transmission t;
 		auto& m = *t.add_messages();
 		if( requestId )
 			m.set_request_id( *requestId );
 
 		auto& proto = *m.mutable_exception();
-		proto.set_what( e.what() );
-		proto.set_code( e.Code );
+		proto.set_what( string{e.what()} );
+		if( auto p = dynamic_cast<const IException*>(&e) )
+			proto.set_code( p->Code );
 		return t;
 	}
 	α FromServer::MessageTrans( FromServer::Message&& m, RequestId requestId )ι->FromServer::Transmission{
@@ -43,8 +44,8 @@ namespace Jde::Iot{
 		auto& m = *t.add_messages();
 		m.set_request_id( id );
 		auto ack = m.mutable_unsubscribe_ack();
-		for_each( move(successes), [&ack](var& n){*ack->add_successes() = n.ToProto();} );
-		for_each( move(failures), [&ack](var& n){*ack->add_failures() = n.ToProto();} );
+		for_each( move(successes), [&ack](let& n){*ack->add_successes() = n.ToProto();} );
+		for_each( move(failures), [&ack](let& n){*ack->add_failures() = n.ToProto();} );
 		return t;
 	}
 }

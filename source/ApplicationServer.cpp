@@ -1,11 +1,12 @@
 #include "ApplicationServer.h"
-#include <jde/app/client/await/SocketAwait.h>
+#include <jde/app/client/awaits/SocketAwait.h>
+#include <jde/ql/QLAwait.h>
 
-namespace Jde::Iot{
-	α ApplicationServer::GraphQL( string&& q, UserPK userPK, SL sl )ι->up<TAwait<json>>{
-		return mu<App::Client::GraphQLAwait>( move(q), userPK, sl );
+namespace Jde::Opc{
+	α ApplicationServer::GraphQL( string&& q, UserPK executer, bool returnRaw, SL sl )ι->up<TAwait<jvalue>>{
+		return mu<QL::QLAwait<>>( move(q), executer, returnRaw, sl );
 	}
-	α ApplicationServer::SessionInfoAwait( SessionPK sessionPK, SL sl )ι->up<TAwait<App::Proto::FromServer::SessionInfo>>{
+	α ApplicationServer::SessionInfoAwait( SessionPK sessionPK, SL sl )ι->up<TAwait<Web::FromServer::SessionInfo>>{
 		return mu<App::Client::SessionInfoAwait>( sessionPK, sl );
 	}
 }

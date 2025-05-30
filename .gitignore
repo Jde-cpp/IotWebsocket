@@ -53,3 +53,4 @@ source/types/proto/duration.proto
 source/types/proto/google/*
 
 **/.build/*
+config/common-meta.libsonnet

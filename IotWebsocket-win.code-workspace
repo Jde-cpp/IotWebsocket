@@ -1,0 +1,272 @@
+{
+	"settings": {
+		"window.title": "Gateway",
+		"name": "IotWebsocket",
+		"sourceDir": "${env:JDE_BASH}/IotWebsocket/source",
+		"buildTarget": "Debug",
+		"compiler": "msvc",
+		"buildRoot": "${env:JDE_BUILD_DIR}/${config:compiler}/jde",
+		"buildDir": "${config:buildRoot}/apps/${config:name}/",
+		"testBuildDir": "${config:buildRoot}/libs/opc/tests/",
+		"files.associations": {
+			"*.dbclient-js": "javascript",
+			"*.sqlbook": "sql",
+			"*.ndjson": "jsonl",
+			"source_location": "cpp",
+			"any": "cpp",
+			"atomic": "cpp",
+			"strstream": "cpp",
+			"bit": "cpp",
+			"cctype": "cpp",
+			"cinttypes": "cpp",
+			"clocale": "cpp",
+			"cmath": "cpp",
+			"codecvt": "cpp",
+			"compare": "cpp",
+			"complex": "cpp",
+			"concepts": "cpp",
+			"coroutine": "cpp",
+			"csignal": "cpp",
+			"cstdarg": "cpp",
+			"cstddef": "cpp",
+			"cstdint": "cpp",
+			"cstdio": "cpp",
+			"cstdlib": "cpp",
+			"cstring": "cpp",
+			"ctime": "cpp",
+			"cwchar": "cpp",
+			"cwctype": "cpp",
+			"map": "cpp",
+			"set": "cpp",
+			"exception": "cpp",
+			"algorithm": "cpp",
+			"memory": "cpp",
+			"memory_resource": "cpp",
+			"numeric": "cpp",
+			"optional": "cpp",
+			"random": "cpp",
+			"ratio": "cpp",
+			"system_error": "cpp",
+			"tuple": "cpp",
+			"type_traits": "cpp",
+			"utility": "cpp",
+			"fstream": "cpp",
+			"future": "cpp",
+			"iomanip": "cpp",
+			"iosfwd": "cpp",
+			"iostream": "cpp",
+			"istream": "cpp",
+			"limits": "cpp",
+			"mutex": "cpp",
+			"new": "cpp",
+			"numbers": "cpp",
+			"ostream": "cpp",
+			"semaphore": "cpp",
+			"shared_mutex": "cpp",
+			"sstream": "cpp",
+			"stdexcept": "cpp",
+			"stdfloat": "cpp",
+			"stop_token": "cpp",
+			"streambuf": "cpp",
+			"typeindex": "cpp",
+			"typeinfo": "cpp",
+			"variant": "cpp",
+			"*.ipp": "cpp",
+			"*.tcc": "cpp",
+			"array": "cpp",
+			"string": "cpp",
+			"string_view": "cpp",
+			"ranges": "cpp",
+			"span": "cpp",
+			"bitset": "cpp",
+			"regex": "cpp",
+			"stacktrace": "cpp",
+			"deque": "cpp",
+			"vector": "cpp",
+			"chrono": "cpp",
+			"text_encoding": "cpp",
+			"charconv": "cpp",
+			"format": "cpp",
+			"functional": "cpp",
+			"unordered_map": "cpp",
+			"unordered_set": "cpp",
+			"cfenv": "cpp",
+			"condition_variable": "cpp",
+			"csetjmp": "cpp",
+			"forward_list": "cpp",
+			"list": "cpp",
+			"iterator": "cpp",
+			"initializer_list": "cpp",
+			"thread": "cpp",
+			"filesystem": "cpp",
+			"xstring": "cpp",
+			"ios": "cpp",
+			"xlocale": "cpp",
+			"locale": "cpp",
+			"xlocmes": "cpp",
+			"xlocmon": "cpp",
+			"xlocnum": "cpp",
+			"xloctime": "cpp",
+			"xhash": "cpp",
+			"xtree": "cpp"
+		},
+	},
+	"tasks": {
+		"version": "2.0.0",
+		"tasks": [
+			{
+				"label": "build",
+				"type": "shell",
+				"command": "cd ${config:buildDir}; tput reset;cmake --build .;",
+				"problemMatcher": { "base": "$msCompile", "fileLocation": ["absolute"] },
+				"group": { "kind": "build", "isDefault": true }
+			},
+			{
+				"label": "buildProject",
+				"type": "shell",
+				"command": "tput reset; source $JDE_DIR/Public/build/buildFunctions.sh;buildProject ${fileWorkspaceFolder} ${config:buildDir};",
+				"problemMatcher": { "base": "$msCompile", "fileLocation": ["absolute"] },
+				"group": { "kind": "build", "isDefault": false }
+			},
+			{
+				"label": "compile",
+				"type": "shell",
+				"command": "tput reset; source $JDE_DIR/Public/build/buildFunctions-win.sh;compile \"${workspaceFolder}\" \"${fileWorkspaceFolder}\" \"${relativeFile}\" ${config:buildRoot};",
+				"problemMatcher": { "base": "$msCompile", "fileLocation": ["absolute"] },
+				"group": { "kind": "build", "isDefault": false }
+			},
+			{
+				"label": "cmake",
+				"type": "shell",
+				"command": "mkdir -p ${config:buildDir};cd ${config:buildDir}; tput reset; rm -f CMakeCache.txt; cmake ${config:sourceDir} --preset win-msvc-jde-debug",
+				"problemMatcher": { "base": "$msCompile", "fileLocation": ["absolute"] },
+				"group": { "kind": "build", "isDefault": false }
+			}
+		]
+	},
+	"launch": {
+		"version": "0.2.0",
+		"configurations": [
+			{
+				"name": "Debug",
+				"type": "cppdbg",
+				"request": "launch",
+				"program": "${config:buildDir}/Jde.Opc.Gateway",
+				"args": ["-c", "-settings=${config:sourceDir}/../config/OpcGateway.jsonnet"],
+				"stopAtEntry": false,
+				"cwd": "${config:buildDir}",
+				"environment": [
+					{"name":"JDE_CONNECTION","value":"mysqlx://${env:JDE_MYSQL_CREDS}@127.0.0.1:33060/jde?ssl-mode=disabled"}],
+				"externalConsole": false,
+				"MIMode": "gdb",
+				"setupCommands": [{"description": "Enable pretty-printing for gdb","text": "-enable-pretty-printing",	"ignoreFailures": true }],
+				"sourceFileMap": { "/build/glibc-negH51/glibc-2.27":"$(REPO_DIR)/glibc-2.27" },
+				"preLaunchTask": "build",
+				"visualizerFile": "${env:JDE_DIR}/Public/build/gcc.natvis",
+				"showDisplayString": true
+			},
+			{
+				"name": "Release",
+				"type": "cppdbg",
+				"request": "launch",
+				"program": "${workspaceFolder:IotWebsocket}/../../bin/release/Jde.IotWebsocket",
+				"args": ["-c"],
+				"stopAtEntry": false,
+				"cwd": "${workspaceFolder:IotWebsocket}/../../bin/release",
+				"environment": [],
+				"externalConsole": false,
+				"MIMode": "gdb",
+				"setupCommands": [{"description": "Enable pretty-printing for gdb","text": "-enable-pretty-printing","ignoreFailures": true}],
+				"sourceFileMap": { "/build/glibc-negH51/glibc-2.27":"$(REPO_DIR)/glibc-2.27" },
+				"preLaunchTask": "release",
+				"visualizerFile": "${env:JDE_DIR}/Public/build/gcc.natvis",
+				"showDisplayString": true
+			},
+			{
+				"name": "Debug Tests",
+				"type": "cppdbg",
+				"request": "launch",
+				"program": "${config:testBuildDir}/Jde.Opc.Tests",
+				"args": [ "-settings=${env:JDE_DIR}/Public/libs/opc/tests/config/Opc.Tests.jsonnet" ],
+				"stopAtEntry": false,
+				"cwd": "${config:testBuildDir}",
+				"additionalSOLibSearchPath": "/lib64",
+				"environment": [
+					{"name":"JDE_CONNECTION","value":"mysqlx://${env:JDE_MYSQL_CREDS}@127.0.0.1:33060/jde?ssl-mode=disabled"}
+				],
+				"externalConsole": false,
+				"MIMode": "gdb",
+				"setupCommands": [{"description": "Enable pretty-printing for gdb","text": "-enable-pretty-printing","ignoreFailures": true}],
+				"sourceFileMap": { "/build/glibc-negH51/glibc-2.27":"$(REPO_DIR)/glibc-2.27" },
+				"preLaunchTask": "build",
+				"visualizerFile": "${env:JDE_DIR}/Public/build/gcc.natvis",
+				"showDisplayString": true
+			}
+		],
+		"compounds": []
+	},
+	"folders": [
+		{
+			"path": "config",
+			"name": "config"
+		},
+		{
+			"path": "source",
+			"name": "IotWebsocket"
+		},
+		{
+			"path": "../Public/libs/opc/src",
+			"name": "common"
+		},
+		{
+			"path": "../Public/libs/opc/tests",
+			"name": "tests"
+		},
+		{
+			"path": "../Public/libs/app/client",
+			"name": "appClient"
+		},
+		{
+			"path": "../Public/libs/app/shared",
+			"name": "appShared"
+		},
+		{
+			"path": "../Public/libs/web/client",
+			"name": "webClient"
+		},
+		{
+			"path": "../Public/libs/ql",
+			"name": "ql"
+		},
+		{
+			"path": "../Public/libs/access/src",
+			"name": "access"
+		},
+		{
+			"path": "../Public/include/jde",
+			"name": "headers"
+		},
+		{
+			"path": "../Public/libs/web/server",
+			"name": "webServer"
+		},
+		{
+			"path": "../Framework/source",
+			"name": "Framework"
+		},
+		{
+			"path": "../Public/libs/crypto"
+		},
+		{
+			"path": "../Public/libs/db/src",
+			"name": "db"
+		},
+		{
+			"path": "../Public/libs/db/src/drivers/mysql",
+			"name": "mysql"
+		},
+		{
+			"path": "../open62541"
+		}
+	]
+}

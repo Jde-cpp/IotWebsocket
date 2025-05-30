@@ -3,17 +3,122 @@ branch=${1:-master}
 clean=${2:-0};
 shouldFetch=${3:-0};
 tests=${4:-1}
+target=${5:Debug}
+compiler=${6:-msvc}
 
+cmakeTarget="${target^}";
 [[ "$branch" = master ]] && branch2=main || branch2="$branch"
 echo build-iotwebsocket.sh branch: $branch2 clean: $clean shouldFetch: $shouldFetch tests: $tests;
 scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-if [ -z $JDE_BASH ]; then JDE_BASH=$scriptDir/jde; fi;
-if [ -z $REPO_DIR ]; then REPO_DIR=$scriptDir/libraries; fi;
+if [ -z $JDE_BASH ]; then export JDE_BASH=$scriptDir/jde; fi;
+if [ -z $REPO_DIR ]; then export REPO_DIR=$scriptDir/libraries; fi;
+if [ -z $JDE_BUILD_DIR ]; then export $scriptDir/build; fi;
 
 if [ ! -d $JDE_BASH ]; then mkdir jde; fi;
-if [ ! -d $JDE_BASH/Framework ]; then cd $JDE_BASH; git clone -b $branch --single-branch https://github.com/Jde-cpp/Framework.git; cd ..; fi;
+cd jde;
+if [ ! -d Public ]; then git clone -b $branch --single-branch https://github.com/Jde-cpp/Public.git; fi;
+source Public/build/common.sh;
+toBashDir $REPO_DIR REPO_BASH;
+cd $JDE_BASH/Public/build;
+
+./buildBoost.sh $target $compiler; if [ $? -ne 0 ]; then echo "cmake Failed"; echo `pwd`; exit 1; fi;
+
+#build external libraries
+if [ -z $JDE_BUILD_DIR ]; then export JDE_BUILD_DIR=$scriptDir/build; fi;
+toBashDir $JDE_BUILD_DIR buildBashDir;
+echo buildBashDir: $buildBashDir;
+
+cd $buildBashDir;
+mkdir -p $compiler; cd $compiler;
+# if (( $clean == 1 )) || [ ! -d libs ]; then
+# 	echo ----------------------Build Libs----------------------
+# 	exit 0;
+# 	rm -f CMakeCache.txt;
+# 	cd libs;
+# 	echo cmake /c/Users/duffyj/source/repos/jde/Public/build --preset win-msvc;
+# 	cmake $JDE_BASH/Public/build --preset win-msvc; if [ $? -ne 0 ]; then echo "cmake Failed"; echo `pwd`; exit 1; fi;
+# 	cmake --build . --config $cmakeTarget; if [ $? -ne 0 ]; then echo "Build Failed"; echo `pwd`; exit 1; fi;
+# fi
+
+compilerDir=$buildBashDir/$compiler;
+moveToDir jde;
+if [ $tests -eq 1 ]; then
+	moveToDir libs;
+	jdeLibsDir=`pwd`;
+	if (( $clean == 1 )) || [ ! -d crypto ]; then
+		moveToDir crypto;
+		echo ---------------------Build Crypto----------------------
+		#rm -f CMakeCache.txt;
+		#cmake $JDE_BASH/Public/libs/crypto --preset win-msvc-jde; if [ $? -ne 0 ]; then echo "cmake Failed"; echo `pwd`; exit 1; fi;
+		#cmake --build . --config $cmakeTarget; if [ $? -ne 0 ]; then echo "Build Failed"; echo `pwd`; exit 1; fi;
+	fi
+	cd $jdeLibsDir;
+	if (( $clean == 1 )) || [ ! -d access ]; then
+		moveToDir access;
+		echo ---------------------Build Access----------------------
+		#rm -f CMakeCache.txt;
+		#cmake $JDE_BASH/Public/libs/access --preset win-msvc-jde; if [ $? -ne 0 ]; then echo "cmake Failed"; echo `pwd`; exit 1; fi;
+		#cmake --build . --config $cmakeTarget; if [ $? -ne 0 ]; then echo "Build Failed"; echo `pwd`; exit 1; fi;
+	fi
+	cd $jdeLibsDir;
+	if (( $clean == 1 )) || [ ! -d web ]; then
+		moveToDir web;
+		echo -------------------------Build Web--------------------------
+		#rm -f CMakeCache.txt;
+		#cmake $JDE_BASH/Public/libs/web --preset win-msvc-jde; if [ $? -ne 0 ]; then echo "cmake Failed"; echo `pwd`; exit 1; fi;
+		#cmake --build . --config $cmakeTarget; if [ $? -ne 0 ]; then echo "Build Failed"; echo `pwd`; exit 1; fi;
+	fi
+	cd $jdeLibsDir;
+	if (( $clean == 1 )) || [ ! -d opc ]; then
+		moveToDir opc;
+		echo -------------------------Build Opc--------------------------
+		#rm -f CMakeCache.txt;
+		#cmake $JDE_BASH/Public/libs/opc --preset win-msvc-jde; if [ $? -ne 0 ]; then echo "cmake Failed"; echo `pwd`; exit 1; fi;
+		#cmake --build . --config $cmakeTarget; if [ $? -ne 0 ]; then echo "Build Failed"; echo `pwd`; exit 1; fi;
+	fi
+fi
+
+#git clone -b $branch --single-branch https://github.com/Jde-cpp/AppServer.git;
+cd $compilerDir/jde;
+moveToDir apps;
+appsDir=`pwd`;
+if (( $clean == 1 )) || [ ! -d $JDE_BASH/AppServer ]; then
+	echo -------------------------AppServer--------------------------
+	cd AppServer;
+	rm -f CMakeCache.txt;
+#	cmake $JDE_BASH/AppServer --preset win-msvc-jde; if [ $? -ne 0 ]; then echo "cmake Failed"; echo `pwd`; exit 1; fi;
+#	cmake --build . --config $cmakeTarget; if [ $? -ne 0 ]; then echo "Build Failed"; echo `pwd`; exit 1; fi;
+fi
+
+# if [ ! -d $JDE_BASH/IotWebsocket ]; then
+# 	cd $JDE_BASH;
+# 	git clone -b $branch --single-branch https://github.com/Jde-cpp/IotWebsocket.git;
+# fi
+cd $appsDir;
+if (( $clean == 1 )) || [ ! -d IotWebsocket ]; then
+	moveToDir IotWebsocket;
+	echo ------------------------IotWebsocket------------------------
+	rm -f CMakeCache.txt;
+	cmake $JDE_BASH/IotWebsocket/source --preset win-msvc-jde; if [ $? -ne 0 ]; then echo "cmake Failed"; echo `pwd`; exit 1; fi;
+	cmake --build .;  --config $cmakeTarget; if [ $? -ne 0 ]; then echo "Build Failed"; echo `pwd`; exit 1; fi;
+fi
+
+echo --------------------------Complete--------------------------
+exit 0;
+
+
+/mnt/ram/jde/Debug
+cls;rm CMakeCache.txt;cmake /home/duffyj/code/jde/Public/build --preset linux-relWithDebInfo;
+cls;rm CMakeCache.txt;cmake /home/duffyj/code/jde/Public/build --preset linux-debug;
+
+cmake
+
+
+
+if [ ! -d Framework ]; then git clone -b $branch --single-branch https://github.com/Jde-cpp/Framework.git; fi;
 if ! source $JDE_BASH/Framework/scripts/common-error.sh; then exit 1; fi;
-source $JDE_BASH/Framework/scripts/source-build.sh;
+#source $JDE_BASH/Framework/scripts/source-build.sh;
+
 $JDE_BASH/Framework/scripts/framework-build.sh $branch $clean $shouldFetch $tests;
 
 if [ ! windows -a ! -z "$install" ]; then #https://www.open62541.org/doc/open62541-1.3.pdf
@@ -97,4 +202,3 @@ fetch main IotSite;
 ./scripts/setup.sh
 
 exit 0;
-

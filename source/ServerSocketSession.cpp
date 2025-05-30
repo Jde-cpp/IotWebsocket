@@ -1,13 +1,15 @@
 #include "ServerSocketSession.h"
-#include <jde/iot/UM.h>
-#include <jde/iot/async/CreateSubscriptions.h>
-#include <jde/iot/async/DataChanges.h>
+#include <jde/opc/UM.h>
+#include <jde/opc/async/CreateSubscriptions.h>
+#include <jde/opc/async/DataChanges.h>
+#include <jde/opc/async/SessionAwait.h>
 #include "WebServer.h"
-#include "types/proto/Iot.FromServer.h"
+#include "types/proto/Opc.FromServer.h"
+#include <jde/opc/uatypes/UAException.h>
 
-#define var const auto
+#define let const auto
 
-namespace Jde::Iot{
+namespace Jde::Opc{
 	ServerSocketSession::ServerSocketSession( sp<RestStream> stream, beast::flat_buffer&& buffer, TRequestType&& request, tcp::endpoint&& userEndpoint, uint32 connectionIndex )ι:
 		base{ move(stream), move(buffer), move(request), move(userEndpoint), connectionIndex }
 	{}
@@ -23,15 +25,15 @@ namespace Jde::Iot{
 		Write( FromServer::AckTrans(id) );
 	}
 
-	α ServerSocketSession::SendDataChange( const Jde::Iot::OpcNK& opcNK, const Jde::Iot::NodeId& node, const Jde::Iot::Value& value )ι->void{
+	α ServerSocketSession::SendDataChange( const Jde::Opc::OpcNK& opcNK, const Jde::Opc::NodeId& node, const Jde::Opc::Value& value )ι->void{
 		return Write( MessageTrans(value.ToProto(opcNK,node), 0) );
 	}
 
-	α ServerSocketSession::SetSessionId( SessionPK sessionId, RequestId requestId )->Sessions::UpsertAwait::Task{
-		LogRead( Ƒ("sessionId: '{:x}'", sessionId), requestId );
+	α ServerSocketSession::SetSessionId( str strSessionId, RequestId requestId )->Sessions::UpsertAwait::Task{
+		LogRead( Ƒ("sessionId: '{}'", strSessionId), requestId );
 		try{
-			co_await Sessions::UpsertAwait( Ƒ("{:x}", sessionId), _userEndpoint.address().to_string(), true );
-			base::SetSessionId( sessionId );
+			let sessionInfo = co_await Sessions::UpsertAwait( strSessionId, _userEndpoint.address().to_string(), true );
+			base::SetSessionId( sessionInfo->SessionId );
 			Write( FromServer::CompleteTrans(requestId) );
 		}
 		catch( IException& e ){
@@ -39,14 +41,24 @@ namespace Jde::Iot{
 		}
 	}
 
-	α ServerSocketSession::Subscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->Task{
+	α ServerSocketSession::Subscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->void{
 		try{
 			auto self = SharedFromThis(); //keep alive
 			auto [loginName,password] = Credentials( base::SessionId(), opcId );
-			LogRead( Ƒ("Subscribe: opcId: '{}', user: '{}', nodeCount: {}", opcId, loginName, nodes.size()), requestId );
-
-			auto client = ( co_await UAClient::GetClient(move(opcId), loginName, password) ).SP<UAClient>();
-			( co_await Iot::CreateSubscription(client) ).CheckError();
+			LogRead( Ƒ("({:x})Subscribe: opcId: '{}', user: '{}', nodeCount: {}", base::SessionId(), opcId, loginName, nodes.size()), requestId );
+			if( auto client = UAClient::Find( move(opcId), loginName, password); client )
+				CreateSubscription( client, move(nodes), requestId );
+			else
+				WriteException( Ƒ("Client not found: opcId: '{}'", opcId), requestId );
+		}
+		catch( IException& e ){
+			WriteException( move(e), requestId );
+		}
+	}
+	α ServerSocketSession::CreateSubscription( sp<UAClient> client, flat_set<NodeId> nodes, uint32 requestId )ι->Task{
+		try{
+			auto self = SharedFromThis(); //keep alive
+			( co_await Opc::CreateSubscription(client) ).CheckError();
 			up<FromServer::SubscriptionAck> ack;
 			try{
 				ack = ( co_await DataChangesSubscribe(nodes, self, client) ).UP<FromServer::SubscriptionAck>();
@@ -66,29 +78,54 @@ namespace Jde::Iot{
 		}
 	}
 
-	α ServerSocketSession::Unsubscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->Task{
+	α ServerSocketSession::Unsubscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->void{
 		try{
 			auto self = SharedFromThis();//keep alive
-			auto [loginName,password] = Iot::Credentials( SessionId(), opcId );
+			auto [loginName,password] = Opc::Credentials( SessionId(), opcId );
 			LogRead( Ƒ("Unsubscribe: opcId: '{}', user: '{}', nodeCount: {}", opcId, loginName, nodes.size()), requestId );
-			auto pClient = ( co_await UAClient::GetClient(move(opcId), loginName, password) ).SP<UAClient>();
-			auto [successes,failures] = pClient->MonitoredNodes.Unsubscribe( move(nodes), self );
-			Write( FromServer::UnsubscribeTrans(requestId, move(successes), move(failures)) );
+			if( auto pClient = UAClient::Find( move(opcId), loginName, password); pClient ){
+				auto [successes,failures] = pClient->MonitoredNodes.Unsubscribe( move(nodes), self );
+				Write( FromServer::UnsubscribeTrans(requestId, move(successes), move(failures)) );
+			}
+			else
+				WriteException( Ƒ("Client not found: opcId: '{}'", opcId), requestId );
 		}
 		catch( IException& e ){
 			WriteException( move(e), requestId );
 		}
 	}
+	α ServerSocketSession::WriteSubscription( const jvalue& j, Jde::RequestId requestId )ι->void{
+		ASSERT_DESC( false, "Not Implemented" );
+	}
+	α ServerSocketSession::WriteSubscriptionAck( vector<QL::SubscriptionId>&& subscriptionIds, Jde::RequestId requestId )ι->void{
+		ASSERT_DESC( false, "Not Implemented" );
+	}
+	α ServerSocketSession::WriteComplete( Jde::RequestId requestId )ι->void{
+		ASSERT_DESC( false, "Not Implemented" );
+	}
 
-	α ServerSocketSession::WriteException( IException&& e, RequestId requestId )ι->void{
+	α ServerSocketSession::WriteException( exception&& e, Jde::RequestId requestId )ι->void{
 		LogWriteException( e, requestId );
 		Write( FromServer::ExceptionTrans(move(e), requestId) );
+	}
+	α ServerSocketSession::WriteException( string&& e, Jde::RequestId requestId )ι->void{
+		LogWriteException( move(e), requestId );
+		Write( FromServer::ExceptionTrans( Exception(move(e)), requestId ) );
 	}
 
 	α ServerSocketSession::OnRead( FromClient::Transmission&& transmission )ι->void{
 		for( auto i=0; i<transmission.messages_size(); ++i ){
 			auto& m = *transmission.mutable_messages( i );
-			var requestId = m.request_id();
+			let requestId = m.request_id();
+
+			FromClient::Message msg;
+			uint32 requestId2 = 0;
+			string sessionId = "c6a22e5c";
+			msg.set_request_id( requestId2 );
+			msg.set_session_id( sessionId );
+			let result = Jde::Proto::ToString( msg );
+			let bytes = result.data();
+
 			switch( m.Value_case() ){
 			using enum FromClient::Message::ValueCase;
 			case kSessionId:
@@ -104,6 +141,7 @@ namespace Jde::Iot{
 				break;}
 			default:
 				LogRead( Ƒ("Unknown message type '{}'", underlying(m.Value_case())), requestId, ELogLevel::Critical );
+				WriteException( Exception("({})Message not implemented."), requestId );
 			}
 		}
 	}

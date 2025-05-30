@@ -1,27 +1,20 @@
 Write-Host "Removing Services..."
-if( Test-Path -Path $Env:Programfiles\Jde-cpp\iot\Jde.IotWebSocket.exe ) {
-	& "$Env:Programfiles\Jde-cpp\iot\Jde.IotWebSocket.exe"  -uninstall
+if( Test-Path -Path $Env:Programfiles\Jde-cpp\OpcGateway\Jde.Opc.Gateway.exe ) {
+	& "$Env:Programfiles\Jde-cpp\OpcGateway\Jde.Opc.Gateway.exe"  -uninstall
 }
 if( Test-Path -Path $Env:Programfiles\Jde-cpp\AppServer\Jde.App.Server.exe ) {
 	& "$Env:Programfiles\Jde-cpp\AppServer\Jde.App.Server.exe"  -uninstall
 }
 
-if ( (Get-OdbcDsn -Name "jde_app" -ErrorAction Ignore) -ne $null){
-  Remove-OdbcDsn -Name "jde_app" -Platform "64-bit" -DsnType "System"
-}
-if ( (Get-OdbcDsn -Name "jde_iot" -ErrorAction Ignore) -ne $null){
-  Remove-OdbcDsn -Name "jde_iot" -Platform "64-bit" -DsnType "System"
+if ( (Get-OdbcDsn -Name "jde" -ErrorAction Ignore) -ne $null){
+  Remove-OdbcDsn -Name "jde" -Platform "64-bit" -DsnType "System"
 }
 [Environment]::SetEnvironmentVariable('Jde_App_Connection', $null, 'Machine')
-[Environment]::SetEnvironmentVariable('Jde_Iot_Connection', $null, 'Machine')
 if( Test-Path -Path $Env:PROGRAMFILES/jde-cpp ) {
   Remove-Item -LiteralPath $Env:PROGRAMFILES/jde-cpp -Force -Recurse
 }
 if( Test-Path -Path $Env:ProgramData/jde-cpp ) {
   Remove-Item -LiteralPath $Env:ProgramData/jde-cpp -Force -Recurse
-}
-if( Test-Path -Path "$([Environment]::GetFolderPath("CommonDesktopDirectory"))/JdeIotWeb.bat" ) {
-  Remove-Item -LiteralPath "$([Environment]::GetFolderPath("CommonDesktopDirectory"))/JdeIotWeb.bat"
 }
 if( Test-Path -Path "$([Environment]::GetFolderPath("CommonDesktopDirectory"))/JdeSetup.ps1" ) {
   Remove-Item -LiteralPath "$([Environment]::GetFolderPath("CommonDesktopDirectory"))/JdeSetup.ps1"
@@ -29,8 +22,6 @@ if( Test-Path -Path "$([Environment]::GetFolderPath("CommonDesktopDirectory"))/J
 
 
 $Server = "localhost"
-$AppDB = "jde_app"
-$IotDB = "jde_iot"
+$AppDB = "jde"
 #Invoke-Sqlcmd -Query "if exists(select * from sys.databases where name = '$($AppDB)') drop database $($AppDB)" -ServerInstance "$($Server)"
-#Invoke-Sqlcmd -Query "if exists(select * from sys.databases where name = '$($IotDB)') drop database $($IotDB)" -ServerInstance "$($Server)"
 Read-Host -Prompt "Press Enter to exit"
