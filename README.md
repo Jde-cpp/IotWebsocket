@@ -1,14 +1,13 @@
-# IotWebsocket
+# OpcGateway
 
 Rest/Websocket Application on top of [open62541.org](https://www.open62541.org/).
 
 ## Installation
 ### Prerequisites
 1) [Microsoft Sql Server](https://www.microsoft.com/en-us/sql-server/sql-server-downloads).
-2) [nodejs](https://nodejs.org/en/download).
 
 ### Steps
-1) Execute iot.exe installation.
+1) Execute OpcGateway.exe installation.
 2) Setup databases, services, from administrator powershell run:
     ```
     . "$([Environment]::GetFolderPath("CommonDesktopDirectory"))/JdeSetup.ps1"
@@ -28,8 +27,8 @@ Rest/Websocket Application on top of [open62541.org](https://www.open62541.org/)
 ## Running
 1) Start Services
 ```
-    net start Jde.IotWebSocket
     net start Jde.AppServer
+    net start Jde.OpcGateway
 ```
 2) Browse to http://127.0.0.1:8071.
 3) Setup Opc Server.
