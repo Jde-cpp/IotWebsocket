@@ -55,7 +55,7 @@ namespace Jde::Opc{
 			auto j = co_await Browse::ObjectsFolderAwait( NodeId{_request.Params()}, snapshot, move(_client) );
 			Resume( {move(j), move(_request)} );
 		}
-		catch( IException& e ){
+		catch( exception& e ){
 			ResumeExp( move(e) );
 		}
 	}

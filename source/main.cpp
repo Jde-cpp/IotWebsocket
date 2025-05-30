@@ -21,14 +21,16 @@ namespace Jde{
 α main( int argc, char **argv )->int{
 	using namespace Jde;
 	startUp( argc, argv );
-	_exitCode = IApplication::Pause();
+	if( !_exitCode )
+		_exitCode = IApplication::Pause();
 	Process::Shutdown( _exitCode.value_or(EXIT_FAILURE) );
 	return _exitCode.value_or( EXIT_FAILURE );
 }
 
 α Jde::startUp( int argc, char **argv )ι->Access::ConfigureAwait::Task{
 	try{
-		TagParser( Opc::LogTagParser );
+		TagFromString( Opc::TagFromString );
+		TagToString( Opc::TagToString );
 		OSApp::Startup( argc, argv, "Jde.OpcGateway", "IOT Connection" );
 		auto authorize = App::Client::RemoteAcl();
 		auto schema = DB::GetAppSchema( "opc", authorize );
@@ -43,19 +45,23 @@ namespace Jde{
 			Crypto::CreateKeyCertificate( settings );
 		}
 
+		Opc::StartWebServer();
 		App::Client::Connect();
-		Execution::Run();
+//		Execution::Run();
 		while( App::Client::AppClientSocketSession::Instance()==nullptr || App::Client::QLServer()==nullptr )
 			std::this_thread::yield();
 		auto await = Access::Configure( DB::GetAppSchema("access", authorize), {schema}, App::Client::QLServer(), UserPK{UserPK::System} );
 		co_await await;
 		Process::AddShutdownFunction( [](bool terminate){Opc::UAClient::Shutdown(terminate);} );
 		QL::Hook::Add( mu<Opc::OpcQLHook>() );
-		Opc::StartWebServer();
 		Information( ELogTags::App, "---Started {}---", OSApp::ProductName() );
 	}
 	catch( const IException& e ){
-		Critical( ELogTags::App, "Exiting on error:  {}"sv, e.what() );
+		if( e.Level()==ELogLevel::Trace )
+			std::cout << e.what() << std::endl;
+		else
+			std::cerr << e.what() << std::endl;
+		Critical( ELogTags::App, "Exiting on error:  {}", e.what() );
 		_exitCode = e.Code ? (int)e.Code : EXIT_FAILURE;
 	}
 }
