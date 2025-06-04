@@ -21,12 +21,15 @@ local args = import 'args.libsonnet';
 		}
 	},
 	dbServers: {
-		scriptPaths: args.scriptPaths,
+		scriptPaths: args.dbServers.scriptPaths,
 		sync: true,
 		localhost:{
-			driver: args.dbDriver,
-			connectionString: args.dbConnectionString,
-			catalogs: args.catalogs
+			driver: args.dbServers.localhost.driver,
+			connectionString: args.dbServers.localhost.connectionString,
+			username: args.dbServers.localhost.username,
+			password: args.dbServers.localhost.password,
+			schema: "debug",
+			catalogs: args.dbServers.localhost.catalogs
 		}
 	},
 	credentials:{
@@ -59,6 +62,6 @@ local args = import 'args.libsonnet';
 	workers:{
 		drive:{ "threads":  1 },
 		alarm:{ "threads":  1 },
-		executor: 1
+		executor: 2
 	}
 }

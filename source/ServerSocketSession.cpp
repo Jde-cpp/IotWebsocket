@@ -94,13 +94,13 @@ namespace Jde::Opc{
 			WriteException( move(e), requestId );
 		}
 	}
-	α ServerSocketSession::WriteSubscription( const jvalue& j, Jde::RequestId requestId )ι->void{
+	α ServerSocketSession::WriteSubscription( const jvalue& /*j*/, Jde::RequestId /*requestId*/ )ι->void{
 		ASSERT_DESC( false, "Not Implemented" );
 	}
-	α ServerSocketSession::WriteSubscriptionAck( vector<QL::SubscriptionId>&& subscriptionIds, Jde::RequestId requestId )ι->void{
+	α ServerSocketSession::WriteSubscriptionAck( vector<QL::SubscriptionId>&& /*subscriptionIds*/, Jde::RequestId /*requestId*/ )ι->void{
 		ASSERT_DESC( false, "Not Implemented" );
 	}
-	α ServerSocketSession::WriteComplete( Jde::RequestId requestId )ι->void{
+	α ServerSocketSession::WriteComplete( Jde::RequestId /*requestId*/ )ι->void{
 		ASSERT_DESC( false, "Not Implemented" );
 	}
 
@@ -124,7 +124,6 @@ namespace Jde::Opc{
 			msg.set_request_id( requestId2 );
 			msg.set_session_id( sessionId );
 			let result = Jde::Proto::ToString( msg );
-			let bytes = result.data();
 
 			switch( m.Value_case() ){
 			using enum FromClient::Message::ValueCase;
