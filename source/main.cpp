@@ -13,7 +13,7 @@
 
 #define let const auto
 namespace Jde{
-	α OSApp::ProductName()ι->sv{ return "OpcGateway"; }
+	α Process::ProductName()ι->sv{ return "OpcGateway"; }
 	Ω startUp( int argc, char **argv )ι->Access::ConfigureAwait::Task;
 	optional<int> _exitCode;
 }
