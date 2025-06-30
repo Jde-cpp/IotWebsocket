@@ -35,4 +35,4 @@ DISABLE_WARNINGS
 #include <jde/opc/types/proto/Opc.FromServer.pb.h>
 ENABLE_WARNINGS
 //#include <jde/opc/types/FromServer.h>
-#include <jde/opc/uatypes/UAException.h>
+#include <jde/opc/uatypes/UAClientException.h>
