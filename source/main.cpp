@@ -13,7 +13,7 @@
 
 #define let const auto
 namespace Jde{
-	α OSApp::ProductName()ι->sv{ return "OpcGateway"; }
+	α Process::ProductName()ι->sv{ return "OpcGateway"; }
 	Ω startUp( int argc, char **argv )ι->Access::ConfigureAwait::Task;
 	optional<int> _exitCode;
 }
@@ -22,15 +22,14 @@ namespace Jde{
 	using namespace Jde;
 	startUp( argc, argv );
 	if( !_exitCode )
-		_exitCode = IApplication::Pause();
+		_exitCode = Process::Pause();
 	Process::Shutdown( _exitCode.value_or(EXIT_FAILURE) );
 	return _exitCode.value_or( EXIT_FAILURE );
 }
 
 α Jde::startUp( int argc, char **argv )ι->Access::ConfigureAwait::Task{
 	try{
-		TagFromString( Opc::TagFromString );
-		TagToString( Opc::TagToString );
+		Logging::AddTagParser( mu<Opc::UALogParser>() );
 		OSApp::Startup( argc, argv, "Jde.OpcGateway", "IOT Connection" );
 		auto authorize = App::Client::RemoteAcl();
 		auto schema = DB::GetAppSchema( "opc", authorize );
@@ -54,7 +53,7 @@ namespace Jde{
 		co_await await;
 		Process::AddShutdownFunction( [](bool terminate){Opc::UAClient::Shutdown(terminate);} );
 		QL::Hook::Add( mu<Opc::OpcQLHook>() );
-		Information( ELogTags::App, "---Started {}---", OSApp::ProductName() );
+		Information( ELogTags::App, "---Started {}---", Process::ProductName() );
 	}
 	catch( const IException& e ){
 		if( e.Level()==ELogLevel::Trace )
