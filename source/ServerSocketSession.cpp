@@ -5,7 +5,7 @@
 #include <jde/opc/async/SessionAwait.h>
 #include "WebServer.h"
 #include "types/proto/Opc.FromServer.h"
-#include <jde/opc/uatypes/UAException.h>
+#include <jde/opc/uatypes/UAClientException.h>
 
 #define let const auto
 
@@ -25,7 +25,7 @@ namespace Jde::Opc{
 		Write( FromServer::AckTrans(id) );
 	}
 
-	α ServerSocketSession::SendDataChange( const Jde::Opc::OpcNK& opcNK, const Jde::Opc::NodeId& node, const Jde::Opc::Value& value )ι->void{
+	α ServerSocketSession::SendDataChange( const Jde::Opc::OpcClientNK& opcNK, const Jde::Opc::NodeId& node, const Jde::Opc::Value& value )ι->void{
 		return Write( MessageTrans(value.ToProto(opcNK,node), 0) );
 	}
 
@@ -41,7 +41,7 @@ namespace Jde::Opc{
 		}
 	}
 
-	α ServerSocketSession::Subscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->void{
+	α ServerSocketSession::Subscribe( OpcClientNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->void{
 		try{
 			auto self = SharedFromThis(); //keep alive
 			auto [loginName,password] = Credentials( base::SessionId(), opcId );
@@ -63,7 +63,7 @@ namespace Jde::Opc{
 			try{
 				ack = ( co_await DataChangesSubscribe(nodes, self, client) ).UP<FromServer::SubscriptionAck>();
 			}
-			catch( UAException& e ){
+			catch( Client::UAClientException& e ){
 				if( !e.IsBadSession() )
 					e.Throw();
 			}
@@ -78,7 +78,7 @@ namespace Jde::Opc{
 		}
 	}
 
-	α ServerSocketSession::Unsubscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->void{
+	α ServerSocketSession::Unsubscribe( OpcClientNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->void{
 		try{
 			auto self = SharedFromThis();//keep alive
 			auto [loginName,password] = Opc::Credentials( SessionId(), opcId );
@@ -94,13 +94,13 @@ namespace Jde::Opc{
 			WriteException( move(e), requestId );
 		}
 	}
-	α ServerSocketSession::WriteSubscription( const jvalue& j, Jde::RequestId requestId )ι->void{
+	α ServerSocketSession::WriteSubscription( const jvalue& /*j*/, Jde::RequestId /*requestId*/ )ι->void{
 		ASSERT_DESC( false, "Not Implemented" );
 	}
-	α ServerSocketSession::WriteSubscriptionAck( vector<QL::SubscriptionId>&& subscriptionIds, Jde::RequestId requestId )ι->void{
+	α ServerSocketSession::WriteSubscriptionAck( vector<QL::SubscriptionId>&& /*subscriptionIds*/, Jde::RequestId /*requestId*/ )ι->void{
 		ASSERT_DESC( false, "Not Implemented" );
 	}
-	α ServerSocketSession::WriteComplete( Jde::RequestId requestId )ι->void{
+	α ServerSocketSession::WriteComplete( Jde::RequestId /*requestId*/ )ι->void{
 		ASSERT_DESC( false, "Not Implemented" );
 	}
 
@@ -124,7 +124,6 @@ namespace Jde::Opc{
 			msg.set_request_id( requestId2 );
 			msg.set_session_id( sessionId );
 			let result = Jde::Proto::ToString( msg );
-			let bytes = result.data();
 
 			switch( m.Value_case() ){
 			using enum FromClient::Message::ValueCase;

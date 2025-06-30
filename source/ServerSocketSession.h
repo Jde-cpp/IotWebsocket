@@ -12,7 +12,7 @@ namespace Jde::Opc{
 		using base = TWebsocketSession<FromServer::Transmission,FromClient::Transmission>;
 		ServerSocketSession( sp<RestStream> stream, beast::flat_buffer&& buffer, TRequestType&& request, tcp::endpoint&& userEndpoint, uint32 connectionIndex )ι;
 		α OnRead( FromClient::Transmission&& transmission )ι->void override;
-		α SendDataChange( const Jde::Opc::OpcNK& opcNK, const Jde::Opc::NodeId& node, const Jde::Opc::Value& value )ι->void override;
+		α SendDataChange( const Jde::Opc::OpcClientNK& opcNK, const Jde::Opc::NodeId& node, const Jde::Opc::Value& value )ι->void override;
 		α to_string()Ι->string override{ return Ƒ( "{:x}", Id() ); }
 
 	private:
@@ -21,8 +21,8 @@ namespace Jde::Opc{
 		α ProcessTransmission( FromClient::Transmission&& transmission )ι->void;
 		α SetSessionId( str sessionId, RequestId requestId )->Sessions::UpsertAwait::Task;
 		α SharedFromThis()ι->sp<ServerSocketSession>{ return std::dynamic_pointer_cast<ServerSocketSession>(shared_from_this()); }
-		α Subscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->void;
-		α Unsubscribe( OpcNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->void;
+		α Subscribe( OpcClientNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->void;
+		α Unsubscribe( OpcClientNK&& opcId, flat_set<NodeId> nodes, uint32 requestId )ι->void;
 
 		α WriteSubscription( const jvalue& j, Jde::RequestId requestId )ι->void override;
 		α WriteSubscriptionAck( vector<QL::SubscriptionId>&& subscriptionIds, Jde::RequestId requestId )ι->void override;
