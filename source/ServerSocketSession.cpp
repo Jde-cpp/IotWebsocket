@@ -5,7 +5,7 @@
 #include <jde/opc/async/SessionAwait.h>
 #include "WebServer.h"
 #include "types/proto/Opc.FromServer.h"
-#include <jde/opc/uatypes/UAException.h>
+#include <jde/opc/uatypes/UAClientException.h>
 
 #define let const auto
 
@@ -63,7 +63,7 @@ namespace Jde::Opc{
 			try{
 				ack = ( co_await DataChangesSubscribe(nodes, self, client) ).UP<FromServer::SubscriptionAck>();
 			}
-			catch( UAException& e ){
+			catch( Client::UAClientException& e ){
 				if( !e.IsBadSession() )
 					e.Throw();
 			}

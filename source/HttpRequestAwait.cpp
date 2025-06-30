@@ -7,7 +7,7 @@
 #include <jde/opc/uatypes/Node.h>
 #include <jde/opc/uatypes/UAClient.h>
 #include <jde/opc/uatypes/Value.h>
-#include <jde/opc/uatypes/UAException.h>
+#include <jde/opc/uatypes/UAClientException.h>
 
 #define let const auto
 
@@ -108,7 +108,7 @@ namespace Jde::Opc{
 					try{
 						updatedResults = ( co_await Read::SendRequest(move(successNodes), move(_client)) ).UP<flat_map<NodeId, Value>>();
 					}
-					catch( UAException& e ){
+					catch( Client::UAClientException& e ){
 						if( !e.IsBadSession() )
 							e.Throw();
 					}
